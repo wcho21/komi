@@ -13,5 +13,13 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
+      - name: cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: run ci script
         run: ./bin/ci.sh
