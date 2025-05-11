@@ -1,8 +1,8 @@
+mod core;
 mod util;
 
-pub fn execute(_source: &str) -> String {
-    // fake implementation
-    String::from("1")
+pub fn execute(source: &str) -> String {
+    core::execute(source)
 }
 
 #[cfg(test)]
