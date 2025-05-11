@@ -1,6 +1,9 @@
 mod core;
 mod util;
 
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
 pub fn execute(source: &str) -> String {
     core::execute(source)
 }
