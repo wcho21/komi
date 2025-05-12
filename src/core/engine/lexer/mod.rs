@@ -1,24 +1,24 @@
-mod source_reader;
+mod source_scanner;
 mod utf8_tape;
 
 use crate::core::err::LexError;
 use crate::core::syntax::{Token, TokenKind};
 use crate::util::string;
 use crate::util::{Range, Scanner};
-use source_reader::SourceReader;
+use source_scanner::SourceScanner;
 
 type ResTokens = Result<Vec<Token>, LexError>;
 type ResToken = Result<Token, LexError>;
 
 /// A lexer to produce tokens from a source.
 struct Lexer<'a> {
-    reader: SourceReader<'a>,
+    reader: SourceScanner<'a>,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
         Self {
-            reader: SourceReader::new(source),
+            reader: SourceScanner::new(source),
         }
     }
 
