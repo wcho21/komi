@@ -97,7 +97,7 @@ impl<'a> Lexer<'a> {
     }
 }
 
-pub fn lex<'a>(source: &'a str) -> Result<Vec<Token>, LexErr> {
+pub fn lex(source: &str) -> Result<Vec<Token>, LexErr> {
     let tokens = Lexer::new(source).lex()?;
     Ok(tokens)
 }
