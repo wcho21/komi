@@ -33,9 +33,11 @@ impl<'a> Tape for Utf8Tape<'a> {
     fn get_current(&self) -> Option<Self::Item> {
         self.chars.get(self.base_index).map(|s| *s)
     }
+
     fn peek_next(&self) -> Option<Self::Item> {
         self.chars.get(self.base_index + 1).map(|s| *s)
     }
+
     fn advance(&mut self) -> () {
         if self.base_index == self.chars.len() {
             return ();
