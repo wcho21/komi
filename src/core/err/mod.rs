@@ -1,26 +1,36 @@
 mod lex;
+mod parse;
+
+pub use lex::LexErr;
+pub use parse::ParseErr;
 use std::error::Error;
 use std::fmt;
 
-pub use lex::LexErr;
-
 #[derive(Debug)]
-pub enum ExecErr<'a> {
-    Lex(LexErr<'a>),
+pub enum ExecErr {
+    LexErr(LexErr),
+    ParseErr(ParseErr),
 }
 
-impl<'a> fmt::Display for ExecErr<'a> {
+impl<'a> fmt::Display for ExecErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ExecErr::Lex(err) => write!(f, "{}", err),
+            ExecErr::LexErr(err) => write!(f, "{}", err),
+            ExecErr::ParseErr(err) => write!(f, "{}", err),
         }
     }
 }
 
-impl<'a> From<LexErr<'a>> for ExecErr<'a> {
-    fn from(err: LexErr<'a>) -> Self {
-        ExecErr::Lex(err)
+impl From<LexErr> for ExecErr {
+    fn from(err: LexErr) -> Self {
+        ExecErr::LexErr(err)
     }
 }
 
-impl<'a> Error for ExecErr<'a> {}
+impl From<ParseErr> for ExecErr {
+    fn from(err: ParseErr) -> Self {
+        ExecErr::ParseErr(err)
+    }
+}
+
+impl<'a> Error for ExecErr {}

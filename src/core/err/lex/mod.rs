@@ -5,12 +5,12 @@ use std::fmt;
 /// Errors that can occur during the lexing process.
 /// Serves as the interface between a lexer and its user.
 #[derive(Debug)]
-pub enum LexErr<'a> {
-    IllegalChar(&'a str, Range),
-    BadNumLiteral(&'a str, Range),
+pub enum LexErr {
+    IllegalChar(String, Range),
+    BadNumLiteral(String, Range),
 }
 
-impl<'a> fmt::Display for LexErr<'a> {
+impl fmt::Display for LexErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             LexErr::IllegalChar(str, location) => write!(
@@ -27,4 +27,4 @@ impl<'a> fmt::Display for LexErr<'a> {
     }
 }
 
-impl<'a> Error for LexErr<'a> {}
+impl<'a> Error for LexErr {}

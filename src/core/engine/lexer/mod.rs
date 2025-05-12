@@ -19,7 +19,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn lex(&mut self) -> Result<Vec<Token>, LexErr<'a>> {
+    pub fn lex(&mut self) -> Result<Vec<Token>, LexErr> {
         let mut tokens: Vec<Token> = vec![];
 
         loop {
@@ -27,7 +27,7 @@ impl<'a> Lexer<'a> {
                 Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
                 Some(x) => {
                     return Err(LexErr::IllegalChar(
-                        x,
+                        x.to_string(),
                         range::from_spot(&self.reader.spot()),
                     ));
                 }
@@ -40,7 +40,7 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    fn lex_num(&mut self) -> Result<Token, LexErr<'a>> {
+    fn lex_num(&mut self) -> Result<Token, LexErr> {
         let mut lexeme = String::new();
         let begin = self.reader.spot();
 
@@ -53,7 +53,7 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) && s != "." => {
                     let end = self.reader.spot();
-                    return Err(LexErr::BadNumLiteral(s, Range::new(begin, end)));
+                    return Err(LexErr::BadNumLiteral(s.to_string(), Range::new(begin, end)));
                 }
                 _ => {
                     break;
@@ -81,7 +81,7 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) => {
                     let end = self.reader.spot();
-                    return Err(LexErr::BadNumLiteral(s, Range::new(begin, end)));
+                    return Err(LexErr::BadNumLiteral(s.to_string(), Range::new(begin, end)));
                 }
                 _ => {
                     break;
@@ -97,7 +97,7 @@ impl<'a> Lexer<'a> {
     }
 }
 
-pub fn lex<'a>(source: &'a str) -> Result<Vec<Token>, LexErr<'a>> {
+pub fn lex<'a>(source: &'a str) -> Result<Vec<Token>, LexErr> {
     let tokens = Lexer::new(source).lex()?;
     Ok(tokens)
 }
