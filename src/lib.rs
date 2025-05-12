@@ -42,6 +42,6 @@ mod tests {
     }
 
     fn is_err(executed: &str) -> bool {
-        executed.starts_with("{ err: \"")
+        executed.starts_with("{ \"err\": \"")
     }
 }
