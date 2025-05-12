@@ -7,6 +7,7 @@ use crate::util::string;
 use crate::util::{Range, Spot, range};
 use source_reader::SourceReader;
 
+/// A lexer to produce tokens from a source.
 struct Lexer<'a> {
     reader: SourceReader<'a>,
 }

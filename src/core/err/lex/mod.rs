@@ -2,6 +2,8 @@ use crate::util::Range;
 use std::error::Error;
 use std::fmt;
 
+/// Errors that can occur during the lexing process.
+/// Serves as the interface between a lexer and its user.
 #[derive(Debug)]
 pub enum LexErr<'a> {
     IllegalChar(&'a str, Range),

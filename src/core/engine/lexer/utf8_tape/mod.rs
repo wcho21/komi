@@ -1,5 +1,6 @@
 use crate::util::Tape;
 
+/// A UTF-8 character tape from a string.
 pub struct Utf8Tape<'a> {
     chars: Vec<&'a str>,
     base_index: usize,

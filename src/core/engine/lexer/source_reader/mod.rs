@@ -1,6 +1,8 @@
 use super::utf8_tape::Utf8Tape;
 use crate::util::{Spot, Tape};
 
+/// A character reader from a source.
+/// It reads characters one by one, but treats CRLF ("\r\n") as a single character.
 pub struct SourceReader<'a> {
     tape: Utf8Tape<'a>,
     col: u64,
