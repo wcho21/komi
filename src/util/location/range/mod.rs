@@ -11,8 +11,13 @@ impl Range {
     pub const fn new(begin: Spot, end: Spot) -> Self {
         Range { begin, end }
     }
+
+    pub const fn from_spot(spot: &Spot) -> Self {
+        Range { begin: *spot, end: *spot }
+    }
 }
 
+#[deprecated]
 pub const fn from_spot(spot: &Spot) -> Range {
     Range::new(*spot, *spot)
 }
