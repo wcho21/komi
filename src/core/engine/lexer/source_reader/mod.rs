@@ -20,7 +20,7 @@ impl<'a> SourceReader<'a> {
 
     pub fn read(&self) -> Option<&'a str> {
         match self.tape.get_current() {
-            Some("\r") => match self.tape.peak_next() {
+            Some("\r") => match self.tape.peek_next() {
                 Some("\n") => Some("\r\n"),
                 _ => Some("\r"),
             },

@@ -1,12 +1,12 @@
 /// A position representing the coordinate of a character in multi-line text.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Spot {
     row: u64,
     col: u64,
 }
 
 impl Spot {
-    pub fn new(row: u64, col: u64) -> Self {
+    pub const fn new(row: u64, col: u64) -> Self {
         Spot { row, col }
     }
 }

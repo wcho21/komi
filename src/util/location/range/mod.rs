@@ -1,20 +1,20 @@
 use super::spot::Spot;
 
 /// A range representing the span of multiple characters in a multi-line text.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Range {
     begin: Spot,
     end: Spot,
 }
 
 impl Range {
-    pub fn new(begin: Spot, end: Spot) -> Self {
+    pub const fn new(begin: Spot, end: Spot) -> Self {
         Range { begin, end }
     }
 }
 
-pub fn from_spot(spot: &Spot) -> Range {
-    Range::new(spot.clone(), spot.clone())
+pub const fn from_spot(spot: &Spot) -> Range {
+    Range::new(*spot, *spot)
 }
 
 #[cfg(test)]

@@ -8,6 +8,7 @@ ARG RUSTUP_VERSION=1.28.2
 ARG RUST_VERSION=1.86.0
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain ${RUST_VERSION} -y
 ARG WASM_PACK_VERSION=0.13.1
-RUN PATH="/root/.cargo/bin:${PATH}" cargo install wasm-pack --version ${WASM_PACK_VERSION}
+ARG JUST_VERSION=1.40.0
+RUN PATH="/root/.cargo/bin:${PATH}" cargo install wasm-pack@${WASM_PACK_VERSION} just@${JUST_VERSION}
 ARG BUN_VERSION=1.2.12
 RUN curl -fsSL https://bun.sh/install | bash -s "bun-v${BUN_VERSION}"

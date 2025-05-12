@@ -10,8 +10,8 @@ pub enum ValueKind {
 /// A representation of the value produced during evaluation.
 #[derive(Debug, PartialEq)]
 pub struct Value {
-    kind: ValueKind,
-    location: Range,
+    pub kind: ValueKind,
+    pub location: Range,
 }
 
 impl Value {
