@@ -3,8 +3,8 @@ use super::spot::Spot;
 /// A range representing the span of multiple characters in a multi-line text.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Range {
-    begin: Spot,
-    end: Spot,
+    pub begin: Spot,
+    pub end: Spot,
 }
 
 impl Range {
