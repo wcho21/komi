@@ -1,3 +1,4 @@
+/// A position representing the coordinate of a character in multi-line text.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Spot {
     row: u64,

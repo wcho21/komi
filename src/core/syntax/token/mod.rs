@@ -1,10 +1,13 @@
 use crate::util::Range;
 
+/// Kinds of tokens produced during lexing.
+/// Serves as the interface between a lexer and its user.
 #[derive(Debug, PartialEq)]
 pub enum TokenKind {
     Number(f64),
 }
 
+/// A token produced during lexing.
 #[derive(Debug, PartialEq)]
 pub struct Token {
     kind: TokenKind,

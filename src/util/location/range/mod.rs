@@ -1,5 +1,6 @@
 use super::spot::Spot;
 
+/// A range representing the span of multiple characters in a multi-line text.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Range {
     begin: Spot,
@@ -10,6 +11,10 @@ impl Range {
     pub fn new(begin: Spot, end: Spot) -> Self {
         Range { begin, end }
     }
+}
+
+pub fn from_spot(spot: &Spot) -> Range {
+    Range::new(spot.clone(), spot.clone())
 }
 
 #[cfg(test)]

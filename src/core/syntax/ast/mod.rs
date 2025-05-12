@@ -1,10 +1,13 @@
 use crate::util::Range;
 
+/// Kinds of AST produced during parsing.
+/// Serves as the interface between a parser and its user.
 #[derive(Debug, PartialEq)]
 pub enum AstKind {
     Number(f64),
 }
 
+/// An abstract syntax tree, or AST produced during parsing.
 #[derive(Debug, PartialEq)]
 pub struct Ast {
     kind: AstKind,

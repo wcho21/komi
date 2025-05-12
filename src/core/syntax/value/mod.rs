@@ -1,10 +1,13 @@
 use crate::util::Range;
 
+/// Kinds of values produced during evaluation.
+/// Serves as the interface between an evaluator and its user.
 #[derive(Debug, PartialEq)]
 pub enum ValueKind {
     Number(f64),
 }
 
+/// A representation of the value produced during evaluation.
 #[derive(Debug, PartialEq)]
 pub struct Value {
     kind: ValueKind,
