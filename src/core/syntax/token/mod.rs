@@ -2,24 +2,24 @@ use crate::util::Range;
 
 /// Kinds of tokens produced during lexing.
 /// Serves as the interface between a lexer and its user.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum TokenKind {
     Number(f64),
 }
 
 /// A token produced during lexing.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Token {
     kind: TokenKind,
     location: Range,
 }
 
 impl Token {
-    pub fn new(kind: TokenKind, location: Range) -> Self {
+    pub const fn new(kind: TokenKind, location: Range) -> Self {
         Token { kind, location }
     }
 
-    pub fn from_num(num: f64, location: Range) -> Self {
+    pub const fn from_num(num: f64, location: Range) -> Self {
         Token::new(TokenKind::Number(num), location)
     }
 }
