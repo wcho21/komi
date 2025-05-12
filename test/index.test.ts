@@ -7,11 +7,11 @@ beforeAll(async () => {
 
 describe("ok", () => {
   it("single number literal", async () => {
-    const executed = execute("1");
+    const executed = execute("12.25");
 
     const { ok } = JSON.parse(executed);
 
-    expect(ok).toBe("1");
+    expect(ok).toBe("12.25");
   });
 });
 
