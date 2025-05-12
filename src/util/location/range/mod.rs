@@ -1,3 +1,4 @@
+use super::spot;
 use super::spot::Spot;
 
 /// A range representing the span of multiple characters in a multi-line text.
@@ -12,6 +13,8 @@ impl Range {
         Range { begin, end }
     }
 }
+
+pub const ORIGIN: Range = Range::new(spot::ORIGIN, spot::ORIGIN);
 
 #[cfg(test)]
 mod tests {
