@@ -2,13 +2,15 @@ mod engine;
 mod err;
 mod syntax;
 
-pub fn execute(source: &str) -> String {
-    let tokens = engine::lex(&source).unwrap();
+use err::ExecErr;
+
+pub fn execute(source: &str) -> Result<String, ExecErr> {
+    let tokens = engine::lex(&source)?;
     let ast = engine::parse(&tokens);
     let value = engine::evaluate(&ast);
     let representation = engine::represent(&value);
 
-    representation
+    Ok(representation)
 }
 
 #[cfg(test)]
@@ -16,10 +18,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn should_work() {
+    fn should_work() -> Result<(), ExecErr<'static>> {
         let source = "1";
-        let executed = execute(source);
+        let executed = execute(source)?;
 
         assert_eq!(executed, "1");
+        Ok(())
     }
 }
