@@ -21,10 +21,10 @@ mod tests {
 
     #[test]
     fn should_work() -> Res {
-        let source = "1";
+        let source = "12.25";
         let executed = execute(source)?;
 
-        assert_eq!(executed, "1");
+        assert_eq!(executed, "12.25");
         Ok(())
     }
 
