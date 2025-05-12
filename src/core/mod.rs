@@ -2,7 +2,7 @@ mod engine;
 mod err;
 mod syntax;
 
-use err::ExecErr;
+pub use err::ExecErr;
 
 pub fn execute(source: &str) -> Result<String, ExecErr> {
     let tokens = engine::lex(&source)?;
@@ -25,6 +25,15 @@ mod tests {
         let executed = execute(source)?;
 
         assert_eq!(executed, "1");
+        Ok(())
+    }
+
+    #[test]
+    fn test_fail() -> Res {
+        let source = " ";
+        let executed = execute(source);
+
+        assert!(matches!(executed, Err(ExecErr::Lex(_))));
         Ok(())
     }
 }
