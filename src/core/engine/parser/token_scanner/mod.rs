@@ -1,13 +1,13 @@
 use crate::core::syntax::Token;
 use crate::util::{Range, Scanner, range};
 
-pub struct TokenTape<'a> {
+pub struct TokenScanner<'a> {
     tokens: &'a Vec<Token>,
     base_index: usize,
     last_location: Range,
 }
 
-impl<'a> TokenTape<'a> {
+impl<'a> TokenScanner<'a> {
     pub fn new(tokens: &'a Vec<Token>) -> Self {
         Self {
             tokens,
@@ -17,7 +17,7 @@ impl<'a> TokenTape<'a> {
     }
 }
 
-impl<'a> Scanner for TokenTape<'a> {
+impl<'a> Scanner for TokenScanner<'a> {
     type Item = &'a Token;
 
     fn read(&self) -> Option<Self::Item> {
@@ -60,38 +60,38 @@ mod tests {
     fn test_read_for_empty() {
         let tokens: Vec<Token> = vec![];
 
-        let tape = TokenTape::new(&tokens);
+        let scanner = TokenScanner::new(&tokens);
 
-        assert_eq!(tape.read(), None);
+        assert_eq!(scanner.read(), None);
     }
 
     #[test]
     fn test_read_twice() {
         let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
 
-        let tape = TokenTape::new(&tokens);
+        let scanner = TokenScanner::new(&tokens);
 
-        assert_eq!(tape.read(), Some(&TOKEN_MOCKS[0]));
-        assert_eq!(tape.read(), Some(&TOKEN_MOCKS[0]));
+        assert_eq!(scanner.read(), Some(&TOKEN_MOCKS[0]));
+        assert_eq!(scanner.read(), Some(&TOKEN_MOCKS[0]));
     }
 
     #[test]
     fn test_advance() {
         let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
 
-        let mut tape = TokenTape::new(&tokens);
+        let mut scanner = TokenScanner::new(&tokens);
 
-        tape.advance();
-        assert_eq!(tape.read(), Some(&TOKEN_MOCKS[1]));
+        scanner.advance();
+        assert_eq!(scanner.read(), Some(&TOKEN_MOCKS[1]));
     }
 
     #[test]
     fn test_advance_for_empty() {
         let tokens: Vec<Token> = vec![];
 
-        let mut tape = TokenTape::new(&tokens);
+        let mut scanner = TokenScanner::new(&tokens);
 
-        tape.advance();
-        assert_eq!(tape.read(), None);
+        scanner.advance();
+        assert_eq!(scanner.read(), None);
     }
 }

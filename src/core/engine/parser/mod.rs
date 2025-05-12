@@ -1,20 +1,20 @@
-mod token_tape;
+mod token_scanner;
 
 use crate::core::err::ParseError;
 use crate::core::syntax::{Ast, AstKind, Token, TokenKind};
 use crate::util::{Range, Spot, Scanner};
-use token_tape::TokenTape;
+use token_scanner::TokenScanner;
 
 type ResAst = Result<Ast, ParseError>;
 
 struct Parser<'a> {
-    token_tape: TokenTape<'a>,
+    scanner: TokenScanner<'a>,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(tokens: &'a Vec<Token>) -> Self {
         Self {
-            token_tape: TokenTape::new(tokens),
+            scanner: TokenScanner::new(tokens),
         }
     }
 
@@ -27,7 +27,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_num(&self) -> ResAst {
-        match self.token_tape.read() {
+        match self.scanner.read() {
             Some(Token {
                 kind: TokenKind::Number(n),
                 location,
