@@ -33,7 +33,7 @@ impl<'a> Tape for Utf8Tape<'a> {
     fn get_current(&self) -> Option<Self::Item> {
         self.chars.get(self.base_index).map(|s| *s)
     }
-    fn peak_next(&self) -> Option<Self::Item> {
+    fn peek_next(&self) -> Option<Self::Item> {
         self.chars.get(self.base_index + 1).map(|s| *s)
     }
     fn advance(&mut self) -> () {
@@ -69,31 +69,31 @@ mod tests {
     }
 
     #[test]
-    fn test_peak_next() {
+    fn test_peek_next() {
         let source = "ab";
 
         let tape = Utf8Tape::new(&source);
 
-        assert_eq!(tape.peak_next(), Some("b"));
+        assert_eq!(tape.peek_next(), Some("b"));
     }
 
     #[test]
-    fn test_peak_next_twice() {
+    fn test_peek_next_twice() {
         let source = "ab";
 
         let tape = Utf8Tape::new(&source);
 
-        assert_eq!(tape.peak_next(), Some("b"));
-        assert_eq!(tape.peak_next(), Some("b"));
+        assert_eq!(tape.peek_next(), Some("b"));
+        assert_eq!(tape.peek_next(), Some("b"));
     }
 
     #[test]
-    fn test_peak_next_for_empty() {
+    fn test_peek_next_for_empty() {
         let source = "";
 
         let tape = Utf8Tape::new(&source);
 
-        assert_eq!(tape.peak_next(), None);
+        assert_eq!(tape.peek_next(), None);
     }
 
     #[test]
@@ -104,7 +104,7 @@ mod tests {
 
         tape.advance();
         assert_eq!(tape.get_current(), Some("b"));
-        assert_eq!(tape.peak_next(), None);
+        assert_eq!(tape.peek_next(), None);
     }
 
     #[test]
@@ -115,6 +115,6 @@ mod tests {
 
         tape.advance();
         assert_eq!(tape.get_current(), None);
-        assert_eq!(tape.peak_next(), None);
+        assert_eq!(tape.peek_next(), None);
     }
 }
