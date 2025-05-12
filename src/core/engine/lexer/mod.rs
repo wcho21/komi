@@ -1,14 +1,14 @@
 mod source_reader;
 mod utf8_tape;
 
-use crate::core::err::LexErr;
+use crate::core::err::LexError;
 use crate::core::syntax::{Token, TokenKind};
 use crate::util::string;
 use crate::util::{Range, range};
 use source_reader::SourceReader;
 
-type ResTokens = Result<Vec<Token>, LexErr>;
-type ResToken = Result<Token, LexErr>;
+type ResTokens = Result<Vec<Token>, LexError>;
+type ResToken = Result<Token, LexError>;
 
 /// A lexer to produce tokens from a source.
 struct Lexer<'a> {
@@ -29,7 +29,7 @@ impl<'a> Lexer<'a> {
             match self.reader.read() {
                 Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
                 Some(x) => {
-                    return Err(LexErr::IllegalChar(
+                    return Err(LexError::IllegalChar(
                         x.to_string(),
                         range::from_spot(&self.reader.spot()),
                     ));
@@ -56,7 +56,7 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) && s != "." => {
                     let end = self.reader.spot();
-                    return Err(LexErr::BadNumLiteral(s.to_string(), Range::new(begin, end)));
+                    return Err(LexError::BadNumLiteral(s.to_string(), Range::new(begin, end)));
                 }
                 _ => {
                     break;
@@ -84,7 +84,7 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) => {
                     let end = self.reader.spot();
-                    return Err(LexErr::BadNumLiteral(s.to_string(), Range::new(begin, end)));
+                    return Err(LexError::BadNumLiteral(s.to_string(), Range::new(begin, end)));
                 }
                 _ => {
                     break;
@@ -110,7 +110,7 @@ mod tests {
     use super::*;
     use crate::util::Spot;
 
-    type Res = Result<(), LexErr>;
+    type Res = Result<(), LexError>;
 
     #[test]
     fn lex_num_int() -> Res {
@@ -146,7 +146,7 @@ mod tests {
 
         let token = Lexer::new(source).lex();
 
-        assert!(matches!(token, Err(LexErr::BadNumLiteral(_, _))));
+        assert!(matches!(token, Err(LexError::BadNumLiteral(_, _))));
         Ok(())
     }
 
@@ -156,7 +156,7 @@ mod tests {
 
         let token = Lexer::new(source).lex();
 
-        assert!(matches!(token, Err(LexErr::IllegalChar(_, _))));
+        assert!(matches!(token, Err(LexError::IllegalChar(_, _))));
         Ok(())
     }
 }

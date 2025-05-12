@@ -1,11 +1,11 @@
 mod token_tape;
 
-use crate::core::err::ParseErr;
+use crate::core::err::ParseError;
 use crate::core::syntax::{Ast, AstKind, Token, TokenKind};
 use crate::util::{Range, Spot, Tape};
 use token_tape::TokenTape;
 
-type ResAst = Result<Ast, ParseErr>;
+type ResAst = Result<Ast, ParseError>;
 
 struct Parser<'a> {
     token_tape: TokenTape<'a>,
@@ -32,7 +32,7 @@ impl<'a> Parser<'a> {
                 kind: TokenKind::Number(n),
                 location,
             }) => Ok(Ast::new(AstKind::Number(*n), *location)),
-            _ => Err(ParseErr::Unexpected(
+            _ => Err(ParseError::Unexpected(
                 "Unexpected".to_string(),
                 Range::new(Spot::new(0, 0), Spot::new(0, 0)),
             )),
@@ -49,7 +49,7 @@ mod tests {
     use super::*;
     use crate::core::syntax::AstKind;
 
-    type Res = Result<(), ParseErr>;
+    type Res = Result<(), ParseError>;
 
     const RANGE_MOCKS: &[Range] = &[
         Range::new(Spot::new(0, 0), Spot::new(1, 0)),

@@ -2,9 +2,9 @@ mod engine;
 mod err;
 mod syntax;
 
-pub use err::ExecErr;
+pub use err::ExecError;
 
-pub fn execute(source: &str) -> Result<String, ExecErr> {
+pub fn execute(source: &str) -> Result<String, ExecError> {
     let tokens = engine::lex(&source)?;
     let ast = engine::parse(&tokens)?;
     let value = engine::evaluate(&ast)?;
@@ -17,7 +17,7 @@ pub fn execute(source: &str) -> Result<String, ExecErr> {
 mod tests {
     use super::*;
 
-    type Res = Result<(), ExecErr>;
+    type Res = Result<(), ExecError>;
 
     #[test]
     fn should_work() -> Res {
@@ -33,7 +33,7 @@ mod tests {
         let source = " ";
         let executed = execute(source);
 
-        assert!(matches!(executed, Err(ExecErr::LexErr(_))));
+        assert!(matches!(executed, Err(ExecError::LexError(_))));
         Ok(())
     }
 }

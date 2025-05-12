@@ -1,8 +1,8 @@
-use crate::core::err::EvalErr;
+use crate::core::err::EvalError;
 use crate::core::syntax::{Ast, AstKind, Value, ValueKind};
 use crate::util::Range;
 
-type ResVal = Result<Value, EvalErr>;
+type ResVal = Result<Value, EvalError>;
 
 struct Evaluator<'a> {
     ast: &'a Ast,
@@ -41,7 +41,7 @@ mod tests {
     use crate::core::syntax::ValueKind;
     use crate::util::Spot;
 
-    type Res = Result<(), EvalErr>;
+    type Res = Result<(), EvalError>;
 
     const RANGE_MOCKS: &[Range] = &[
         Range::new(Spot::new(0, 0), Spot::new(1, 0)),
