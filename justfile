@@ -6,3 +6,6 @@ clean:
 
 test:
   ./bin/test.sh
+
+ci:
+  ./bin/ci.sh
