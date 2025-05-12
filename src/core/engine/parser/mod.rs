@@ -2,7 +2,7 @@ mod token_tape;
 
 use crate::core::err::ParseError;
 use crate::core::syntax::{Ast, AstKind, Token, TokenKind};
-use crate::util::{Range, Spot, Tape};
+use crate::util::{Range, Spot, Scanner};
 use token_tape::TokenTape;
 
 type ResAst = Result<Ast, ParseError>;
@@ -27,7 +27,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_num(&self) -> ResAst {
-        match self.token_tape.get_current() {
+        match self.token_tape.read() {
             Some(Token {
                 kind: TokenKind::Number(n),
                 location,
