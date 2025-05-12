@@ -17,8 +17,10 @@ pub fn execute(source: &str) -> Result<String, ExecErr> {
 mod tests {
     use super::*;
 
+    type Res = Result<(), ExecErr<'static>>;
+
     #[test]
-    fn should_work() -> Result<(), ExecErr<'static>> {
+    fn should_work() -> Res {
         let source = "1";
         let executed = execute(source)?;
 
