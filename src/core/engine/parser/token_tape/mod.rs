@@ -1,9 +1,10 @@
 use crate::core::syntax::Token;
-use crate::util::Tape;
+use crate::util::{Range, Scanner, Tape, range, tape};
 
 pub struct TokenTape<'a> {
     tokens: &'a Vec<Token>,
     base_index: usize,
+    last_location: Range,
 }
 
 impl<'a> TokenTape<'a> {
@@ -11,7 +12,31 @@ impl<'a> TokenTape<'a> {
         Self {
             tokens,
             base_index: 0,
+            last_location: range::ORIGIN,
         }
+    }
+}
+
+impl<'a> Scanner for TokenTape<'a> {
+    type Item = &'a Token;
+
+    fn read(&self) -> Option<Self::Item> {
+        self.tokens.get(self.base_index)
+    }
+
+    fn advance(&mut self) -> () {
+        if self.base_index == self.tokens.len() {
+            return ();
+        }
+
+        self.last_location = self.tokens[self.base_index].location;
+        self.base_index += 1;
+    }
+
+    fn locate(&self) -> Range {
+        self.tokens
+            .get(self.base_index)
+            .map_or_else(|| self.last_location, |t| t.location)
     }
 }
 
@@ -104,7 +129,7 @@ mod tests {
 
         let mut tape = TokenTape::new(&tokens);
 
-        tape.advance();
+        tape::Tape::advance(&mut tape);
         assert_eq!(tape.get_current(), Some(&TOKEN_MOCKS[1]));
         assert_eq!(tape.peek_next(), None);
     }
@@ -115,7 +140,7 @@ mod tests {
 
         let mut tape = TokenTape::new(&tokens);
 
-        tape.advance();
+        tape::Tape::advance(&mut tape);
         assert_eq!(tape.get_current(), None);
         assert_eq!(tape.peek_next(), None);
     }
