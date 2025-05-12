@@ -97,11 +97,9 @@ impl<'a> Lexer<'a> {
     }
 }
 
-pub fn lex<'a>(_source: &str) -> Result<Vec<Token>, LexErr<'a>> {
-    // fake implementation
-    // return dummy token
-    let fake_location = Range::new(Spot::new(0, 0), Spot::new(0, 0));
-    Ok(vec![Token::new(TokenKind::Number(1.0), fake_location)])
+pub fn lex<'a>(source: &'a str) -> Result<Vec<Token>, LexErr<'a>> {
+    let tokens = Lexer::new(source).lex()?;
+    Ok(tokens)
 }
 
 #[cfg(test)]
@@ -144,6 +142,16 @@ mod tests {
         let token = Lexer::new(source).lex();
 
         assert!(matches!(token, Err(LexErr::BadNumLiteral(_, _))));
+        Ok(())
+    }
+
+    #[test]
+    fn lex_fail() -> Result<(), Box<dyn Error>> {
+        let source = " ";
+
+        let token = Lexer::new(source).lex();
+
+        assert!(matches!(token, Err(LexErr::IllegalChar(_, _))));
         Ok(())
     }
 }
