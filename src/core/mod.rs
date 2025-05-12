@@ -6,7 +6,7 @@ pub use err::ExecErr;
 
 pub fn execute(source: &str) -> Result<String, ExecErr> {
     let tokens = engine::lex(&source)?;
-    let ast = engine::parse(&tokens);
+    let ast = engine::parse(&tokens)?;
     let value = engine::evaluate(&ast);
     let representation = engine::represent(&value);
 
@@ -17,7 +17,7 @@ pub fn execute(source: &str) -> Result<String, ExecErr> {
 mod tests {
     use super::*;
 
-    type Res = Result<(), ExecErr<'static>>;
+    type Res = Result<(), ExecErr>;
 
     #[test]
     fn should_work() -> Res {
@@ -33,7 +33,7 @@ mod tests {
         let source = " ";
         let executed = execute(source);
 
-        assert!(matches!(executed, Err(ExecErr::Lex(_))));
+        assert!(matches!(executed, Err(ExecErr::LexErr(_))));
         Ok(())
     }
 }

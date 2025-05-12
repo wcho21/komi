@@ -1,11 +1,45 @@
-use crate::core::syntax::{Ast, Token};
-use crate::util::{Range, Spot};
+mod token_tape;
 
-pub fn parse(_tokens: &Vec<Token>) -> Ast {
-    // fake implementation
-    // return dummy ast
-    let fake_location = Range::new(Spot::new(0, 0), Spot::new(0, 0));
-    Ast::from_num(1.0, fake_location)
+use crate::core::err::ParseErr;
+use crate::core::syntax::{Ast, AstKind, Token, TokenKind};
+use crate::util::{Range, Spot, Tape};
+use token_tape::TokenTape;
+
+struct Parser<'a> {
+    token_tape: TokenTape<'a>,
+}
+
+impl<'a> Parser<'a> {
+    pub fn new(tokens: &'a Vec<Token>) -> Self {
+        Self {
+            token_tape: TokenTape::new(tokens),
+        }
+    }
+
+    pub fn parse(&self) -> Result<Ast, ParseErr> {
+        self.parse_program()
+    }
+
+    fn parse_program(&self) -> Result<Ast, ParseErr> {
+        self.parse_num()
+    }
+
+    fn parse_num(&self) -> Result<Ast, ParseErr> {
+        match self.token_tape.get_current() {
+            Some(Token {
+                kind: TokenKind::Number(n),
+                location,
+            }) => Ok(Ast::new(AstKind::Number(*n), *location)),
+            _ => Err(ParseErr::Unexpected(
+                "Unexpected".to_string(),
+                Range::new(Spot::new(0, 0), Spot::new(0, 0)),
+            )),
+        }
+    }
+}
+
+pub fn parse(tokens: &Vec<Token>) -> Result<Ast, ParseErr> {
+    Parser::new(tokens).parse()
 }
 
 #[cfg(test)]
@@ -13,16 +47,26 @@ mod tests {
     use super::*;
     use crate::core::syntax::AstKind;
 
+    use std::error::Error;
+
+    const RANGE_MOCKS: &[Range] = &[
+        Range::new(Spot::new(0, 0), Spot::new(1, 0)),
+        Range::new(Spot::new(1, 0), Spot::new(3, 0)),
+    ];
+
+    const TOKEN_MOCKS: &[Token] = &[
+        Token::new(TokenKind::Number(1.0), RANGE_MOCKS[0]),
+        Token::new(TokenKind::Number(2.0), RANGE_MOCKS[1]),
+    ];
+
     #[test]
-    fn fake_parse() {
-        let fake_tokens = vec![];
-        let expected = Ast::new(
-            AstKind::Number(1.0),
-            Range::new(Spot::new(0, 0), Spot::new(0, 0)),
-        );
+    fn parse_num() -> Result<(), Box<dyn Error>> {
+        let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
 
-        let tokens = parse(&fake_tokens);
+        let ast = parse(&tokens)?;
 
-        assert_eq!(tokens, expected);
+        let expected = Ast::new(AstKind::Number(1.0), RANGE_MOCKS[0]);
+        assert_eq!(ast, expected);
+        Ok(())
     }
 }

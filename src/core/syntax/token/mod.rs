@@ -10,8 +10,8 @@ pub enum TokenKind {
 /// A token produced during lexing.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Token {
-    kind: TokenKind,
-    location: Range,
+    pub kind: TokenKind,
+    pub location: Range,
 }
 
 impl Token {
