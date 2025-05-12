@@ -140,54 +140,87 @@ mod tests {
     }
 
     #[test]
-    fn test_spot_col() {
+    fn test_locate_col_changes() {
         let source = "ab";
         let mut reader = SourceReader::new(source);
 
         assert_eq!(reader.read(), Some("a"));
-        assert_eq!(reader.spot(), Spot::new(0, 0));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(0, 0), Spot::new(0, 1))
+        );
         reader.advance();
         assert_eq!(reader.read(), Some("b"));
-        assert_eq!(reader.spot(), Spot::new(0, 1));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(0, 1), Spot::new(0, 2))
+        );
         reader.advance();
         assert_eq!(reader.read(), None);
-        assert_eq!(reader.spot(), Spot::new(0, 2));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(0, 2), Spot::new(0, 3))
+        );
         reader.advance();
         assert_eq!(reader.read(), None);
-        assert_eq!(reader.spot(), Spot::new(0, 2));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(0, 2), Spot::new(0, 3))
+        );
     }
 
     #[test]
-    fn test_spot_row() {
+    fn test_locate_row_changes() {
         let source = "\r\n\n\r";
         let mut reader = SourceReader::new(source);
 
         assert_eq!(reader.read(), Some("\r\n"));
-        assert_eq!(reader.spot(), Spot::new(0, 0));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(0, 0), Spot::new(0, 1))
+        );
         reader.advance();
         assert_eq!(reader.read(), Some("\n"));
-        assert_eq!(reader.spot(), Spot::new(1, 0));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(1, 0), Spot::new(1, 1))
+        );
         reader.advance();
         assert_eq!(reader.read(), Some("\r"));
-        assert_eq!(reader.spot(), Spot::new(2, 0));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(2, 0), Spot::new(2, 1))
+        );
         reader.advance();
         assert_eq!(reader.read(), None);
-        assert_eq!(reader.spot(), Spot::new(3, 0));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(3, 0), Spot::new(3, 1))
+        );
         reader.advance();
         assert_eq!(reader.read(), None);
-        assert_eq!(reader.spot(), Spot::new(3, 0));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(3, 0), Spot::new(3, 1))
+        );
     }
 
     #[test]
-    fn test_spot_col_reset() {
+    fn test_locate_col_reset() {
         let source = "a\r\nb";
         let mut reader = SourceReader::new(source);
 
         reader.advance();
         assert_eq!(reader.read(), Some("\r\n"));
-        assert_eq!(reader.spot(), Spot::new(0, 1));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(0, 1), Spot::new(0, 2))
+        );
         reader.advance();
         assert_eq!(reader.read(), Some("b"));
-        assert_eq!(reader.spot(), Spot::new(1, 0));
+        assert_eq!(
+            reader.locate(),
+            Range::new(Spot::new(1, 0), Spot::new(1, 1))
+        );
     }
 }
