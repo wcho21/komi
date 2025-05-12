@@ -10,8 +10,8 @@ pub enum AstKind {
 /// An abstract syntax tree, or AST produced during parsing.
 #[derive(Debug, PartialEq)]
 pub struct Ast {
-    kind: AstKind,
-    location: Range,
+    pub kind: AstKind,
+    pub location: Range,
 }
 
 impl Ast {

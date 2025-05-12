@@ -7,7 +7,7 @@ pub use err::ExecErr;
 pub fn execute(source: &str) -> Result<String, ExecErr> {
     let tokens = engine::lex(&source)?;
     let ast = engine::parse(&tokens)?;
-    let value = engine::evaluate(&ast);
+    let value = engine::evaluate(&ast)?;
     let representation = engine::represent(&value);
 
     Ok(representation)
