@@ -11,9 +11,13 @@ impl<'a> Evaluator<'a> {
         Self { ast }
     }
 
-    pub fn eval(&self) -> Result<Value, EvalErr> { // TODO: reduce typing type
+    pub fn eval(&self) -> Result<Value, EvalErr> {
+        // TODO: reduce typing type
         match self.ast {
-            Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
+            Ast {
+                kind: AstKind::Number(n),
+                location,
+            } => Self::eval_number(n, location),
         }
     }
 

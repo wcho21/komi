@@ -1,10 +1,10 @@
+mod eval;
 mod lex;
 mod parse;
-mod eval;
 
+pub use eval::EvalErr;
 pub use lex::LexErr;
 pub use parse::ParseErr;
-pub use eval::EvalErr;
 use std::error::Error;
 use std::fmt;
 
