@@ -1,5 +1,5 @@
 use super::utf8_tape::Utf8Tape;
-use crate::util::{Spot, Tape, Range};
+use crate::util::{Range, Scanner, Spot, Tape};
 
 /// A character reader from a source.
 /// It reads characters one by one, but treats CRLF ("\r\n") as a single character.
@@ -17,8 +17,12 @@ impl<'a> SourceReader<'a> {
             row: 0,
         }
     }
+}
 
-    pub fn read(&self) -> Option<&'a str> {
+impl<'a> Scanner for SourceReader<'a> {
+    type Item = &'a str;
+
+    fn read(&self) -> Option<&'a str> {
         match self.tape.get_current() {
             Some("\r") => match self.tape.peek_next() {
                 Some("\n") => Some("\r\n"),
@@ -28,7 +32,7 @@ impl<'a> SourceReader<'a> {
         }
     }
 
-    pub fn advance(&mut self) -> () {
+    fn advance(&mut self) -> () {
         match self.read() {
             Some("\r") | Some("\n") => {
                 self.row += 1;
@@ -49,13 +53,11 @@ impl<'a> SourceReader<'a> {
         }
     }
 
-    #[deprecated]
-    pub fn spot(&self) -> Spot {
-        Spot::new(self.row, self.col)
-    }
-
-    pub fn locate(&self) -> Range {
-        Range::from_spot(&Spot::new(self.row, self.col))
+    fn locate(&self) -> Range {
+        Range::new(
+            Spot::new(self.row, self.col),
+            Spot::new(self.row, self.col + 1),
+        )
     }
 }
 
