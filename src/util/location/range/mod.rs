@@ -12,6 +12,10 @@ impl Range {
     }
 }
 
+pub fn from_spot(spot: &Spot) -> Range {
+    Range::new(spot.clone(), spot.clone())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

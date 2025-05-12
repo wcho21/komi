@@ -1,27 +1,148 @@
-use crate::core::syntax::{Token, TokenKind};
-use crate::util::{Range, Spot};
+mod source_reader;
+mod utf8_tape;
 
-pub fn lex(_source: &str) -> Vec<Token> {
+use crate::core::err::LexErr;
+use crate::core::syntax::{Token, TokenKind};
+use crate::util::string;
+use crate::util::{Range, Spot, range};
+use source_reader::SourceReader;
+
+struct Lexer<'a> {
+    reader: SourceReader<'a>,
+}
+
+impl<'a> Lexer<'a> {
+    pub fn new(source: &'a str) -> Self {
+        Self {
+            reader: SourceReader::new(source),
+        }
+    }
+
+    pub fn lex(&mut self) -> Result<Vec<Token>, LexErr<'a>> {
+        let mut tokens: Vec<Token> = vec![];
+
+        loop {
+            match self.reader.read() {
+                Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
+                Some(x) => {
+                    return Err(LexErr::IllegalChar(
+                        x,
+                        range::from_spot(&self.reader.spot()),
+                    ));
+                }
+                None => {
+                    break;
+                }
+            }
+        }
+
+        Ok(tokens)
+    }
+
+    fn lex_num(&mut self) -> Result<Token, LexErr<'a>> {
+        let mut lexeme = String::new();
+        let begin = self.reader.spot();
+
+        // read whole number part
+        loop {
+            match self.reader.read() {
+                Some(s) if string::is_ascii_single_digit(s) => {
+                    lexeme.push_str(s);
+                    self.reader.advance();
+                }
+                Some(s) if !string::is_ascii_single_whitespace(s) && s != "." => {
+                    let end = self.reader.spot();
+                    return Err(LexErr::BadNumLiteral(s, Range::new(begin, end)));
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
+
+        if self.reader.read() != Some(".") {
+            let num = lexeme.parse::<f64>().unwrap();
+            let end = self.reader.spot();
+
+            let token = Token::new(TokenKind::Number(num), Range::new(begin, end));
+            return Ok(token);
+        }
+
+        lexeme.push_str(".");
+        self.reader.advance();
+
+        // read decimal part
+        loop {
+            match self.reader.read() {
+                Some(s) if string::is_ascii_single_digit(s) => {
+                    lexeme.push_str(s);
+                    self.reader.advance();
+                }
+                Some(s) if !string::is_ascii_single_whitespace(s) => {
+                    let end = self.reader.spot();
+                    return Err(LexErr::BadNumLiteral(s, Range::new(begin, end)));
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
+
+        let num = lexeme.parse::<f64>().unwrap();
+        let end = self.reader.spot();
+
+        let token = Token::new(TokenKind::Number(num), Range::new(begin, end));
+        return Ok(token);
+    }
+}
+
+pub fn lex<'a>(_source: &str) -> Result<Vec<Token>, LexErr<'a>> {
     // fake implementation
     // return dummy token
     let fake_location = Range::new(Spot::new(0, 0), Spot::new(0, 0));
-    vec![Token::new(TokenKind::Number(1.0), fake_location)]
+    Ok(vec![Token::new(TokenKind::Number(1.0), fake_location)])
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::error::Error;
 
     #[test]
-    fn fake_lex() {
-        let fake_source = String::from("");
+    fn lex_num_int() -> Result<(), Box<dyn Error>> {
+        let source = "123";
+
+        let token = Lexer::new(source).lex()?;
+
         let expected = vec![Token::new(
-            TokenKind::Number(1.0),
-            Range::new(Spot::new(0, 0), Spot::new(0, 0)),
+            TokenKind::Number(123.0),
+            Range::new(Spot::new(0, 0), Spot::new(0, 3)),
         )];
+        assert_eq!(token, expected);
+        Ok(())
+    }
 
-        let tokens = lex(&fake_source);
+    #[test]
+    fn lex_num_float() -> Result<(), Box<dyn Error>> {
+        let source = "12.25"; // chosen to be equal on float comparison
 
-        assert_eq!(tokens, expected);
+        let token = Lexer::new(source).lex()?;
+
+        let expected = vec![Token::new(
+            TokenKind::Number(12.25),
+            Range::new(Spot::new(0, 0), Spot::new(0, 5)),
+        )];
+        assert_eq!(token, expected);
+        Ok(())
+    }
+
+    #[test]
+    fn lex_num_fail() -> Result<(), Box<dyn Error>> {
+        let source = "12a";
+
+        let token = Lexer::new(source).lex();
+
+        assert!(matches!(token, Err(LexErr::BadNumLiteral(_, _))));
+        Ok(())
     }
 }
