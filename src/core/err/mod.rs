@@ -1,8 +1,10 @@
 mod lex;
 mod parse;
+mod eval;
 
 pub use lex::LexErr;
 pub use parse::ParseErr;
+pub use eval::EvalErr;
 use std::error::Error;
 use std::fmt;
 
@@ -10,13 +12,15 @@ use std::fmt;
 pub enum ExecErr {
     LexErr(LexErr),
     ParseErr(ParseErr),
+    EvalErr(EvalErr),
 }
 
 impl<'a> fmt::Display for ExecErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ExecErr::LexErr(err) => write!(f, "{}", err),
-            ExecErr::ParseErr(err) => write!(f, "{}", err),
+            ExecErr::LexErr(err) => err.fmt(f),
+            ExecErr::ParseErr(err) => err.fmt(f),
+            ExecErr::EvalErr(err) => err.fmt(f),
         }
     }
 }
@@ -30,6 +34,12 @@ impl From<LexErr> for ExecErr {
 impl From<ParseErr> for ExecErr {
     fn from(err: ParseErr) -> Self {
         ExecErr::ParseErr(err)
+    }
+}
+
+impl From<EvalErr> for ExecErr {
+    fn from(err: EvalErr) -> Self {
+        ExecErr::EvalErr(err)
     }
 }
 
