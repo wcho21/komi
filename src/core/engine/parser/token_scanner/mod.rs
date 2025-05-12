@@ -94,4 +94,15 @@ mod tests {
         scanner.advance();
         assert_eq!(scanner.read(), None);
     }
+
+    #[test]
+    fn test_locate() {
+        let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
+
+        let mut scanner = TokenScanner::new(&tokens);
+
+        assert_eq!(scanner.locate(), RANGE_MOCKS[0]);
+        scanner.advance();
+        assert_eq!(scanner.locate(), RANGE_MOCKS[1]);
+    }
 }
