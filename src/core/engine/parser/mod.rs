@@ -5,6 +5,8 @@ use crate::core::syntax::{Ast, AstKind, Token, TokenKind};
 use crate::util::{Range, Spot, Tape};
 use token_tape::TokenTape;
 
+type ResAst = Result<Ast, ParseErr>;
+
 struct Parser<'a> {
     token_tape: TokenTape<'a>,
 }
@@ -16,15 +18,15 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse(&self) -> Result<Ast, ParseErr> {
+    pub fn parse(&self) -> ResAst {
         self.parse_program()
     }
 
-    fn parse_program(&self) -> Result<Ast, ParseErr> {
+    fn parse_program(&self) -> ResAst {
         self.parse_num()
     }
 
-    fn parse_num(&self) -> Result<Ast, ParseErr> {
+    fn parse_num(&self) -> ResAst {
         match self.token_tape.get_current() {
             Some(Token {
                 kind: TokenKind::Number(n),
@@ -38,7 +40,7 @@ impl<'a> Parser<'a> {
     }
 }
 
-pub fn parse(tokens: &Vec<Token>) -> Result<Ast, ParseErr> {
+pub fn parse(tokens: &Vec<Token>) -> ResAst {
     Parser::new(tokens).parse()
 }
 
@@ -47,7 +49,7 @@ mod tests {
     use super::*;
     use crate::core::syntax::AstKind;
 
-    use std::error::Error;
+    type Res = Result<(), ParseErr>;
 
     const RANGE_MOCKS: &[Range] = &[
         Range::new(Spot::new(0, 0), Spot::new(1, 0)),
@@ -60,7 +62,7 @@ mod tests {
     ];
 
     #[test]
-    fn parse_num() -> Result<(), Box<dyn Error>> {
+    fn parse_num() -> Res {
         let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
 
         let ast = parse(&tokens)?;

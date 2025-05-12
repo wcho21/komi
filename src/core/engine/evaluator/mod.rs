@@ -1,6 +1,8 @@
 use crate::core::err::EvalErr;
 use crate::core::syntax::{Ast, AstKind, Value, ValueKind};
-use crate::util::{Range, Spot};
+use crate::util::Range;
+
+type ResVal = Result<Value, EvalErr>;
 
 struct Evaluator<'a> {
     ast: &'a Ast,
@@ -11,9 +13,12 @@ impl<'a> Evaluator<'a> {
         Self { ast }
     }
 
-    pub fn eval(&self) -> Result<Value, EvalErr> {
-        // TODO: reduce typing type
+    pub fn eval(&self) -> ResVal {
         match self.ast {
+            Ast {
+                kind: AstKind::Number(n),
+                location,
+            } => Self::eval_number(n, location),
             Ast {
                 kind: AstKind::Number(n),
                 location,
@@ -21,12 +26,12 @@ impl<'a> Evaluator<'a> {
         }
     }
 
-    fn eval_number(num: &f64, location: &Range) -> Result<Value, EvalErr> {
+    fn eval_number(num: &f64, location: &Range) -> ResVal {
         Ok(Value::new(ValueKind::Number(*num), *location))
     }
 }
 
-pub fn evaluate(ast: &Ast) -> Result<Value, EvalErr> {
+pub fn evaluate(ast: &Ast) -> ResVal {
     Evaluator::new(ast).eval()
 }
 
@@ -34,7 +39,9 @@ pub fn evaluate(ast: &Ast) -> Result<Value, EvalErr> {
 mod tests {
     use super::*;
     use crate::core::syntax::ValueKind;
-    use std::error::Error;
+    use crate::util::Spot;
+
+    type Res = Result<(), EvalErr>;
 
     const RANGE_MOCKS: &[Range] = &[
         Range::new(Spot::new(0, 0), Spot::new(1, 0)),
@@ -42,7 +49,7 @@ mod tests {
     ];
 
     #[test]
-    fn fake_evaluate() -> Result<(), Box<dyn Error>> {
+    fn fake_evaluate() -> Res {
         let ast = Ast::new(AstKind::Number(1.0), RANGE_MOCKS[0]);
 
         let value = evaluate(&ast)?;

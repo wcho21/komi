@@ -4,8 +4,11 @@ mod utf8_tape;
 use crate::core::err::LexErr;
 use crate::core::syntax::{Token, TokenKind};
 use crate::util::string;
-use crate::util::{Range, Spot, range};
+use crate::util::{Range, range};
 use source_reader::SourceReader;
+
+type ResTokens = Result<Vec<Token>, LexErr>;
+type ResToken = Result<Token, LexErr>;
 
 /// A lexer to produce tokens from a source.
 struct Lexer<'a> {
@@ -19,7 +22,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn lex(&mut self) -> Result<Vec<Token>, LexErr> {
+    pub fn lex(&mut self) -> ResTokens {
         let mut tokens: Vec<Token> = vec![];
 
         loop {
@@ -40,7 +43,7 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    fn lex_num(&mut self) -> Result<Token, LexErr> {
+    fn lex_num(&mut self) -> ResToken {
         let mut lexeme = String::new();
         let begin = self.reader.spot();
 
@@ -97,7 +100,7 @@ impl<'a> Lexer<'a> {
     }
 }
 
-pub fn lex(source: &str) -> Result<Vec<Token>, LexErr> {
+pub fn lex(source: &str) -> ResTokens {
     let tokens = Lexer::new(source).lex()?;
     Ok(tokens)
 }
@@ -105,10 +108,12 @@ pub fn lex(source: &str) -> Result<Vec<Token>, LexErr> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::error::Error;
+    use crate::util::Spot;
+
+    type Res = Result<(), LexErr>;
 
     #[test]
-    fn lex_num_int() -> Result<(), Box<dyn Error>> {
+    fn lex_num_int() -> Res {
         let source = "123";
 
         let token = Lexer::new(source).lex()?;
@@ -122,7 +127,7 @@ mod tests {
     }
 
     #[test]
-    fn lex_num_float() -> Result<(), Box<dyn Error>> {
+    fn lex_num_float() -> Res {
         let source = "12.25"; // chosen to be equal on float comparison
 
         let token = Lexer::new(source).lex()?;
@@ -136,7 +141,7 @@ mod tests {
     }
 
     #[test]
-    fn lex_num_fail() -> Result<(), Box<dyn Error>> {
+    fn lex_num_fail() -> Res {
         let source = "12a";
 
         let token = Lexer::new(source).lex();
@@ -146,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn lex_fail() -> Result<(), Box<dyn Error>> {
+    fn lex_fail() -> Res {
         let source = " ";
 
         let token = Lexer::new(source).lex();
