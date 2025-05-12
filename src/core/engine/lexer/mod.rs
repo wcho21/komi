@@ -12,13 +12,13 @@ type ResToken = Result<Token, LexError>;
 
 /// A lexer to produce tokens from a source.
 struct Lexer<'a> {
-    reader: SourceScanner<'a>,
+    scanner: SourceScanner<'a>,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
         Self {
-            reader: SourceScanner::new(source),
+            scanner: SourceScanner::new(source),
         }
     }
 
@@ -26,10 +26,10 @@ impl<'a> Lexer<'a> {
         let mut tokens: Vec<Token> = vec![];
 
         loop {
-            match self.reader.read() {
+            match self.scanner.read() {
                 Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
                 Some(x) => {
-                    return Err(LexError::IllegalChar(x.to_string(), self.reader.locate()));
+                    return Err(LexError::IllegalChar(x.to_string(), self.scanner.locate()));
                 }
                 None => {
                     break;
@@ -42,17 +42,17 @@ impl<'a> Lexer<'a> {
 
     fn lex_num(&mut self) -> ResToken {
         let mut lexeme = String::new();
-        let begin = self.reader.locate().begin;
+        let begin = self.scanner.locate().begin;
 
         // read whole number part
         loop {
-            match self.reader.read() {
+            match self.scanner.read() {
                 Some(s) if string::is_ascii_single_digit(s) => {
                     lexeme.push_str(s);
-                    self.reader.advance();
+                    self.scanner.advance();
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) && s != "." => {
-                    let end = self.reader.locate().begin;
+                    let end = self.scanner.locate().begin;
                     return Err(LexError::BadNumLiteral(
                         s.to_string(),
                         Range::new(begin, end),
@@ -64,26 +64,26 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        if self.reader.read() != Some(".") {
+        if self.scanner.read() != Some(".") {
             let num = lexeme.parse::<f64>().unwrap();
-            let end = self.reader.locate().begin;
+            let end = self.scanner.locate().begin;
 
             let token = Token::new(TokenKind::Number(num), Range::new(begin, end));
             return Ok(token);
         }
 
         lexeme.push_str(".");
-        self.reader.advance();
+        self.scanner.advance();
 
         // read decimal part
         loop {
-            match self.reader.read() {
+            match self.scanner.read() {
                 Some(s) if string::is_ascii_single_digit(s) => {
                     lexeme.push_str(s);
-                    self.reader.advance();
+                    self.scanner.advance();
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) => {
-                    let end = self.reader.locate().begin;
+                    let end = self.scanner.locate().begin;
                     return Err(LexError::BadNumLiteral(
                         s.to_string(),
                         Range::new(begin, end),
@@ -96,7 +96,7 @@ impl<'a> Lexer<'a> {
         }
 
         let num = lexeme.parse::<f64>().unwrap();
-        let end = self.reader.locate().begin;
+        let end = self.scanner.locate().begin;
 
         let token = Token::new(TokenKind::Number(num), Range::new(begin, end));
         return Ok(token);

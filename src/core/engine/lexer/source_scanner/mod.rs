@@ -1,7 +1,7 @@
 use super::utf8_tape::Utf8Tape;
 use crate::util::{Range, Scanner, Spot, Tape};
 
-/// A character reader from a source.
+/// A character scaner from a source.
 /// It reads characters one by one, but treats CRLF ("\r\n") as a single character.
 pub struct SourceScanner<'a> {
     tape: Utf8Tape<'a>,
@@ -68,105 +68,105 @@ mod tests {
     #[test]
     fn test_read() {
         let source = "ab";
-        let reader = SourceScanner::new(source);
+        let scanner = SourceScanner::new(source);
 
-        assert_eq!(reader.read(), Some("a"));
+        assert_eq!(scanner.read(), Some("a"));
     }
 
     #[test]
     fn test_read_twice() {
         let source = "ab";
-        let reader = SourceScanner::new(source);
+        let scanner = SourceScanner::new(source);
 
-        assert_eq!(reader.read(), Some("a"));
-        assert_eq!(reader.read(), Some("a"));
+        assert_eq!(scanner.read(), Some("a"));
+        assert_eq!(scanner.read(), Some("a"));
     }
 
     #[test]
     fn test_read_empty() {
         let source = "";
-        let reader = SourceScanner::new(source);
+        let scanner = SourceScanner::new(source);
 
-        assert_eq!(reader.read(), None);
+        assert_eq!(scanner.read(), None);
     }
 
     #[test]
     fn test_advance() {
         let source = "ab";
-        let mut reader = SourceScanner::new(source);
+        let mut scanner = SourceScanner::new(source);
 
-        reader.advance();
-        assert_eq!(reader.read(), Some("b"));
+        scanner.advance();
+        assert_eq!(scanner.read(), Some("b"));
     }
 
     #[test]
     fn test_read_lf() {
         let source = "\n\n";
-        let mut reader = SourceScanner::new(source);
+        let mut scanner = SourceScanner::new(source);
 
-        assert_eq!(reader.read(), Some("\n"));
-        assert_eq!(reader.read(), Some("\n"));
-        reader.advance();
-        assert_eq!(reader.read(), Some("\n"));
-        assert_eq!(reader.read(), Some("\n"));
-        reader.advance();
-        assert_eq!(reader.read(), None);
+        assert_eq!(scanner.read(), Some("\n"));
+        assert_eq!(scanner.read(), Some("\n"));
+        scanner.advance();
+        assert_eq!(scanner.read(), Some("\n"));
+        assert_eq!(scanner.read(), Some("\n"));
+        scanner.advance();
+        assert_eq!(scanner.read(), None);
     }
 
     #[test]
     fn test_read_cr() {
         let source = "\r\r";
-        let mut reader = SourceScanner::new(source);
+        let mut scanner = SourceScanner::new(source);
 
-        assert_eq!(reader.read(), Some("\r"));
-        assert_eq!(reader.read(), Some("\r"));
-        reader.advance();
-        assert_eq!(reader.read(), Some("\r"));
-        assert_eq!(reader.read(), Some("\r"));
-        reader.advance();
-        assert_eq!(reader.read(), None);
+        assert_eq!(scanner.read(), Some("\r"));
+        assert_eq!(scanner.read(), Some("\r"));
+        scanner.advance();
+        assert_eq!(scanner.read(), Some("\r"));
+        assert_eq!(scanner.read(), Some("\r"));
+        scanner.advance();
+        assert_eq!(scanner.read(), None);
     }
 
     #[test]
     fn test_read_crlf() {
         let source = "\r\n\r\n";
-        let mut reader = SourceScanner::new(source);
+        let mut scanner = SourceScanner::new(source);
 
-        assert_eq!(reader.read(), Some("\r\n"));
-        assert_eq!(reader.read(), Some("\r\n"));
-        reader.advance();
-        assert_eq!(reader.read(), Some("\r\n"));
-        assert_eq!(reader.read(), Some("\r\n"));
-        reader.advance();
-        assert_eq!(reader.read(), None);
+        assert_eq!(scanner.read(), Some("\r\n"));
+        assert_eq!(scanner.read(), Some("\r\n"));
+        scanner.advance();
+        assert_eq!(scanner.read(), Some("\r\n"));
+        assert_eq!(scanner.read(), Some("\r\n"));
+        scanner.advance();
+        assert_eq!(scanner.read(), None);
     }
 
     #[test]
     fn test_locate_col_changes() {
         let source = "ab";
-        let mut reader = SourceScanner::new(source);
+        let mut scanner = SourceScanner::new(source);
 
-        assert_eq!(reader.read(), Some("a"));
+        assert_eq!(scanner.read(), Some("a"));
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(0, 0), Spot::new(0, 1))
         );
-        reader.advance();
-        assert_eq!(reader.read(), Some("b"));
+        scanner.advance();
+        assert_eq!(scanner.read(), Some("b"));
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(0, 1), Spot::new(0, 2))
         );
-        reader.advance();
-        assert_eq!(reader.read(), None);
+        scanner.advance();
+        assert_eq!(scanner.read(), None);
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(0, 2), Spot::new(0, 3))
         );
-        reader.advance();
-        assert_eq!(reader.read(), None);
+        scanner.advance();
+        assert_eq!(scanner.read(), None);
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(0, 2), Spot::new(0, 3))
         );
     }
@@ -174,35 +174,35 @@ mod tests {
     #[test]
     fn test_locate_row_changes() {
         let source = "\r\n\n\r";
-        let mut reader = SourceScanner::new(source);
+        let mut scanner = SourceScanner::new(source);
 
-        assert_eq!(reader.read(), Some("\r\n"));
+        assert_eq!(scanner.read(), Some("\r\n"));
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(0, 0), Spot::new(0, 1))
         );
-        reader.advance();
-        assert_eq!(reader.read(), Some("\n"));
+        scanner.advance();
+        assert_eq!(scanner.read(), Some("\n"));
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(1, 0), Spot::new(1, 1))
         );
-        reader.advance();
-        assert_eq!(reader.read(), Some("\r"));
+        scanner.advance();
+        assert_eq!(scanner.read(), Some("\r"));
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(2, 0), Spot::new(2, 1))
         );
-        reader.advance();
-        assert_eq!(reader.read(), None);
+        scanner.advance();
+        assert_eq!(scanner.read(), None);
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(3, 0), Spot::new(3, 1))
         );
-        reader.advance();
-        assert_eq!(reader.read(), None);
+        scanner.advance();
+        assert_eq!(scanner.read(), None);
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(3, 0), Spot::new(3, 1))
         );
     }
@@ -210,18 +210,18 @@ mod tests {
     #[test]
     fn test_locate_col_reset() {
         let source = "a\r\nb";
-        let mut reader = SourceScanner::new(source);
+        let mut scanner = SourceScanner::new(source);
 
-        reader.advance();
-        assert_eq!(reader.read(), Some("\r\n"));
+        scanner.advance();
+        assert_eq!(scanner.read(), Some("\r\n"));
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(0, 1), Spot::new(0, 2))
         );
-        reader.advance();
-        assert_eq!(reader.read(), Some("b"));
+        scanner.advance();
+        assert_eq!(scanner.read(), Some("b"));
         assert_eq!(
-            reader.locate(),
+            scanner.locate(),
             Range::new(Spot::new(1, 0), Spot::new(1, 1))
         );
     }
