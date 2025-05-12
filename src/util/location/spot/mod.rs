@@ -11,6 +11,8 @@ impl Spot {
     }
 }
 
+pub const ORIGIN: Spot = Spot::new(0, 0);
+
 #[cfg(test)]
 mod tests {
     use super::*;

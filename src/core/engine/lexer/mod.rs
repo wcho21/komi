@@ -1,35 +1,35 @@
-mod source_reader;
+mod source_scanner;
 mod utf8_tape;
 
-use crate::core::err::LexErr;
+use crate::core::err::LexError;
 use crate::core::syntax::{Token, TokenKind};
 use crate::util::string;
-use crate::util::{Range, Spot, range};
-use source_reader::SourceReader;
+use crate::util::{Range, Scanner};
+use source_scanner::SourceScanner;
+
+type ResTokens = Result<Vec<Token>, LexError>;
+type ResToken = Result<Token, LexError>;
 
 /// A lexer to produce tokens from a source.
 struct Lexer<'a> {
-    reader: SourceReader<'a>,
+    scanner: SourceScanner<'a>,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
         Self {
-            reader: SourceReader::new(source),
+            scanner: SourceScanner::new(source),
         }
     }
 
-    pub fn lex(&mut self) -> Result<Vec<Token>, LexErr> {
+    pub fn lex(&mut self) -> ResTokens {
         let mut tokens: Vec<Token> = vec![];
 
         loop {
-            match self.reader.read() {
+            match self.scanner.read() {
                 Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
                 Some(x) => {
-                    return Err(LexErr::IllegalChar(
-                        x.to_string(),
-                        range::from_spot(&self.reader.spot()),
-                    ));
+                    return Err(LexError::IllegalChar(x.to_string(), self.scanner.locate()));
                 }
                 None => {
                     break;
@@ -40,20 +40,23 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    fn lex_num(&mut self) -> Result<Token, LexErr> {
+    fn lex_num(&mut self) -> ResToken {
         let mut lexeme = String::new();
-        let begin = self.reader.spot();
+        let begin = self.scanner.locate().begin;
 
         // read whole number part
         loop {
-            match self.reader.read() {
+            match self.scanner.read() {
                 Some(s) if string::is_ascii_single_digit(s) => {
                     lexeme.push_str(s);
-                    self.reader.advance();
+                    self.scanner.advance();
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) && s != "." => {
-                    let end = self.reader.spot();
-                    return Err(LexErr::BadNumLiteral(s.to_string(), Range::new(begin, end)));
+                    let end = self.scanner.locate().begin;
+                    return Err(LexError::BadNumLiteral(
+                        s.to_string(),
+                        Range::new(begin, end),
+                    ));
                 }
                 _ => {
                     break;
@@ -61,27 +64,30 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        if self.reader.read() != Some(".") {
+        if self.scanner.read() != Some(".") {
             let num = lexeme.parse::<f64>().unwrap();
-            let end = self.reader.spot();
+            let end = self.scanner.locate().begin;
 
             let token = Token::new(TokenKind::Number(num), Range::new(begin, end));
             return Ok(token);
         }
 
         lexeme.push_str(".");
-        self.reader.advance();
+        self.scanner.advance();
 
         // read decimal part
         loop {
-            match self.reader.read() {
+            match self.scanner.read() {
                 Some(s) if string::is_ascii_single_digit(s) => {
                     lexeme.push_str(s);
-                    self.reader.advance();
+                    self.scanner.advance();
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) => {
-                    let end = self.reader.spot();
-                    return Err(LexErr::BadNumLiteral(s.to_string(), Range::new(begin, end)));
+                    let end = self.scanner.locate().begin;
+                    return Err(LexError::BadNumLiteral(
+                        s.to_string(),
+                        Range::new(begin, end),
+                    ));
                 }
                 _ => {
                     break;
@@ -90,14 +96,14 @@ impl<'a> Lexer<'a> {
         }
 
         let num = lexeme.parse::<f64>().unwrap();
-        let end = self.reader.spot();
+        let end = self.scanner.locate().begin;
 
         let token = Token::new(TokenKind::Number(num), Range::new(begin, end));
         return Ok(token);
     }
 }
 
-pub fn lex(source: &str) -> Result<Vec<Token>, LexErr> {
+pub fn lex(source: &str) -> ResTokens {
     let tokens = Lexer::new(source).lex()?;
     Ok(tokens)
 }
@@ -105,10 +111,12 @@ pub fn lex(source: &str) -> Result<Vec<Token>, LexErr> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::error::Error;
+    use crate::util::Spot;
+
+    type Res = Result<(), LexError>;
 
     #[test]
-    fn lex_num_int() -> Result<(), Box<dyn Error>> {
+    fn lex_num_int() -> Res {
         let source = "123";
 
         let token = Lexer::new(source).lex()?;
@@ -122,7 +130,7 @@ mod tests {
     }
 
     #[test]
-    fn lex_num_float() -> Result<(), Box<dyn Error>> {
+    fn lex_num_float() -> Res {
         let source = "12.25"; // chosen to be equal on float comparison
 
         let token = Lexer::new(source).lex()?;
@@ -136,22 +144,22 @@ mod tests {
     }
 
     #[test]
-    fn lex_num_fail() -> Result<(), Box<dyn Error>> {
+    fn lex_num_fail() -> Res {
         let source = "12a";
 
         let token = Lexer::new(source).lex();
 
-        assert!(matches!(token, Err(LexErr::BadNumLiteral(_, _))));
+        assert!(matches!(token, Err(LexError::BadNumLiteral(_, _))));
         Ok(())
     }
 
     #[test]
-    fn lex_fail() -> Result<(), Box<dyn Error>> {
+    fn lex_fail() -> Res {
         let source = " ";
 
         let token = Lexer::new(source).lex();
 
-        assert!(matches!(token, Err(LexErr::IllegalChar(_, _))));
+        assert!(matches!(token, Err(LexError::IllegalChar(_, _))));
         Ok(())
     }
 }
