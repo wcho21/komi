@@ -250,4 +250,19 @@ mod tests {
             Ok(())
         }
     }
+
+    mod fail {
+        use super::*;
+
+        #[test]
+        fn test_illegal_char() -> Res {
+            let source = "^";
+
+            let token = Lexer::new(source).lex();
+
+            let _expected = LexError::IllegalChar{char: "^".to_string(), location: Range::from_nums(0,0,0,1)};
+            assert!(matches!(token, Err(_expected)));
+            Ok(())
+        }
+    }
 }
