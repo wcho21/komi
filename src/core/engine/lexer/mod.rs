@@ -116,7 +116,7 @@ mod tests {
     type Res = Result<(), LexError>;
 
     #[test]
-    fn test_lex_num_int() -> Res {
+    fn test_lex_num_without_decimal() -> Res {
         let source = "123";
 
         let token = Lexer::new(source).lex()?;
@@ -130,7 +130,7 @@ mod tests {
     }
 
     #[test]
-    fn test_lex_num_float() -> Res {
+    fn test_lex_num_with_decimal() -> Res {
         let source = "12.25"; // chosen to be equal on float comparison
 
         let token = Lexer::new(source).lex()?;

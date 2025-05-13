@@ -22,7 +22,16 @@ mod tests {
     type Res = Result<(), ExecError>;
 
     #[test]
-    fn test_single_number_literal() -> Res {
+    fn test_single_number_literal_without_decimal() -> Res {
+        let source = "12";
+        let executed = execute(source)?;
+
+        assert_eq!(executed, "12");
+        Ok(())
+    }
+
+    #[test]
+    fn test_single_number_literal_with_decimal() -> Res {
         let source = "12.25";
         let executed = execute(source)?;
 
