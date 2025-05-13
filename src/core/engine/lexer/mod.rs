@@ -27,9 +27,7 @@ impl<'a> Lexer<'a> {
 
         loop {
             match self.scanner.read() {
-                Some(s) if string::is_digit(s) => {
-                    tokens.push(self.advance_and_lex_with_first_char(Self::lex_num, s)?)
-                }
+                Some(s) if string::is_digit(s) => tokens.push(self.advance_and_lex_with_first_char(Self::lex_num, s)?),
                 Some("+") => tokens.push(self.advance_and_lex(Self::lex_plus)?),
                 Some("-") => tokens.push(self.advance_and_lex(Self::lex_minus)?),
                 Some("*") => tokens.push(self.advance_and_lex(Self::lex_asterisk)?),
@@ -78,11 +76,7 @@ impl<'a> Lexer<'a> {
         lex(self, first_location)
     }
 
-    fn advance_and_lex_with_first_char<F>(
-        &mut self,
-        lex: F,
-        first_char: &'a str,
-    ) -> Result<Token, LexError>
+    fn advance_and_lex_with_first_char<F>(&mut self, lex: F, first_char: &'a str) -> Result<Token, LexError>
     where
         F: FnOnce(&mut Self, Range, &'a str) -> ResToken,
     {
@@ -283,10 +277,7 @@ mod tests {
 
             let token = Lexer::new(source).lex()?;
 
-            let expected = vec![Token::new(
-                TokenKind::Plus,
-                Range::from_nums(0, 0, 0, "+".len() as u64),
-            )];
+            let expected = vec![Token::new(TokenKind::Plus, Range::from_nums(0, 0, 0, "+".len() as u64))];
             assert_eq!(token, expected);
             Ok(())
         }
@@ -302,10 +293,7 @@ mod tests {
             let token = Lexer::new(source).lex()?;
 
             let expected = vec![
-                Token::new(
-                    TokenKind::Number(12.0),
-                    Range::from_nums(0, 0, 0, "12".len() as u64),
-                ),
+                Token::new(TokenKind::Number(12.0), Range::from_nums(0, 0, 0, "12".len() as u64)),
                 Token::new(
                     TokenKind::Plus,
                     Range::from_nums(0, "12 ".len() as u64, 0, "12 +".len() as u64),

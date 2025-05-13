@@ -39,10 +39,7 @@ impl<'a> Evaluator<'a> {
         if let ValueKind::Number(num) = val.kind {
             Ok(num)
         } else {
-            Err(EvalError::BadAdditionOperand(
-                format!("{:?}", val.kind),
-                val.location,
-            ))
+            Err(EvalError::BadAdditionOperand(format!("{:?}", val.kind), val.location))
         }
     }
 

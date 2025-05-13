@@ -4,10 +4,7 @@ pub struct Bp {
     pub right: u8,
 }
 
-static LOWEST_BP: Bp = Bp {
-    left: 0o0,
-    right: 0o1,
-};
+static LOWEST_BP: Bp = Bp { left: 0o0, right: 0o1 };
 static SUMMATIVE_BP: Bp = Bp {
     left: 0o30,
     right: 0o31,
