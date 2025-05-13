@@ -28,35 +28,13 @@ impl<'a> Lexer<'a> {
         loop {
             match self.scanner.read() {
                 Some(s) if string::is_digit(s) => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_num(first_location, s)?);
+                    tokens.push(self.advance_and_lex_with_first_char(Self::lex_num, s)?)
                 }
-                Some("+") => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_plus(first_location)?);
-                }
-                Some("-") => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_minus(first_location)?);
-                }
-                Some("*") => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_asterisk(first_location)?);
-                }
-                Some("/") => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_slash(first_location)?);
-                }
-                Some("%") => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_percent(first_location)?);
-                }
+                Some("+") => tokens.push(self.advance_and_lex(Self::lex_plus)?),
+                Some("-") => tokens.push(self.advance_and_lex(Self::lex_minus)?),
+                Some("*") => tokens.push(self.advance_and_lex(Self::lex_asterisk)?),
+                Some("/") => tokens.push(self.advance_and_lex(Self::lex_slash)?),
+                Some("%") => tokens.push(self.advance_and_lex(Self::lex_percent)?),
                 Some("#") => {
                     self.scanner.advance();
                     self.skip_comment();
@@ -89,6 +67,28 @@ impl<'a> Lexer<'a> {
                 }
             }
         }
+    }
+
+    fn advance_and_lex<F>(&mut self, lex: F) -> Result<Token, LexError>
+    where
+        F: FnOnce(&mut Self, Range) -> ResToken,
+    {
+        let first_location = self.scanner.locate();
+        self.scanner.advance();
+        lex(self, first_location)
+    }
+
+    fn advance_and_lex_with_first_char<F>(
+        &mut self,
+        lex: F,
+        first_char: &'a str,
+    ) -> Result<Token, LexError>
+    where
+        F: FnOnce(&mut Self, Range, &'a str) -> ResToken,
+    {
+        let first_location = self.scanner.locate();
+        self.scanner.advance();
+        lex(self, first_location, first_char)
     }
 
     fn lex_plus(&mut self, first_location: Range) -> ResToken {
