@@ -4,7 +4,10 @@ use crate::util::Range;
 /// Serves as the interface between a lexer and its user.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum TokenKind {
+    /// A number with or without decimal, such as `12` or `12.25`.
     Number(f64),
+    /// A plus `+`
+    Plus,
 }
 
 /// A token produced during lexing.
@@ -21,6 +24,10 @@ impl Token {
 
     pub const fn from_num(num: f64, location: Range) -> Self {
         Token::new(TokenKind::Number(num), location)
+    }
+
+    pub const fn from_plus(location: Range) -> Self {
+        Token::new(TokenKind::Plus, location)
     }
 }
 
@@ -52,6 +59,19 @@ mod tests {
             token,
             Token {
                 kind: TokenKind::Number(1.0),
+                location: RANGE_MOCK,
+            }
+        )
+    }
+
+    #[test]
+    fn test_from_plus() {
+        let token = Token::from_plus(RANGE_MOCK);
+
+        assert_eq!(
+            token,
+            Token {
+                kind: TokenKind::Plus,
                 location: RANGE_MOCK,
             }
         )
