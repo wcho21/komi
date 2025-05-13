@@ -1,11 +1,11 @@
 build:
-  ./bin/build.sh --release
+  ./bin/build --release
 
 clean:
-  ./bin/build.sh clean
+  ./bin/build clean
 
 test:
-  ./bin/test.sh
+  ./bin/test
 
 ci:
-  ./bin/ci.sh
+  ./bin/ci
