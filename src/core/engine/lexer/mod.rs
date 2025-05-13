@@ -29,7 +29,7 @@ impl<'a> Lexer<'a> {
             match self.scanner.read() {
                 Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
                 Some("+") => tokens.push(self.lex_plus()?),
-                Some(s) if string::is_ascii_single_whitespace(s) || s =="\r\n" => {
+                Some(s) if string::is_ascii_single_whitespace(s) || s == "\r\n" => {
                     self.scanner.advance();
                     continue;
                 }
@@ -260,7 +260,10 @@ mod tests {
 
             let token = Lexer::new(source).lex();
 
-            let _expected = LexError::IllegalChar{char: "^".to_string(), location: Range::from_nums(0,0,0,1)};
+            let _expected = LexError::IllegalChar {
+                char: "^".to_string(),
+                location: Range::from_nums(0, 0, 0, 1),
+            };
             assert!(matches!(token, Err(_expected)));
             Ok(())
         }
