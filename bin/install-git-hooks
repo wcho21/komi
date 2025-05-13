@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+echo "Info: installing pre-commit hook..."
+cp .hooks/pre-commit .git/hooks/pre-commit
+echo "Info: hook installed."
