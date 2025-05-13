@@ -27,15 +27,13 @@ impl<'a> Lexer<'a> {
 
         loop {
             match self.scanner.read() {
-                Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
+                Some(s) if string::is_digit(s) => tokens.push(self.lex_num()?),
                 Some("+") => tokens.push(self.lex_plus()?),
                 Some("#") => {
                     self.scanner.advance();
                     self.skip_comment();
-                },
-                Some(s) if string::is_ascii_single_whitespace(s) || s == "\r\n" => {
-                    self.scanner.advance();
-                },
+                }
+                Some(s) if string::is_whitespace(s) => self.scanner.advance(),
                 Some(x) => {
                     return Err(LexError::IllegalChar {
                         char: x.to_string(),
@@ -57,10 +55,10 @@ impl<'a> Lexer<'a> {
                 Some("\n") | Some("\r") | Some("\r\n") | None => {
                     self.scanner.advance();
                     break;
-                },
+                }
                 _ => {
                     self.scanner.advance();
-                },
+                }
             }
         }
     }
@@ -88,7 +86,7 @@ impl<'a> Lexer<'a> {
         // read whole number part
         loop {
             match self.scanner.read() {
-                Some(s) if string::is_ascii_single_digit(s) => {
+                Some(s) if string::is_digit(s) => {
                     lexeme.push_str(s);
                     self.scanner.advance();
                 }
@@ -112,7 +110,7 @@ impl<'a> Lexer<'a> {
         // read decimal part
         loop {
             match self.scanner.read() {
-                Some(s) if string::is_ascii_single_digit(s) => {
+                Some(s) if string::is_digit(s) => {
                     lexeme.push_str(s);
                     self.scanner.advance();
                 }
