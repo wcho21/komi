@@ -19,10 +19,7 @@ impl<'a> Evaluator<'a> {
                 kind: AstKind::Number(n),
                 location,
             } => Self::eval_number(n, location),
-            Ast {
-                kind: AstKind::Number(n),
-                location,
-            } => Self::eval_number(n, location),
+            _ => panic!("todo"),
         }
     }
 
