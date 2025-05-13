@@ -27,9 +27,9 @@ impl<'a> TokenScanner<'a> {
 }
 
 impl<'a> Scanner for TokenScanner<'a> {
-    type Item = &'a Token;
+    type Item = Option<&'a Token>;
 
-    fn read(&self) -> Option<Self::Item> {
+    fn read(&self) -> Self::Item {
         self.tokens.get(self.base_index)
     }
 

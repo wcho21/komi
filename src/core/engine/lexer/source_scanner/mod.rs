@@ -20,7 +20,7 @@ impl<'a> SourceScanner<'a> {
 }
 
 impl<'a> Scanner for SourceScanner<'a> {
-    type Item = &'a str;
+    type Item = Option<&'a str>;
 
     fn read(&self) -> Option<&'a str> {
         match self.tape.get_current() {
