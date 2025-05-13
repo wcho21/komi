@@ -1,28 +1,26 @@
 mod core;
 mod util;
 
-use util::exec_fmt;
+use util::exec_fmt::format;
 
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn execute(source: &str) -> String {
-    match core::execute(source) {
-        Ok(s) => exec_fmt::fmt_ok(&s),
-        Err(e) => exec_fmt::fmt_err(e),
-    }
+    format(core::execute(source))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use util::exec_fmt::is_err_format;
 
     #[test]
     fn test_execute() {
         let source = "1";
         let executed = execute(source);
 
-        assert_eq!(executed, exec_fmt::fmt_ok("1"));
+        assert_eq!(executed, "komi v1 ok 1")
     }
 
     #[test]
@@ -30,18 +28,6 @@ mod tests {
         let source = " ";
         let executed = execute(source);
 
-        assert_err(&executed);
-    }
-
-    fn assert_err(executed: &str) -> () {
-        assert!(
-            is_err(&executed),
-            "Expected an error, but received '{}'",
-            executed
-        );
-    }
-
-    fn is_err(executed: &str) -> bool {
-        executed.starts_with("{ \"err\": \"")
+        assert!(executed.starts_with("komi v1 err"));
     }
 }

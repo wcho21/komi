@@ -1,10 +1,12 @@
 mod engine;
-mod err;
+pub mod err;
 mod syntax;
 
 pub use err::ExecError;
 
-pub fn execute(source: &str) -> Result<String, ExecError> {
+pub type ExecResult = Result<String, ExecError>;
+
+pub fn execute(source: &str) -> ExecResult {
     let tokens = engine::lex(&source)?;
     let ast = engine::parse(&tokens)?;
     let value = engine::evaluate(&ast)?;
@@ -33,7 +35,7 @@ mod tests {
         let source = " ";
         let executed = execute(source);
 
-        assert!(matches!(executed, Err(ExecError::LexError(_))));
+        assert!(matches!(executed, Err(ExecError::Lex(_))));
         Ok(())
     }
 }
