@@ -71,13 +71,6 @@ impl<'a> Lexer<'a> {
                     lexeme.push_str(s);
                     self.scanner.advance();
                 }
-                Some(s) if !string::is_ascii_single_whitespace(s) && s != "." => {
-                    let end = self.scanner.locate().begin;
-                    return Err(LexError::BadNumLiteral {
-                        char: s.to_string(),
-                        location: Range::new(begin, end),
-                    });
-                }
                 _ => {
                     break;
                 }
@@ -101,13 +94,6 @@ impl<'a> Lexer<'a> {
                 Some(s) if string::is_ascii_single_digit(s) => {
                     lexeme.push_str(s);
                     self.scanner.advance();
-                }
-                Some(s) if !string::is_ascii_single_whitespace(s) => {
-                    let end = self.scanner.locate().begin;
-                    return Err(LexError::BadNumLiteral {
-                        char: s.to_string(),
-                        location: Range::new(begin, end),
-                    });
                 }
                 _ => {
                     break;
@@ -166,22 +152,6 @@ mod tests {
             assert_eq!(token, expected);
             Ok(())
         }
-
-        #[test]
-        fn test_lex_fail() -> Res {
-            let source = "12a";
-
-            let token = Lexer::new(source).lex();
-
-            assert!(matches!(
-                token,
-                Err(LexError::BadNumLiteral {
-                    char: _,
-                    location: _
-                })
-            ));
-            Ok(())
-        }
     }
 
     mod plus {
@@ -197,6 +167,34 @@ mod tests {
                 TokenKind::Plus,
                 Range::new(Spot::new(0, 0), Spot::new(0, 1)),
             )];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+    }
+
+    mod expression {
+        use super::*;
+
+        #[test]
+        fn test_lex() -> Res {
+            let source = "12+34.675";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![
+                Token::new(
+                    TokenKind::Number(12.0),
+                    Range::new(Spot::new(0, 0), Spot::new(0, 2)),
+                ),
+                Token::new(
+                    TokenKind::Plus,
+                    Range::new(Spot::new(0, 2), Spot::new(0, 3)),
+                ),
+                Token::new(
+                    TokenKind::Number(34.675),
+                    Range::new(Spot::new(0, 3), Spot::new(0, 9)),
+                ),
+            ];
             assert_eq!(token, expected);
             Ok(())
         }
