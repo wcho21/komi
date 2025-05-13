@@ -6,22 +6,24 @@ use std::fmt;
 /// Serves as the interface between a lexer and its user.
 #[derive(Debug)]
 pub enum LexError {
-    IllegalChar(String, Range),
-    BadNumLiteral(String, Range),
+    /// An illegal char, not in the syntax.
+    IllegalChar { char: String, location: Range },
+    /// An illegal number char.
+    BadNumLiteral { char: String, location: Range },
 }
 
 impl fmt::Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            LexError::IllegalChar(str, location) => write!(
+            LexError::IllegalChar { char, location } => write!(
                 f,
                 "Reason: LEX_ILLEGAL_CHAR, Cause: '{}', Location: {:?}",
-                str, location
+                char, location
             ),
-            LexError::BadNumLiteral(str, location) => write!(
+            LexError::BadNumLiteral { char, location } => write!(
                 f,
                 "Reason: LEX_BAD_NUM_LITERAL, Cause: '{}', Location: {:?}",
-                str, location
+                char, location
             ),
         }
     }

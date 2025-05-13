@@ -29,7 +29,10 @@ impl<'a> Lexer<'a> {
             match self.scanner.read() {
                 Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
                 Some(x) => {
-                    return Err(LexError::IllegalChar(x.to_string(), self.scanner.locate()));
+                    return Err(LexError::IllegalChar {
+                        char: x.to_string(),
+                        location: self.scanner.locate(),
+                    });
                 }
                 None => {
                     break;
@@ -53,10 +56,10 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) && s != "." => {
                     let end = self.scanner.locate().begin;
-                    return Err(LexError::BadNumLiteral(
-                        s.to_string(),
-                        Range::new(begin, end),
-                    ));
+                    return Err(LexError::BadNumLiteral {
+                        char: s.to_string(),
+                        location: Range::new(begin, end),
+                    });
                 }
                 _ => {
                     break;
@@ -84,10 +87,10 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) => {
                     let end = self.scanner.locate().begin;
-                    return Err(LexError::BadNumLiteral(
-                        s.to_string(),
-                        Range::new(begin, end),
-                    ));
+                    return Err(LexError::BadNumLiteral {
+                        char: s.to_string(),
+                        location: Range::new(begin, end),
+                    });
                 }
                 _ => {
                     break;
@@ -149,7 +152,13 @@ mod tests {
 
         let token = Lexer::new(source).lex();
 
-        assert!(matches!(token, Err(LexError::BadNumLiteral(_, _))));
+        assert!(matches!(
+            token,
+            Err(LexError::BadNumLiteral {
+                char: _,
+                location: _
+            })
+        ));
         Ok(())
     }
 
@@ -159,7 +168,13 @@ mod tests {
 
         let token = Lexer::new(source).lex();
 
-        assert!(matches!(token, Err(LexError::IllegalChar(_, _))));
+        assert!(matches!(
+            token,
+            Err(LexError::IllegalChar {
+                char: _,
+                location: _
+            })
+        ));
         Ok(())
     }
 }

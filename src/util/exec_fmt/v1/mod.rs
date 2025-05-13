@@ -51,7 +51,10 @@ mod tests {
 
     #[test]
     fn test_format_err() {
-        let some_lex_error = LexError::IllegalChar("bad".to_string(), RANGE_MOCK);
+        let some_lex_error = LexError::IllegalChar {
+            char: "bad".to_string(),
+            location: RANGE_MOCK,
+        };
         let res = Err(ExecError::Lex(some_lex_error));
 
         let formatted = format(res);
