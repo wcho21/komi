@@ -8,6 +8,14 @@ pub enum TokenKind {
     Number(f64),
     /// A plus `+`
     Plus,
+    /// A minus `-`
+    Minus,
+    /// An asterisk `*`
+    Asterisk,
+    /// A slash `/`
+    Slash,
+    /// A percent `%`
+    Percent,
 }
 
 /// A token produced during lexing.
@@ -28,6 +36,22 @@ impl Token {
 
     pub const fn from_plus(location: Range) -> Self {
         Token::new(TokenKind::Plus, location)
+    }
+
+    pub const fn from_minus(location: Range) -> Self {
+        Token::new(TokenKind::Minus, location)
+    }
+
+    pub const fn from_asterisk(location: Range) -> Self {
+        Token::new(TokenKind::Asterisk, location)
+    }
+
+    pub const fn from_slash(location: Range) -> Self {
+        Token::new(TokenKind::Slash, location)
+    }
+
+    pub const fn from_percent(location: Range) -> Self {
+        Token::new(TokenKind::Percent, location)
     }
 }
 
@@ -72,6 +96,58 @@ mod tests {
             token,
             Token {
                 kind: TokenKind::Plus,
+                location: RANGE_MOCK,
+            }
+        )
+    }
+
+    #[test]
+    fn test_from_minus() {
+        let token = Token::from_minus(RANGE_MOCK);
+
+        assert_eq!(
+            token,
+            Token {
+                kind: TokenKind::Minus,
+                location: RANGE_MOCK,
+            }
+        )
+    }
+
+    #[test]
+    fn test_from_asterisk() {
+        let token = Token::from_asterisk(RANGE_MOCK);
+
+        assert_eq!(
+            token,
+            Token {
+                kind: TokenKind::Asterisk,
+                location: RANGE_MOCK,
+            }
+        )
+    }
+
+    #[test]
+    fn test_from_slash() {
+        let token = Token::from_slash(RANGE_MOCK);
+
+        assert_eq!(
+            token,
+            Token {
+                kind: TokenKind::Slash,
+                location: RANGE_MOCK,
+            }
+        )
+    }
+
+    #[test]
+    fn test_from_percent() {
+        let token = Token::from_percent(RANGE_MOCK);
+
+        assert_eq!(
+            token,
+            Token {
+                kind: TokenKind::Percent,
                 location: RANGE_MOCK,
             }
         )
