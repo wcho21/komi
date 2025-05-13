@@ -2,13 +2,14 @@ use crate::util::Range;
 
 /// Kinds of AST produced during parsing.
 /// Serves as the interface between a parser and its user.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum AstKind {
     Number(f64),
+    InfixPlus { left: Box<Ast>, right: Box<Ast> },
 }
 
 /// An abstract syntax tree, or AST produced during parsing.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Ast {
     pub kind: AstKind,
     pub location: Range,
@@ -21,6 +22,15 @@ impl Ast {
 
     pub fn from_num(num: f64, location: Range) -> Self {
         Ast::new(AstKind::Number(num), location)
+    }
+
+    pub fn from_infix_plus(left: Ast, right: Ast) -> Self {
+        let location = Range::new(left.clone().location.begin, right.clone().location.end);
+        let kind = AstKind::InfixPlus {
+            left: Box::new(left),
+            right: Box::new(right),
+        };
+        Ast::new(kind, location)
     }
 }
 
