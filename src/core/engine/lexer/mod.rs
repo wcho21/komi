@@ -268,16 +268,60 @@ mod tests {
         }
     }
 
-    mod plus {
+    mod single_chars {
         use super::*;
 
         #[test]
-        fn test_lex() -> Res {
+        fn test_lex_plus() -> Res {
             let source = "+";
 
             let token = Lexer::new(source).lex()?;
 
-            let expected = vec![Token::new(TokenKind::Plus, Range::from_nums(0, 0, 0, "+".len() as u64))];
+            let expected = vec![Token::new(TokenKind::Plus, Range::from_nums(0, 0, 0, 1))];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_minus() -> Res {
+            let source = "-";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![Token::new(TokenKind::Minus, Range::from_nums(0, 0, 0, 1))];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_asterisk() -> Res {
+            let source = "*";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![Token::new(TokenKind::Asterisk, Range::from_nums(0, 0, 0, 1))];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_slash() -> Res {
+            let source = "/";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![Token::new(TokenKind::Slash, Range::from_nums(0, 0, 0, 1))];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_percent() -> Res {
+            let source = "%";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![Token::new(TokenKind::Percent, Range::from_nums(0, 0, 0, 1))];
             assert_eq!(token, expected);
             Ok(())
         }
