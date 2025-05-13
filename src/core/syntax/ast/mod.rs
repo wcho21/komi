@@ -30,7 +30,7 @@ mod tests {
     use crate::util::Spot;
 
     #[test]
-    fn new() {
+    fn test_new() {
         let range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
         let ast = Ast::new(AstKind::Number(1.0), range.clone());
 

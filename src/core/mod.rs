@@ -1,10 +1,12 @@
 mod engine;
-mod err;
+pub mod err;
 mod syntax;
 
 pub use err::ExecError;
 
-pub fn execute(source: &str) -> Result<String, ExecError> {
+pub type ExecResult = Result<String, ExecError>;
+
+pub fn execute(source: &str) -> ExecResult {
     let tokens = engine::lex(&source)?;
     let ast = engine::parse(&tokens)?;
     let value = engine::evaluate(&ast)?;
@@ -20,7 +22,16 @@ mod tests {
     type Res = Result<(), ExecError>;
 
     #[test]
-    fn should_work() -> Res {
+    fn test_single_number_literal_without_decimal() -> Res {
+        let source = "12";
+        let executed = execute(source)?;
+
+        assert_eq!(executed, "12");
+        Ok(())
+    }
+
+    #[test]
+    fn test_single_number_literal_with_decimal() -> Res {
         let source = "12.25";
         let executed = execute(source)?;
 
@@ -33,7 +44,7 @@ mod tests {
         let source = " ";
         let executed = execute(source);
 
-        assert!(matches!(executed, Err(ExecError::LexError(_))));
+        assert!(matches!(executed, Err(ExecError::Lex(_))));
         Ok(())
     }
 }

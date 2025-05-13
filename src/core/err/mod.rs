@@ -10,36 +10,36 @@ use std::fmt;
 
 #[derive(Debug)]
 pub enum ExecError {
-    LexError(LexError),
-    ParseError(ParseError),
-    EvalError(EvalError),
+    Lex(LexError),
+    Parse(ParseError),
+    Eval(EvalError),
 }
 
 impl<'a> fmt::Display for ExecError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ExecError::LexError(err) => err.fmt(f),
-            ExecError::ParseError(err) => err.fmt(f),
-            ExecError::EvalError(err) => err.fmt(f),
+            ExecError::Lex(err) => err.fmt(f),
+            ExecError::Parse(err) => err.fmt(f),
+            ExecError::Eval(err) => err.fmt(f),
         }
     }
 }
 
 impl From<LexError> for ExecError {
     fn from(err: LexError) -> Self {
-        ExecError::LexError(err)
+        ExecError::Lex(err)
     }
 }
 
 impl From<ParseError> for ExecError {
     fn from(err: ParseError) -> Self {
-        ExecError::ParseError(err)
+        ExecError::Parse(err)
     }
 }
 
 impl From<EvalError> for ExecError {
     fn from(err: EvalError) -> Self {
-        ExecError::EvalError(err)
+        ExecError::Eval(err)
     }
 }
 

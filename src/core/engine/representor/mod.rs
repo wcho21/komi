@@ -17,7 +17,7 @@ mod tests {
     ];
 
     #[test]
-    fn repr_num() {
+    fn test_repr_num() {
         let value = Value::new(ValueKind::Number(1.0), RANGE_MOCKS[0]);
 
         let repr = represent(&value);

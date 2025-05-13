@@ -29,30 +29,30 @@ mod tests {
     use super::*;
     use crate::util::Spot;
 
+    const RANGE_MOCK: Range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
+
     #[test]
-    fn new() {
-        let range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
-        let token = Token::new(TokenKind::Number(1.0), range.clone());
+    fn test_new() {
+        let token = Token::new(TokenKind::Number(1.0), RANGE_MOCK);
 
         assert_eq!(
             token,
             Token {
                 kind: TokenKind::Number(1.0),
-                location: range
+                location: RANGE_MOCK,
             }
         )
     }
 
     #[test]
-    fn from_num() {
-        let range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
-        let token = Token::from_num(1.0, range.clone());
+    fn test_from_num() {
+        let token = Token::from_num(1.0, RANGE_MOCK);
 
         assert_eq!(
             token,
             Token {
                 kind: TokenKind::Number(1.0),
-                location: range
+                location: RANGE_MOCK,
             }
         )
     }

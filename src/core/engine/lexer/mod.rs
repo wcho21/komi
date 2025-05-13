@@ -29,7 +29,10 @@ impl<'a> Lexer<'a> {
             match self.scanner.read() {
                 Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
                 Some(x) => {
-                    return Err(LexError::IllegalChar(x.to_string(), self.scanner.locate()));
+                    return Err(LexError::IllegalChar {
+                        char: x.to_string(),
+                        location: self.scanner.locate(),
+                    });
                 }
                 None => {
                     break;
@@ -53,10 +56,10 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) && s != "." => {
                     let end = self.scanner.locate().begin;
-                    return Err(LexError::BadNumLiteral(
-                        s.to_string(),
-                        Range::new(begin, end),
-                    ));
+                    return Err(LexError::BadNumLiteral {
+                        char: s.to_string(),
+                        location: Range::new(begin, end),
+                    });
                 }
                 _ => {
                     break;
@@ -68,7 +71,7 @@ impl<'a> Lexer<'a> {
             let num = lexeme.parse::<f64>().unwrap();
             let end = self.scanner.locate().begin;
 
-            let token = Token::new(TokenKind::Number(num), Range::new(begin, end));
+            let token = Token::from_num(num, Range::new(begin, end));
             return Ok(token);
         }
 
@@ -84,10 +87,10 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if !string::is_ascii_single_whitespace(s) => {
                     let end = self.scanner.locate().begin;
-                    return Err(LexError::BadNumLiteral(
-                        s.to_string(),
-                        Range::new(begin, end),
-                    ));
+                    return Err(LexError::BadNumLiteral {
+                        char: s.to_string(),
+                        location: Range::new(begin, end),
+                    });
                 }
                 _ => {
                     break;
@@ -98,7 +101,7 @@ impl<'a> Lexer<'a> {
         let num = lexeme.parse::<f64>().unwrap();
         let end = self.scanner.locate().begin;
 
-        let token = Token::new(TokenKind::Number(num), Range::new(begin, end));
+        let token = Token::from_num(num, Range::new(begin, end));
         return Ok(token);
     }
 }
@@ -116,7 +119,7 @@ mod tests {
     type Res = Result<(), LexError>;
 
     #[test]
-    fn lex_num_int() -> Res {
+    fn test_lex_num_without_decimal() -> Res {
         let source = "123";
 
         let token = Lexer::new(source).lex()?;
@@ -130,7 +133,7 @@ mod tests {
     }
 
     #[test]
-    fn lex_num_float() -> Res {
+    fn test_lex_num_with_decimal() -> Res {
         let source = "12.25"; // chosen to be equal on float comparison
 
         let token = Lexer::new(source).lex()?;
@@ -144,22 +147,34 @@ mod tests {
     }
 
     #[test]
-    fn lex_num_fail() -> Res {
+    fn test_lex_num_fail() -> Res {
         let source = "12a";
 
         let token = Lexer::new(source).lex();
 
-        assert!(matches!(token, Err(LexError::BadNumLiteral(_, _))));
+        assert!(matches!(
+            token,
+            Err(LexError::BadNumLiteral {
+                char: _,
+                location: _
+            })
+        ));
         Ok(())
     }
 
     #[test]
-    fn lex_fail() -> Res {
+    fn test_lex_fail() -> Res {
         let source = " ";
 
         let token = Lexer::new(source).lex();
 
-        assert!(matches!(token, Err(LexError::IllegalChar(_, _))));
+        assert!(matches!(
+            token,
+            Err(LexError::IllegalChar {
+                char: _,
+                location: _
+            })
+        ));
         Ok(())
     }
 }

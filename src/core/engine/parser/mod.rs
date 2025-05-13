@@ -62,7 +62,7 @@ mod tests {
     ];
 
     #[test]
-    fn parse_num() -> Res {
+    fn test_parse_num() -> Res {
         let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
 
         let ast = parse(&tokens)?;
