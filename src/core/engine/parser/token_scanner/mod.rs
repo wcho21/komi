@@ -15,6 +15,15 @@ impl<'a> TokenScanner<'a> {
             last_location: range::ORIGIN,
         }
     }
+
+    fn is_end(&self) -> bool {
+        self.base_index == self.tokens.len()
+    }
+
+    fn make_location_from_last_location_end(&self) -> Range {
+        let end = self.last_location.end;
+        Range::new(end, end)
+    }
 }
 
 impl<'a> Scanner for TokenScanner<'a> {
@@ -25,18 +34,20 @@ impl<'a> Scanner for TokenScanner<'a> {
     }
 
     fn advance(&mut self) -> () {
-        if self.base_index == self.tokens.len() {
-            return ();
+        if self.is_end() {
+            return;
         }
 
-        self.last_location = self.tokens[self.base_index].location;
+        self.last_location = self.read().unwrap().location;
         self.base_index += 1;
     }
 
     fn locate(&self) -> Range {
-        self.tokens
-            .get(self.base_index)
-            .map_or_else(|| self.last_location, |t| t.location)
+        if !self.is_end() {
+            self.read().unwrap().location
+        } else {
+            self.make_location_from_last_location_end()
+        }
     }
 }
 
@@ -49,6 +60,7 @@ mod tests {
     const RANGE_MOCKS: &[Range] = &[
         Range::new(Spot::new(0, 0), Spot::new(1, 0)),
         Range::new(Spot::new(1, 0), Spot::new(3, 0)),
+        Range::new(Spot::new(3, 0), Spot::new(3, 0)),
     ];
 
     const TOKEN_MOCKS: &[Token] = &[
@@ -104,5 +116,18 @@ mod tests {
         assert_eq!(scanner.locate(), RANGE_MOCKS[0]);
         scanner.advance();
         assert_eq!(scanner.locate(), RANGE_MOCKS[1]);
+        scanner.advance();
+        assert_eq!(scanner.locate(), RANGE_MOCKS[2]);
+    }
+
+    #[test]
+    fn test_locate_for_empty() {
+        let tokens = vec![];
+
+        let mut scanner = TokenScanner::new(&tokens);
+
+        assert_eq!(scanner.locate(), range::ORIGIN);
+        scanner.advance();
+        assert_eq!(scanner.locate(), range::ORIGIN);
     }
 }
