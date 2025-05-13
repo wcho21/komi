@@ -96,4 +96,6 @@ mod tests {
         assert_eq!(value, expected);
         Ok(())
     }
+
+    // TODO: test addition fail due to wrong data type operand
 }

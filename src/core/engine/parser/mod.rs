@@ -101,15 +101,21 @@ mod tests {
 
     const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
 
-    #[test]
-    fn test_parse_num() -> Res {
-        let tokens = vec![Token::new(TokenKind::Number(1.0), RANGE_MOCKS[0])];
+    // TODO: test empty tokens input
 
-        let ast = parse(&tokens)?;
+    mod single {
+        use super::*;
 
-        let expected = Ast::new(AstKind::Number(1.0), RANGE_MOCKS[0]);
-        assert_eq!(ast, expected);
-        Ok(())
+        #[test]
+        fn test_parse_num() -> Res {
+            let tokens = vec![Token::new(TokenKind::Number(1.0), RANGE_MOCKS[0])];
+
+            let ast = parse(&tokens)?;
+
+            let expected = Ast::new(AstKind::Number(1.0), RANGE_MOCKS[0]);
+            assert_eq!(ast, expected);
+            Ok(())
+        }
     }
 
     mod infixes {
