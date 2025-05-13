@@ -82,7 +82,7 @@ impl<'a> Parser<'a> {
             }
             _ => Err(ParseError::Unexpected(
                 "Unexpected".to_string(),
-                Range::new(Spot::new(0, 0), Spot::new(0, 0)),
+                Range::new(Spot::new(0, 0), Spot::new(0, 0)), // TODO: fix location
             )),
         }
     }
@@ -99,19 +99,11 @@ mod tests {
 
     type Res = Result<(), ParseError>;
 
-    const RANGE_MOCKS: &[Range] = &[
-        Range::new(Spot::new(0, 0), Spot::new(1, 0)),
-        Range::new(Spot::new(1, 0), Spot::new(3, 0)),
-    ];
-
-    const TOKEN_MOCKS: &[Token] = &[
-        Token::new(TokenKind::Number(1.0), RANGE_MOCKS[0]),
-        Token::new(TokenKind::Number(2.0), RANGE_MOCKS[1]),
-    ];
+    const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
 
     #[test]
     fn test_parse_num() -> Res {
-        let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
+        let tokens = vec![Token::new(TokenKind::Number(1.0), RANGE_MOCKS[0])];
 
         let ast = parse(&tokens)?;
 
@@ -126,34 +118,19 @@ mod tests {
         #[test]
         fn test_parse_infix_plus() -> Res {
             let tokens = vec![
-                Token::new(
-                    TokenKind::Number(1.0),
-                    Range::new(Spot::new(0, 0), Spot::new(1, 0)),
-                ),
-                Token::new(
-                    TokenKind::Plus,
-                    Range::new(Spot::new(1, 0), Spot::new(2, 0)),
-                ),
-                Token::new(
-                    TokenKind::Number(2.0),
-                    Range::new(Spot::new(2, 0), Spot::new(3, 0)),
-                ),
+                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
+                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
             ];
 
             let ast = parse(&tokens)?;
 
             let expected = Ast::new(
                 AstKind::InfixPlus {
-                    left: Box::new(Ast::new(
-                        AstKind::Number(1.0),
-                        Range::new(Spot::new(0, 0), Spot::new(1, 0)),
-                    )),
-                    right: Box::new(Ast::new(
-                        AstKind::Number(2.0),
-                        Range::new(Spot::new(2, 0), Spot::new(3, 0)),
-                    )),
+                    left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                    right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
                 },
-                Range::new(Spot::new(0, 0), Spot::new(3, 0)),
+                Range::from_nums(0, 0, 0, 3),
             );
             assert_eq!(ast, expected);
             Ok(())

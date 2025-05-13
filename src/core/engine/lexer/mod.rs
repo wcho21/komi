@@ -118,7 +118,6 @@ pub fn lex(source: &str) -> ResTokens {
 mod tests {
     use super::*;
     use crate::core::syntax::TokenKind;
-    use crate::util::Spot;
 
     type Res = Result<(), LexError>;
 
@@ -133,7 +132,7 @@ mod tests {
 
             let expected = vec![Token::new(
                 TokenKind::Number(123.0),
-                Range::new(Spot::new(0, 0), Spot::new(0, 3)),
+                Range::from_nums(0, 0, 0, "123".len() as u64),
             )];
             assert_eq!(token, expected);
             Ok(())
@@ -147,7 +146,7 @@ mod tests {
 
             let expected = vec![Token::new(
                 TokenKind::Number(12.25),
-                Range::new(Spot::new(0, 0), Spot::new(0, 5)),
+                Range::from_nums(0, 0, 0, "12.25".len() as u64),
             )];
             assert_eq!(token, expected);
             Ok(())
@@ -165,7 +164,7 @@ mod tests {
 
             let expected = vec![Token::new(
                 TokenKind::Plus,
-                Range::new(Spot::new(0, 0), Spot::new(0, 1)),
+                Range::from_nums(0, 0, 0, "+".len() as u64),
             )];
             assert_eq!(token, expected);
             Ok(())
@@ -184,15 +183,15 @@ mod tests {
             let expected = vec![
                 Token::new(
                     TokenKind::Number(12.0),
-                    Range::new(Spot::new(0, 0), Spot::new(0, 2)),
+                    Range::from_nums(0, 0, 0, "12".len() as u64),
                 ),
                 Token::new(
                     TokenKind::Plus,
-                    Range::new(Spot::new(0, 2), Spot::new(0, 3)),
+                    Range::from_nums(0, "12".len() as u64, 0, "12+".len() as u64),
                 ),
                 Token::new(
                     TokenKind::Number(34.675),
-                    Range::new(Spot::new(0, 3), Spot::new(0, 9)),
+                    Range::from_nums(0, "12+".len() as u64, 0, "12+34.675".len() as u64),
                 ),
             ];
             assert_eq!(token, expected);

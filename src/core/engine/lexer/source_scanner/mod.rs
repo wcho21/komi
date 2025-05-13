@@ -1,5 +1,5 @@
 use super::utf8_tape::Utf8Tape;
-use crate::util::{Range, Scanner, Spot, Tape};
+use crate::util::{Range, Scanner, Tape};
 
 /// A character scaner from a source.
 /// It reads characters one by one, but treats CRLF ("\r\n") as a single character.
@@ -54,10 +54,7 @@ impl<'a> Scanner for SourceScanner<'a> {
     }
 
     fn locate(&self) -> Range {
-        Range::new(
-            Spot::new(self.row, self.col),
-            Spot::new(self.row, self.col + 1),
-        )
+        Range::from_nums(self.row, self.col, self.row, self.col + 1)
     }
 }
 
@@ -147,28 +144,16 @@ mod tests {
         let mut scanner = SourceScanner::new(source);
 
         assert_eq!(scanner.read(), Some("a"));
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(0, 0), Spot::new(0, 1))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(0, 0, 0, 1),);
         scanner.advance();
         assert_eq!(scanner.read(), Some("b"));
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(0, 1), Spot::new(0, 2))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(0, 1, 0, 2),);
         scanner.advance();
         assert_eq!(scanner.read(), None);
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(0, 2), Spot::new(0, 3))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(0, 2, 0, 3),);
         scanner.advance();
         assert_eq!(scanner.read(), None);
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(0, 2), Spot::new(0, 3))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(0, 2, 0, 3),);
     }
 
     #[test]
@@ -177,34 +162,19 @@ mod tests {
         let mut scanner = SourceScanner::new(source);
 
         assert_eq!(scanner.read(), Some("\r\n"));
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(0, 0), Spot::new(0, 1))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(0, 0, 0, 1),);
         scanner.advance();
         assert_eq!(scanner.read(), Some("\n"));
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(1, 0), Spot::new(1, 1))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(1, 0, 1, 1),);
         scanner.advance();
         assert_eq!(scanner.read(), Some("\r"));
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(2, 0), Spot::new(2, 1))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(2, 0, 2, 1),);
         scanner.advance();
         assert_eq!(scanner.read(), None);
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(3, 0), Spot::new(3, 1))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(3, 0, 3, 1),);
         scanner.advance();
         assert_eq!(scanner.read(), None);
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(3, 0), Spot::new(3, 1))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(3, 0, 3, 1),);
     }
 
     #[test]
@@ -214,15 +184,9 @@ mod tests {
 
         scanner.advance();
         assert_eq!(scanner.read(), Some("\r\n"));
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(0, 1), Spot::new(0, 2))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(0, 1, 0, 2),);
         scanner.advance();
         assert_eq!(scanner.read(), Some("b"));
-        assert_eq!(
-            scanner.locate(),
-            Range::new(Spot::new(1, 0), Spot::new(1, 1))
-        );
+        assert_eq!(scanner.locate(), Range::from_nums(1, 0, 1, 1),);
     }
 }

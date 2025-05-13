@@ -65,14 +65,10 @@ pub fn evaluate(ast: &Ast) -> ResVal {
 mod tests {
     use super::*;
     use crate::core::syntax::ValueKind;
-    use crate::util::Spot;
 
     type Res = Result<(), EvalError>;
 
-    const RANGE_MOCKS: &[Range] = &[
-        Range::new(Spot::new(0, 0), Spot::new(1, 0)),
-        Range::new(Spot::new(1, 0), Spot::new(3, 0)),
-    ];
+    const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
 
     #[test]
     fn test_single_num() -> Res {

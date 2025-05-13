@@ -37,11 +37,10 @@ impl Ast {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::Spot;
 
     #[test]
     fn test_new() {
-        let range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
+        let range = Range::from_nums(1, 2, 3, 4);
         let ast = Ast::new(AstKind::Number(1.0), range.clone());
 
         assert_eq!(
