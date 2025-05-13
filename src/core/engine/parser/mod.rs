@@ -49,7 +49,7 @@ impl<'a> Parser<'a> {
 
     fn parse_expression_middle(&mut self, left: &Ast, threshold_bp: &Bp) -> Option<ResAst> {
         match self.scanner.read() {
-            Some(Token { kind, location }) => match kind {
+            Some(Token { kind, location: _ }) => match kind {
                 TokenKind::Plus => {
                     let bp = Bp::get_summative();
                     if threshold_bp.right >= bp.left {
