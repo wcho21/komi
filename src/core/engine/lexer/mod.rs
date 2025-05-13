@@ -68,7 +68,7 @@ impl<'a> Lexer<'a> {
             let num = lexeme.parse::<f64>().unwrap();
             let end = self.scanner.locate().begin;
 
-            let token = Token::new(TokenKind::Number(num), Range::new(begin, end));
+            let token = Token::from_num(num, Range::new(begin, end));
             return Ok(token);
         }
 
@@ -98,7 +98,7 @@ impl<'a> Lexer<'a> {
         let num = lexeme.parse::<f64>().unwrap();
         let end = self.scanner.locate().begin;
 
-        let token = Token::new(TokenKind::Number(num), Range::new(begin, end));
+        let token = Token::from_num(num, Range::new(begin, end));
         return Ok(token);
     }
 }
