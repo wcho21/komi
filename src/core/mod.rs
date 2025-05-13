@@ -22,7 +22,7 @@ mod tests {
     type Res = Result<(), ExecError>;
 
     #[test]
-    fn should_work() -> Res {
+    fn test_single_number_literal() -> Res {
         let source = "12.25";
         let executed = execute(source)?;
 

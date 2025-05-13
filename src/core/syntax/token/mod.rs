@@ -30,7 +30,7 @@ mod tests {
     use crate::util::Spot;
 
     #[test]
-    fn new() {
+    fn test_new() {
         let range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
         let token = Token::new(TokenKind::Number(1.0), range.clone());
 
@@ -44,7 +44,7 @@ mod tests {
     }
 
     #[test]
-    fn from_num() {
+    fn test_from_num() {
         let range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
         let token = Token::from_num(1.0, range.clone());
 

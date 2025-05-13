@@ -49,7 +49,7 @@ mod tests {
     ];
 
     #[test]
-    fn fake_evaluate() -> Res {
+    fn test_single_num() -> Res {
         let ast = Ast::new(AstKind::Number(1.0), RANGE_MOCKS[0]);
 
         let value = evaluate(&ast)?;
