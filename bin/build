@@ -4,7 +4,8 @@
 OUT_DIR=./dist
 
 # internal variables
-BUILD_MODE="--dev"
+BUILD_MODE="--release"
+COMMAND="build"
 
 # script body
 build() {
@@ -28,21 +29,22 @@ clean() {
 }
 
 help() {
-  echo "Usage: $0 [--dev|--release]"
+  echo "Usage: $0 [clean|help] [--dev|--release]"
 }
 
 for ARG in "$@"; do
   case $ARG in
     "clean")
-      clean
+      COMMAND="clean"
       ;;
-    "--release")
-      BUILD_MODE="--release"
-      build
+    "help")
+      COMMAND="help"
       ;;
     "--dev")
       BUILD_MODE="--dev"
-      build
+      ;;
+    "--release")
+      BUILD_MODE="--release"
       ;;
     *)
       echo "Unknown option: ${ARG}"
@@ -51,3 +53,18 @@ for ARG in "$@"; do
     ;;
   esac
 done
+
+case $COMMAND in
+  "build")
+    build
+    ;;
+  "help")
+    help
+    ;;
+  "clean")
+    clean
+    ;;
+  *)
+    echo "Unexpected command: '${COMMAND}'"
+    exit 1
+esac
