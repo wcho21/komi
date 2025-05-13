@@ -27,8 +27,16 @@ impl<'a> Lexer<'a> {
 
         loop {
             match self.scanner.read() {
-                Some(s) if string::is_digit(s) => tokens.push(self.lex_num()?),
-                Some("+") => tokens.push(self.lex_plus()?),
+                Some(s) if string::is_digit(s) => {
+                    let first_location = self.scanner.locate();
+                    self.scanner.advance();
+                    tokens.push(self.lex_num(first_location, s)?);
+                }
+                Some("+") => {
+                    let first_location = self.scanner.locate();
+                    self.scanner.advance();
+                    tokens.push(self.lex_plus(first_location)?);
+                }
                 Some("#") => {
                     self.scanner.advance();
                     self.skip_comment();
@@ -63,25 +71,13 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn lex_plus(&mut self) -> ResToken {
-        let location = self.scanner.locate();
-
-        match self.scanner.read() {
-            Some("+") => {
-                self.scanner.advance();
-                return Ok(Token::from_plus(location));
-            }
-            other => Err(LexError::Unexpected {
-                expected: "+".to_string(),
-                received: other.unwrap_or("").to_string(),
-                location,
-            }),
-        }
+    fn lex_plus(&mut self, first_location: Range) -> ResToken {
+        Ok(Token::from_plus(first_location))
     }
 
-    fn lex_num(&mut self) -> ResToken {
-        let mut lexeme = String::new();
-        let begin = self.scanner.locate().begin;
+    fn lex_num(&mut self, first_location: Range, first_char: &'a str) -> ResToken {
+        let mut lexeme = first_char.to_string();
+        let begin = first_location.begin;
 
         // read whole number part
         loop {
