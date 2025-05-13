@@ -49,7 +49,7 @@ impl<'a> Parser<'a> {
 
     fn parse_expression_middle(&mut self, left: &Ast, threshold_bp: &Bp) -> Option<ResAst> {
         match self.scanner.read() {
-            Some(Token { kind, location }) => match kind {
+            Some(Token { kind, location: _ }) => match kind {
                 TokenKind::Plus => {
                     let bp = Bp::get_summative();
                     if threshold_bp.right >= bp.left {
@@ -78,11 +78,11 @@ impl<'a> Parser<'a> {
                 location,
             }) => {
                 self.scanner.advance();
-                Ok(Ast::new(AstKind::Number(*n), *location))
+                Ok(Ast::from_num(*n, *location))
             }
             _ => Err(ParseError::Unexpected(
                 "Unexpected".to_string(),
-                Range::new(Spot::new(0, 0), Spot::new(0, 0)),
+                Range::new(Spot::new(0, 0), Spot::new(0, 0)), // TODO: fix location
             )),
         }
     }
@@ -99,25 +99,23 @@ mod tests {
 
     type Res = Result<(), ParseError>;
 
-    const RANGE_MOCKS: &[Range] = &[
-        Range::new(Spot::new(0, 0), Spot::new(1, 0)),
-        Range::new(Spot::new(1, 0), Spot::new(3, 0)),
-    ];
+    const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
 
-    const TOKEN_MOCKS: &[Token] = &[
-        Token::new(TokenKind::Number(1.0), RANGE_MOCKS[0]),
-        Token::new(TokenKind::Number(2.0), RANGE_MOCKS[1]),
-    ];
+    // TODO: test empty tokens input
 
-    #[test]
-    fn test_parse_num() -> Res {
-        let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
+    mod single {
+        use super::*;
 
-        let ast = parse(&tokens)?;
+        #[test]
+        fn test_parse_num() -> Res {
+            let tokens = vec![Token::new(TokenKind::Number(1.0), RANGE_MOCKS[0])];
 
-        let expected = Ast::new(AstKind::Number(1.0), RANGE_MOCKS[0]);
-        assert_eq!(ast, expected);
-        Ok(())
+            let ast = parse(&tokens)?;
+
+            let expected = Ast::new(AstKind::Number(1.0), RANGE_MOCKS[0]);
+            assert_eq!(ast, expected);
+            Ok(())
+        }
     }
 
     mod infixes {
@@ -126,34 +124,19 @@ mod tests {
         #[test]
         fn test_parse_infix_plus() -> Res {
             let tokens = vec![
-                Token::new(
-                    TokenKind::Number(1.0),
-                    Range::new(Spot::new(0, 0), Spot::new(1, 0)),
-                ),
-                Token::new(
-                    TokenKind::Plus,
-                    Range::new(Spot::new(1, 0), Spot::new(2, 0)),
-                ),
-                Token::new(
-                    TokenKind::Number(2.0),
-                    Range::new(Spot::new(2, 0), Spot::new(3, 0)),
-                ),
+                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
+                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
             ];
 
             let ast = parse(&tokens)?;
 
             let expected = Ast::new(
                 AstKind::InfixPlus {
-                    left: Box::new(Ast::new(
-                        AstKind::Number(1.0),
-                        Range::new(Spot::new(0, 0), Spot::new(1, 0)),
-                    )),
-                    right: Box::new(Ast::new(
-                        AstKind::Number(2.0),
-                        Range::new(Spot::new(2, 0), Spot::new(3, 0)),
-                    )),
+                    left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                    right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
                 },
-                Range::new(Spot::new(0, 0), Spot::new(3, 0)),
+                Range::from_nums(0, 0, 0, 3),
             );
             assert_eq!(ast, expected);
             Ok(())

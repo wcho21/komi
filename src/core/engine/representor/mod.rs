@@ -9,12 +9,9 @@ pub fn represent(val: &Value) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::{Range, Spot};
+    use crate::util::Range;
 
-    const RANGE_MOCKS: &[Range] = &[
-        Range::new(Spot::new(0, 0), Spot::new(1, 0)),
-        Range::new(Spot::new(1, 0), Spot::new(3, 0)),
-    ];
+    const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
 
     #[test]
     fn test_repr_num() {

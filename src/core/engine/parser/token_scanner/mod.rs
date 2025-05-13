@@ -55,17 +55,13 @@ impl<'a> Scanner for TokenScanner<'a> {
 mod tests {
     use super::*;
     use crate::core::syntax::TokenKind;
-    use crate::util::{Range, Spot};
+    use crate::util::Range;
 
-    const RANGE_MOCKS: &[Range] = &[
-        Range::new(Spot::new(0, 0), Spot::new(1, 0)),
-        Range::new(Spot::new(1, 0), Spot::new(3, 0)),
-        Range::new(Spot::new(3, 0), Spot::new(3, 0)),
-    ];
-
+    const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
+    const TOKEN_KIND_MOCKS: &[TokenKind] = &[TokenKind::Number(1.0), TokenKind::Number(2.0)];
     const TOKEN_MOCKS: &[Token] = &[
-        Token::new(TokenKind::Number(1.0), RANGE_MOCKS[0]),
-        Token::new(TokenKind::Number(2.0), RANGE_MOCKS[1]),
+        Token::new(TOKEN_KIND_MOCKS[0], RANGE_MOCKS[0]),
+        Token::new(TOKEN_KIND_MOCKS[1], RANGE_MOCKS[1]),
     ];
 
     #[test]
@@ -109,15 +105,18 @@ mod tests {
 
     #[test]
     fn test_locate() {
-        let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
+        let tokens = vec![
+            Token::new(TOKEN_KIND_MOCKS[0], Range::from_nums(0, 0, 0, 2)),
+            Token::new(TOKEN_KIND_MOCKS[1], Range::from_nums(0, 2, 0, 5)),
+        ];
 
         let mut scanner = TokenScanner::new(&tokens);
 
-        assert_eq!(scanner.locate(), RANGE_MOCKS[0]);
+        assert_eq!(scanner.locate(), Range::from_nums(0, 0, 0, 2));
         scanner.advance();
-        assert_eq!(scanner.locate(), RANGE_MOCKS[1]);
+        assert_eq!(scanner.locate(), Range::from_nums(0, 2, 0, 5));
         scanner.advance();
-        assert_eq!(scanner.locate(), RANGE_MOCKS[2]);
+        assert_eq!(scanner.locate(), Range::from_nums(0, 5, 0, 5));
     }
 
     #[test]

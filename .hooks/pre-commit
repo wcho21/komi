@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+cargo fmt --check
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "Info: pre-commit hook blocked your commit."
+  echo "Info: Rust code is not properly formatted. run 'cargo fmt' to fix."
+  exit 1
+fi
