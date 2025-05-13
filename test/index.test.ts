@@ -9,18 +9,20 @@ describe("ok", () => {
   it("single number literal", async () => {
     const executed = execute("12.25");
 
-    const { ok } = JSON.parse(executed);
+    expect(executed).toBe("komi v1 ok 12.25");
+  });
 
-    expect(ok).toBe("12.25");
+  it("addition", async () => {
+    const executed = execute("12 + 34.675");
+
+    expect(executed).toBe("komi v1 ok 46.675");
   });
 });
 
 describe("err", () => {
   it("err", async () => {
-    const executed = execute(" ");
+    const executed = execute("^");
 
-    const { err } = JSON.parse(executed);
-
-    expect(err).not.toBe(undefined);
+    expect(executed.startsWith("komi v1 err")).toBe(true);
   });
 });
