@@ -29,6 +29,10 @@ impl<'a> Lexer<'a> {
             match self.scanner.read() {
                 Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
                 Some("+") => tokens.push(self.lex_plus()?),
+                Some(s) if string::is_ascii_single_whitespace(s) || s =="\r\n" => {
+                    self.scanner.advance();
+                    continue;
+                }
                 Some(x) => {
                     return Err(LexError::IllegalChar {
                         char: x.to_string(),
@@ -121,6 +125,54 @@ mod tests {
 
     type Res = Result<(), LexError>;
 
+    mod empty {
+        use super::*;
+
+        #[test]
+        fn test_lex_empty() -> Res {
+            let source = "";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_whitespaces() -> Res {
+            let source = "   ";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_tabs() -> Res {
+            let source = "\t\t";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_new_lines() -> Res {
+            let source = "\n\n\r\r\r\n\r\n";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+    }
+
     mod num {
         use super::*;
 
@@ -176,7 +228,7 @@ mod tests {
 
         #[test]
         fn test_lex() -> Res {
-            let source = "12+34.675";
+            let source = "12 + 34.675";
 
             let token = Lexer::new(source).lex()?;
 
@@ -187,34 +239,14 @@ mod tests {
                 ),
                 Token::new(
                     TokenKind::Plus,
-                    Range::from_nums(0, "12".len() as u64, 0, "12+".len() as u64),
+                    Range::from_nums(0, "12 ".len() as u64, 0, "12 +".len() as u64),
                 ),
                 Token::new(
                     TokenKind::Number(34.675),
-                    Range::from_nums(0, "12+".len() as u64, 0, "12+34.675".len() as u64),
+                    Range::from_nums(0, "12 + ".len() as u64, 0, "12 + 34.675".len() as u64),
                 ),
             ];
             assert_eq!(token, expected);
-            Ok(())
-        }
-    }
-
-    mod etc {
-        use super::*;
-
-        #[test]
-        fn test_lex_fail() -> Res {
-            let source = " ";
-
-            let token = Lexer::new(source).lex();
-
-            assert!(matches!(
-                token,
-                Err(LexError::IllegalChar {
-                    char: _,
-                    location: _
-                })
-            ));
             Ok(())
         }
     }

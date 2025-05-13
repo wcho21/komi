@@ -41,19 +41,10 @@ mod tests {
 
     #[test]
     fn test_addition() -> Res {
-        let source = "1+2";
+        let source = "1 + 2";
         let executed = execute(source)?;
 
         assert_eq!(executed, "3");
-        Ok(())
-    }
-
-    #[test]
-    fn test_fail() -> Res {
-        let source = " ";
-        let executed = execute(source);
-
-        assert!(matches!(executed, Err(ExecError::Lex(_))));
         Ok(())
     }
 }
