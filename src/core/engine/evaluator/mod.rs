@@ -64,7 +64,6 @@ pub fn evaluate(ast: &Ast) -> ResVal {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::syntax::ValueKind;
 
     type Res = Result<(), EvalError>;
 
@@ -76,7 +75,7 @@ mod tests {
 
         let value = evaluate(&ast)?;
 
-        let expected = Value::new(ValueKind::Number(1.0), RANGE_MOCKS[0]);
+        let expected = Value::from_num(1.0, RANGE_MOCKS[0]);
         assert_eq!(value, expected);
         Ok(())
     }
@@ -93,7 +92,7 @@ mod tests {
 
         let value = evaluate(&ast)?;
 
-        let expected = Value::new(ValueKind::Number(3.0), Range::from_nums(0, 0, 0, 3));
+        let expected = Value::from_num(3.0, Range::from_nums(0, 0, 0, 3));
         assert_eq!(value, expected);
         Ok(())
     }

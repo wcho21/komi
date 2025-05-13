@@ -78,7 +78,7 @@ impl<'a> Parser<'a> {
                 location,
             }) => {
                 self.scanner.advance();
-                Ok(Ast::new(AstKind::Number(*n), *location))
+                Ok(Ast::from_num(*n, *location))
             }
             _ => Err(ParseError::Unexpected(
                 "Unexpected".to_string(),
