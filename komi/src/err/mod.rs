@@ -22,22 +22,18 @@ impl<'a> fmt::Display for ExecError {
     }
 }
 
-impl From<LexError> for ExecError {
-    fn from(err: LexError) -> Self {
-        ExecError::Lex(err)
-    }
+macro_rules! from_error {
+    ($err:ty, $var:ident) => {
+        impl From<$err> for ExecError {
+            fn from(err: $err) -> Self {
+                ExecError::$var(err)
+            }
+        }
+    };
 }
 
-impl From<ParseError> for ExecError {
-    fn from(err: ParseError) -> Self {
-        ExecError::Parse(err)
-    }
-}
-
-impl From<EvalError> for ExecError {
-    fn from(err: EvalError) -> Self {
-        ExecError::Eval(err)
-    }
-}
+from_error!(LexError, Lex);
+from_error!(ParseError, Parse);
+from_error!(EvalError, Eval);
 
 impl<'a> Error for ExecError {}

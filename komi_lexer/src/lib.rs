@@ -21,6 +21,19 @@ struct Lexer<'a> {
     scanner: SourceScanner<'a>,
 }
 
+macro_rules! advance_and_lex {
+    ($self:ident, $lex_fn:expr) => {{
+        let first_location = $self.scanner.locate();
+        $self.scanner.advance();
+        $lex_fn($self, first_location)
+    }};
+    ($self:ident, $lex_fn:expr, $first_char:expr) => {{
+        let first_location = $self.scanner.locate();
+        $self.scanner.advance();
+        $lex_fn($self, first_location, $first_char)
+    }};
+}
+
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
         Self { scanner: SourceScanner::new(source) }
@@ -32,27 +45,27 @@ impl<'a> Lexer<'a> {
         loop {
             match self.scanner.read() {
                 Some(s) if string::is_digit(s) => {
-                    let token = self.advance_and_lex_with_first_char(Self::lex_num, s)?;
+                    let token = advance_and_lex!(self, Self::lex_num, s)?;
                     tokens.push(token);
                 }
                 Some("+") => {
-                    let token = self.advance_and_lex(Self::lex_plus)?;
+                    let token = advance_and_lex!(self, Self::lex_plus)?;
                     tokens.push(token);
                 }
                 Some("-") => {
-                    let token = self.advance_and_lex(Self::lex_minus)?;
+                    let token = advance_and_lex!(self, Self::lex_minus)?;
                     tokens.push(token);
                 }
                 Some("*") => {
-                    let token = self.advance_and_lex(Self::lex_asterisk)?;
+                    let token = advance_and_lex!(self, Self::lex_asterisk)?;
                     tokens.push(token);
                 }
                 Some("/") => {
-                    let token = self.advance_and_lex(Self::lex_slash)?;
+                    let token = advance_and_lex!(self, Self::lex_slash)?;
                     tokens.push(token);
                 }
                 Some("%") => {
-                    let token = self.advance_and_lex(Self::lex_percent)?;
+                    let token = advance_and_lex!(self, Self::lex_percent)?;
                     tokens.push(token);
                 }
                 Some("#") => {
@@ -84,24 +97,6 @@ impl<'a> Lexer<'a> {
                 }
             }
         }
-    }
-
-    fn advance_and_lex<F>(&mut self, lex: F) -> ResToken
-    where
-        F: FnOnce(&mut Self, Range) -> ResToken,
-    {
-        let first_location = self.scanner.locate();
-        self.scanner.advance();
-        lex(self, first_location)
-    }
-
-    fn advance_and_lex_with_first_char<F>(&mut self, lex: F, first_char: &'a str) -> ResToken
-    where
-        F: FnOnce(&mut Self, Range, &'a str) -> ResToken,
-    {
-        let first_location = self.scanner.locate();
-        self.scanner.advance();
-        lex(self, first_location, first_char)
     }
 
     fn lex_plus(&mut self, first_location: Range) -> ResToken {
@@ -181,77 +176,67 @@ pub fn lex(source: &str) -> ResTokens {
 #[cfg(test)]
 mod tests {
     use super::{LexError, Range, Token, lex};
-    use komi_syntax::TokenKind;
+    use komi_syntax::{TokenKind, mktoken};
 
     type Res = Result<(), LexError>;
+
+    /// Assert a given literal to be lexed into the expected tokens.
+    macro_rules! assert_lex {
+        ($source:literal, $expected:expr) => {
+            assert_eq!(
+                lex($source)?,
+                $expected,
+                "received tokens (left) from the source '{}', but expected different tokens (right)",
+                $source,
+            );
+            return Ok(())
+        };
+    }
+
+    /// Assert lexing a given literal will fail.
+    macro_rules! assert_lex_fail {
+        ($source:literal, $expected:expr) => {
+            assert_eq!(
+                lex($source),
+                Err($expected),
+                "received result (left), but expected lexing the source '{}' to fail (right)",
+                $source,
+            );
+            return Ok(())
+        };
+    }
 
     mod empty {
         use super::*;
 
         #[test]
         fn test_lex_empty() -> Res {
-            let source = "";
-
-            let token = lex(source)?;
-
-            let expected = vec![];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("", vec![]);
         }
 
         #[test]
         fn test_lex_whitespaces() -> Res {
-            let source = "   ";
-
-            let token = lex(source)?;
-
-            let expected = vec![];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("   ", vec![]);
         }
 
         #[test]
         fn test_lex_tabs() -> Res {
-            let source = "\t\t";
-
-            let token = lex(source)?;
-
-            let expected = vec![];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("\t\t", vec![]);
         }
 
         #[test]
         fn test_lex_new_lines() -> Res {
-            let source = "\n\n\r\r\r\n\r\n";
-
-            let token = lex(source)?;
-
-            let expected = vec![];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("\n\n\r\r\r\n\r\n", vec![]);
         }
 
         #[test]
         fn test_lex_comment() -> Res {
-            let source = "# comment";
-
-            let token = lex(source)?;
-
-            let expected = vec![];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("# comment", vec![]);
         }
 
         #[test]
         fn test_lex_multi_line_comment() -> Res {
-            let source = "# comment line 1\r\n# comment line 2";
-
-            let token = lex(source)?;
-
-            let expected = vec![];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("# comment line 1\r\n# comment line 2", vec![]);
         }
     }
 
@@ -260,30 +245,18 @@ mod tests {
 
         #[test]
         fn test_lex_without_decimal() -> Res {
-            let source = "123";
-
-            let token = lex(source)?;
-
-            let expected = vec![Token::new(
-                TokenKind::Number(123.0),
-                Range::from_nums(0, 0, 0, "123".len() as u64),
-            )];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!(
+                "123",
+                vec![mktoken!(TokenKind::Number(123.0), loc 0, 0, 0, "123".len())]
+            );
         }
 
         #[test]
         fn test_lex_with_decimal() -> Res {
-            let source = "12.25"; // chosen to be equal on float comparison
-
-            let token = lex(source)?;
-
-            let expected = vec![Token::new(
-                TokenKind::Number(12.25),
-                Range::from_nums(0, 0, 0, "12.25".len() as u64),
-            )];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!(
+                "12.25",
+                vec![mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, "12.25".len())]
+            );
         }
     }
 
@@ -292,57 +265,27 @@ mod tests {
 
         #[test]
         fn test_lex_plus() -> Res {
-            let source = "+";
-
-            let token = lex(source)?;
-
-            let expected = vec![Token::new(TokenKind::Plus, Range::from_nums(0, 0, 0, 1))];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("+", vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)]);
         }
 
         #[test]
         fn test_lex_minus() -> Res {
-            let source = "-";
-
-            let token = lex(source)?;
-
-            let expected = vec![Token::new(TokenKind::Minus, Range::from_nums(0, 0, 0, 1))];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("-", vec![mktoken!(TokenKind::Minus, loc 0, 0, 0, 1)]);
         }
 
         #[test]
         fn test_lex_asterisk() -> Res {
-            let source = "*";
-
-            let token = lex(source)?;
-
-            let expected = vec![Token::new(TokenKind::Asterisk, Range::from_nums(0, 0, 0, 1))];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("*", vec![mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1)]);
         }
 
         #[test]
         fn test_lex_slash() -> Res {
-            let source = "/";
-
-            let token = lex(source)?;
-
-            let expected = vec![Token::new(TokenKind::Slash, Range::from_nums(0, 0, 0, 1))];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("/", vec![mktoken!(TokenKind::Slash, loc 0, 0, 0, 1)]);
         }
 
         #[test]
         fn test_lex_percent() -> Res {
-            let source = "%";
-
-            let token = lex(source)?;
-
-            let expected = vec![Token::new(TokenKind::Percent, Range::from_nums(0, 0, 0, 1))];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!("%", vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)]);
         }
     }
 
@@ -351,23 +294,14 @@ mod tests {
 
         #[test]
         fn test_lex() -> Res {
-            let source = "12 + 34.675";
-
-            let token = lex(source)?;
-
-            let expected = vec![
-                Token::new(TokenKind::Number(12.0), Range::from_nums(0, 0, 0, "12".len() as u64)),
-                Token::new(
-                    TokenKind::Plus,
-                    Range::from_nums(0, "12 ".len() as u64, 0, "12 +".len() as u64),
-                ),
-                Token::new(
-                    TokenKind::Number(34.675),
-                    Range::from_nums(0, "12 + ".len() as u64, 0, "12 + 34.675".len() as u64),
-                ),
-            ];
-            assert_eq!(token, expected);
-            Ok(())
+            assert_lex!(
+                "12 + 34.675",
+                vec![
+                    mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len()),
+                    mktoken!(TokenKind::Plus, loc 0, "12 ".len(), 0, "12 +".len()),
+                    mktoken!(TokenKind::Number(34.675), loc 0, "12 + ".len(), 0, "12 + 34.675".len()),
+                ]
+            );
         }
     }
 
@@ -376,16 +310,13 @@ mod tests {
 
         #[test]
         fn test_illegal_char() -> Res {
-            let source = "^";
-
-            let token = lex(source);
-
-            let expected = LexError::IllegalChar {
-                char: "^".to_string(),
-                location: Range::from_nums(0, 0, 0, 1),
-            };
-            assert_eq!(token, Err(expected));
-            Ok(())
+            assert_lex_fail!(
+                "^",
+                LexError::IllegalChar {
+                    char: "^".to_string(),
+                    location: Range::from_nums(0, 0, 0, 1),
+                }
+            );
         }
     }
 }

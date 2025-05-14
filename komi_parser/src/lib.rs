@@ -119,7 +119,7 @@ pub fn parse(tokens: &Vec<Token>) -> ResAst {
 #[cfg(test)]
 mod tests {
     use super::{Ast, ParseError, Range, Token, TokenKind, parse};
-    use komi_syntax::AstKind;
+    use komi_syntax::{AstKind, mktoken};
 
     type Res = Result<(), ParseError>;
 
@@ -145,7 +145,7 @@ mod tests {
         /// Represents `1`.
         #[test]
         fn test_parse_num() -> Res {
-            let tokens = vec![Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1))];
+            let tokens = vec![mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1)];
 
             let ast = parse(&tokens)?;
 
@@ -170,9 +170,9 @@ mod tests {
             #[test]
             fn test_parse_plus() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -197,9 +197,9 @@ mod tests {
             #[test]
             fn test_parse_minus() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Minus, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -224,9 +224,9 @@ mod tests {
             #[test]
             fn test_parse_asterisk() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Asterisk, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -251,9 +251,9 @@ mod tests {
             #[test]
             fn test_parse_slash() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Slash, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -278,9 +278,9 @@ mod tests {
             #[test]
             fn test_parse_percent() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Percent, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -309,11 +309,11 @@ mod tests {
             #[test]
             fn test_parse_plus_left_assoc() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-                    Token::new(TokenKind::Plus, Range::from_nums(0, 3, 0, 4)),
-                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    mktoken!(TokenKind::Plus, loc 0, 3, 0, 4),
+                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -344,11 +344,11 @@ mod tests {
             #[test]
             fn test_parse_minus_left_assoc() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Minus, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-                    Token::new(TokenKind::Minus, Range::from_nums(0, 3, 0, 4)),
-                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    mktoken!(TokenKind::Minus, loc 0, 3, 0, 4),
+                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -379,11 +379,11 @@ mod tests {
             #[test]
             fn test_parse_asterisk_left_assoc() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Asterisk, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-                    Token::new(TokenKind::Asterisk, Range::from_nums(0, 3, 0, 4)),
-                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    mktoken!(TokenKind::Asterisk, loc 0, 3, 0, 4),
+                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -414,11 +414,11 @@ mod tests {
             #[test]
             fn test_parse_slash_left_assoc() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Slash, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-                    Token::new(TokenKind::Slash, Range::from_nums(0, 3, 0, 4)),
-                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    mktoken!(TokenKind::Slash, loc 0, 3, 0, 4),
+                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -449,11 +449,11 @@ mod tests {
             #[test]
             fn test_parse_percent_left_assoc() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Percent, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-                    Token::new(TokenKind::Percent, Range::from_nums(0, 3, 0, 4)),
-                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    mktoken!(TokenKind::Percent, loc 0, 3, 0, 4),
+                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -488,11 +488,11 @@ mod tests {
             #[test]
             fn test_parse_asterisk_prioritized_over_plus() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-                    Token::new(TokenKind::Asterisk, Range::from_nums(0, 3, 0, 4)),
-                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    mktoken!(TokenKind::Asterisk, loc 0, 3, 0, 4),
+                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -523,11 +523,11 @@ mod tests {
             #[test]
             fn test_parse_slash_prioritized_over_minus() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Minus, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-                    Token::new(TokenKind::Slash, Range::from_nums(0, 3, 0, 4)),
-                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    mktoken!(TokenKind::Slash, loc 0, 3, 0, 4),
+                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
                 ];
 
                 let ast = parse(&tokens)?;
@@ -558,11 +558,11 @@ mod tests {
             #[test]
             fn test_parse_percent_prioritized_over_plus() -> Res {
                 let tokens = vec![
-                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                    Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
-                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-                    Token::new(TokenKind::Percent, Range::from_nums(0, 3, 0, 4)),
-                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    mktoken!(TokenKind::Percent, loc 0, 3, 0, 4),
+                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
                 ];
 
                 let ast = parse(&tokens)?;
