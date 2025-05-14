@@ -123,6 +123,7 @@ mod tests {
     mod empty {
         use super::*;
 
+        /// Represents ``.
         #[test]
         fn test_parse_empty() -> Res {
             let tokens = vec![];
@@ -138,6 +139,7 @@ mod tests {
     mod leaves {
         use super::*;
 
+        /// Represents `1`.
         #[test]
         fn test_parse_num() -> Res {
             let tokens = vec![Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1))];
@@ -158,134 +160,431 @@ mod tests {
     mod infixes {
         use super::*;
 
-        #[test]
-        fn test_parse_infix_plus() -> Res {
-            let tokens = vec![
-                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
-                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-            ];
+        mod simple {
+            use super::*;
 
-            let ast = parse(&tokens)?;
+            /// Represents `1+2`.
+            #[test]
+            fn test_parse_plus() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                ];
 
-            let expected = Ast::new(
-                AstKind::Program {
-                    expressions: vec![Ast::new(
-                        AstKind::InfixPlus {
-                            left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                            right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                        },
-                        Range::from_nums(0, 0, 0, 3),
-                    )],
-                },
-                Range::from_nums(0, 0, 0, 3),
-            );
-            assert_eq!(ast, expected);
-            Ok(())
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixPlus {
+                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                            },
+                            Range::from_nums(0, 0, 0, 3),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 3),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
+
+            /// Represents `1-2`.
+            #[test]
+            fn test_parse_minus() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Minus, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                ];
+
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixMinus {
+                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                            },
+                            Range::from_nums(0, 0, 0, 3),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 3),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
+
+            /// Represents `1*2`.
+            #[test]
+            fn test_parse_asterisk() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Asterisk, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                ];
+
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixAsterisk {
+                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                            },
+                            Range::from_nums(0, 0, 0, 3),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 3),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
+
+            /// Represents `1/2`.
+            #[test]
+            fn test_parse_slash() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Slash, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                ];
+
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixSlash {
+                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                            },
+                            Range::from_nums(0, 0, 0, 3),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 3),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
+
+            /// Represents `1%2`.
+            #[test]
+            fn test_parse_percent() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Percent, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                ];
+
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixPercent {
+                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                            },
+                            Range::from_nums(0, 0, 0, 3),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 3),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
         }
 
-        #[test]
-        fn test_parse_infix_minus() -> Res {
-            let tokens = vec![
-                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                Token::new(TokenKind::Minus, Range::from_nums(0, 1, 0, 2)),
-                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-            ];
+        mod associativity {
+            use super::*;
 
-            let ast = parse(&tokens)?;
+            /// Represents `1+2+3`, and expects to be parsed into `(1+2)+3`.
+            #[test]
+            fn test_parse_plus_left_assoc() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    Token::new(TokenKind::Plus, Range::from_nums(0, 3, 0, 4)),
+                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                ];
 
-            let expected = Ast::new(
-                AstKind::Program {
-                    expressions: vec![Ast::new(
-                        AstKind::InfixMinus {
-                            left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                            right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                        },
-                        Range::from_nums(0, 0, 0, 3),
-                    )],
-                },
-                Range::from_nums(0, 0, 0, 3),
-            );
-            assert_eq!(ast, expected);
-            Ok(())
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixPlus {
+                                left: Box::new(Ast::new(
+                                    AstKind::InfixPlus {
+                                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                                    },
+                                    Range::from_nums(0, 0, 0, 3),
+                                )),
+                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
+                            },
+                            Range::from_nums(0, 0, 0, 5),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 5),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
+
+            /// Represents `1-2-3`, and expects to be parsed into `(1-2)-3`.
+            #[test]
+            fn test_parse_minus_left_assoc() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Minus, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    Token::new(TokenKind::Minus, Range::from_nums(0, 3, 0, 4)),
+                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                ];
+
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixMinus {
+                                left: Box::new(Ast::new(
+                                    AstKind::InfixMinus {
+                                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                                    },
+                                    Range::from_nums(0, 0, 0, 3),
+                                )),
+                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
+                            },
+                            Range::from_nums(0, 0, 0, 5),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 5),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
+
+            /// Represents `1*2*3`, and expects to be parsed into `(1*2)*3`.
+            #[test]
+            fn test_parse_asterisk_left_assoc() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Asterisk, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    Token::new(TokenKind::Asterisk, Range::from_nums(0, 3, 0, 4)),
+                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                ];
+
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixAsterisk {
+                                left: Box::new(Ast::new(
+                                    AstKind::InfixAsterisk {
+                                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                                    },
+                                    Range::from_nums(0, 0, 0, 3),
+                                )),
+                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
+                            },
+                            Range::from_nums(0, 0, 0, 5),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 5),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
+
+            /// Represents `1/2/3`, and expects to be parsed into `(1/2)/3`.
+            #[test]
+            fn test_parse_slash_left_assoc() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Slash, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    Token::new(TokenKind::Slash, Range::from_nums(0, 3, 0, 4)),
+                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                ];
+
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixSlash {
+                                left: Box::new(Ast::new(
+                                    AstKind::InfixSlash {
+                                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                                    },
+                                    Range::from_nums(0, 0, 0, 3),
+                                )),
+                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
+                            },
+                            Range::from_nums(0, 0, 0, 5),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 5),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
+
+            /// Represents `1%2%3`, and expects to be parsed into `(1%2)%3`.
+            #[test]
+            fn test_parse_percent_left_assoc() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Percent, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    Token::new(TokenKind::Percent, Range::from_nums(0, 3, 0, 4)),
+                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                ];
+
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixPercent {
+                                left: Box::new(Ast::new(
+                                    AstKind::InfixPercent {
+                                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                                    },
+                                    Range::from_nums(0, 0, 0, 3),
+                                )),
+                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
+                            },
+                            Range::from_nums(0, 0, 0, 5),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 5),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
         }
 
-        #[test]
-        fn test_parse_infix_asterisk() -> Res {
-            let tokens = vec![
-                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                Token::new(TokenKind::Asterisk, Range::from_nums(0, 1, 0, 2)),
-                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-            ];
+        mod priority {
+            use super::*;
 
-            let ast = parse(&tokens)?;
+            /// Represents `1+2*3`, and expects to be parsed into `1+(2*3)`.
+            #[test]
+            fn test_parse_asterisk_prioritized_over_plus() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    Token::new(TokenKind::Asterisk, Range::from_nums(0, 3, 0, 4)),
+                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                ];
 
-            let expected = Ast::new(
-                AstKind::Program {
-                    expressions: vec![Ast::new(
-                        AstKind::InfixAsterisk {
-                            left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                            right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                        },
-                        Range::from_nums(0, 0, 0, 3),
-                    )],
-                },
-                Range::from_nums(0, 0, 0, 3),
-            );
-            assert_eq!(ast, expected);
-            Ok(())
-        }
+                let ast = parse(&tokens)?;
 
-        #[test]
-        fn test_parse_infix_slash() -> Res {
-            let tokens = vec![
-                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                Token::new(TokenKind::Slash, Range::from_nums(0, 1, 0, 2)),
-                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-            ];
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixPlus {
+                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                right: Box::new(Ast::new(
+                                    AstKind::InfixAsterisk {
+                                        left: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                                        right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
+                                    },
+                                    Range::from_nums(0, 2, 0, 5),
+                                )),
+                            },
+                            Range::from_nums(0, 0, 0, 5),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 5),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
 
-            let ast = parse(&tokens)?;
+            /// Represents `1-2/3`, and expects to be parsed into `1-(2/3)`.
+            #[test]
+            fn test_parse_slash_prioritized_over_minus() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Minus, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    Token::new(TokenKind::Slash, Range::from_nums(0, 3, 0, 4)),
+                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                ];
 
-            let expected = Ast::new(
-                AstKind::Program {
-                    expressions: vec![Ast::new(
-                        AstKind::InfixSlash {
-                            left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                            right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                        },
-                        Range::from_nums(0, 0, 0, 3),
-                    )],
-                },
-                Range::from_nums(0, 0, 0, 3),
-            );
-            assert_eq!(ast, expected);
-            Ok(())
-        }
+                let ast = parse(&tokens)?;
 
-        #[test]
-        fn test_parse_infix_percent() -> Res {
-            let tokens = vec![
-                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
-                Token::new(TokenKind::Percent, Range::from_nums(0, 1, 0, 2)),
-                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
-            ];
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixMinus {
+                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                right: Box::new(Ast::new(
+                                    AstKind::InfixSlash {
+                                        left: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                                        right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
+                                    },
+                                    Range::from_nums(0, 2, 0, 5),
+                                )),
+                            },
+                            Range::from_nums(0, 0, 0, 5),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 5),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
 
-            let ast = parse(&tokens)?;
+            /// Represents `1+2%3`, and expects to be parsed into `1+(2%3)`.
+            #[test]
+            fn test_parse_percent_prioritized_over_plus() -> Res {
+                let tokens = vec![
+                    Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                    Token::new(TokenKind::Plus, Range::from_nums(0, 1, 0, 2)),
+                    Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+                    Token::new(TokenKind::Percent, Range::from_nums(0, 3, 0, 4)),
+                    Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
+                ];
 
-            let expected = Ast::new(
-                AstKind::Program {
-                    expressions: vec![Ast::new(
-                        AstKind::InfixPercent {
-                            left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                            right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                        },
-                        Range::from_nums(0, 0, 0, 3),
-                    )],
-                },
-                Range::from_nums(0, 0, 0, 3),
-            );
-            assert_eq!(ast, expected);
-            Ok(())
+                let ast = parse(&tokens)?;
+
+                let expected = Ast::new(
+                    AstKind::Program {
+                        expressions: vec![Ast::new(
+                            AstKind::InfixPlus {
+                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                                right: Box::new(Ast::new(
+                                    AstKind::InfixPercent {
+                                        left: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                                        right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
+                                    },
+                                    Range::from_nums(0, 2, 0, 5),
+                                )),
+                            },
+                            Range::from_nums(0, 0, 0, 5),
+                        )],
+                    },
+                    Range::from_nums(0, 0, 0, 5),
+                );
+                assert_eq!(ast, expected);
+                Ok(())
+            }
         }
     }
 }
