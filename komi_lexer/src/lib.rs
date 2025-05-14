@@ -380,11 +380,11 @@ mod tests {
 
             let token = lex(source);
 
-            let _expected = LexError::IllegalChar {
+            let expected = LexError::IllegalChar {
                 char: "^".to_string(),
                 location: Range::from_nums(0, 0, 0, 1),
             };
-            assert!(matches!(token, Err(_expected)));
+            assert_eq!(token, Err(expected));
             Ok(())
         }
     }
