@@ -27,12 +27,30 @@ impl<'a> Lexer<'a> {
 
         loop {
             match self.scanner.read() {
-                Some(s) if string::is_digit(s) => tokens.push(self.advance_and_lex_with_first_char(Self::lex_num, s)?),
-                Some("+") => tokens.push(self.advance_and_lex(Self::lex_plus)?),
-                Some("-") => tokens.push(self.advance_and_lex(Self::lex_minus)?),
-                Some("*") => tokens.push(self.advance_and_lex(Self::lex_asterisk)?),
-                Some("/") => tokens.push(self.advance_and_lex(Self::lex_slash)?),
-                Some("%") => tokens.push(self.advance_and_lex(Self::lex_percent)?),
+                Some(s) if string::is_digit(s) => {
+                    let token = self.advance_and_lex_with_first_char(Self::lex_num, s)?;
+                    tokens.push(token);
+                }
+                Some("+") => {
+                    let token = self.advance_and_lex(Self::lex_plus)?;
+                    tokens.push(token);
+                }
+                Some("-") => {
+                    let token = self.advance_and_lex(Self::lex_minus)?;
+                    tokens.push(token);
+                }
+                Some("*") => {
+                    let token = self.advance_and_lex(Self::lex_asterisk)?;
+                    tokens.push(token);
+                }
+                Some("/") => {
+                    let token = self.advance_and_lex(Self::lex_slash)?;
+                    tokens.push(token);
+                }
+                Some("%") => {
+                    let token = self.advance_and_lex(Self::lex_percent)?;
+                    tokens.push(token);
+                }
                 Some("#") => {
                     self.scanner.advance();
                     self.skip_comment();
@@ -67,7 +85,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn advance_and_lex<F>(&mut self, lex: F) -> Result<Token, LexError>
+    fn advance_and_lex<F>(&mut self, lex: F) -> ResToken
     where
         F: FnOnce(&mut Self, Range) -> ResToken,
     {
@@ -76,7 +94,7 @@ impl<'a> Lexer<'a> {
         lex(self, first_location)
     }
 
-    fn advance_and_lex_with_first_char<F>(&mut self, lex: F, first_char: &'a str) -> Result<Token, LexError>
+    fn advance_and_lex_with_first_char<F>(&mut self, lex: F, first_char: &'a str) -> ResToken
     where
         F: FnOnce(&mut Self, Range, &'a str) -> ResToken,
     {
