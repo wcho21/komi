@@ -20,43 +20,73 @@ pub fn execute(source: &str) -> ExecResult {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{EMPTY_REPR, ExecError, execute};
 
     type Res = Result<(), ExecError>;
 
-    #[test]
-    fn test_single_number_literal_without_decimal() -> Res {
-        let source = "12";
-        let executed = execute(source)?;
+    mod empty {
+        use super::*;
 
-        assert_eq!(executed, "12");
-        Ok(())
+        #[test]
+        fn test_empty() -> Res {
+            let source = "";
+
+            let repr = execute(&source)?;
+
+            let expected = format!("{EMPTY_REPR}");
+            assert_eq!(repr, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_whitespaces() -> Res {
+            let source = "  \t\t\r\r\n\n\r\n\r\n";
+
+            let repr = execute(&source)?;
+
+            let expected = format!("{EMPTY_REPR}");
+            assert_eq!(repr, expected);
+            Ok(())
+        }
     }
 
-    #[test]
-    fn test_single_number_literal_with_decimal() -> Res {
-        let source = "12.25";
-        let executed = execute(source)?;
+    mod math {
+        use super::*;
 
-        assert_eq!(executed, "12.25");
-        Ok(())
-    }
+        #[test]
+        fn test_single_number_literal_without_decimal() -> Res {
+            let source = "12";
+            let executed = execute(source)?;
 
-    #[test]
-    fn test_addition() -> Res {
-        let source = "1 + 2";
-        let executed = execute(source)?;
+            assert_eq!(executed, "12");
+            Ok(())
+        }
 
-        assert_eq!(executed, "3");
-        Ok(())
-    }
+        #[test]
+        fn test_single_number_literal_with_decimal() -> Res {
+            let source = "12.25";
+            let executed = execute(source)?;
 
-    #[test]
-    fn test_arithmetic_expression() -> Res {
-        let source = "9*8%7-6+5/4";
-        let executed = execute(source)?;
+            assert_eq!(executed, "12.25");
+            Ok(())
+        }
 
-        assert_eq!(executed, "-2.75");
-        Ok(())
+        #[test]
+        fn test_addition() -> Res {
+            let source = "1 + 2";
+            let executed = execute(source)?;
+
+            assert_eq!(executed, "3");
+            Ok(())
+        }
+
+        #[test]
+        fn test_arithmetic_expression() -> Res {
+            let source = "9*8%7-6+5/4";
+            let executed = execute(source)?;
+
+            assert_eq!(executed, "-2.75");
+            Ok(())
+        }
     }
 }
