@@ -39,12 +39,21 @@ name = "komi"
 version = "0.1.0"
 dependencies = [
  "komi_lexer",
+ "komi_parser",
  "komi_syntax",
  "komi_util",
 ]
 
 [[package]]
 name = "komi_lexer"
+version = "0.1.0"
+dependencies = [
+ "komi_syntax",
+ "komi_util",
+]
+
+[[package]]
+name = "komi_parser"
 version = "0.1.0"
 dependencies = [
  "komi_syntax",

@@ -16,7 +16,7 @@ use source_scanner::SourceScanner;
 type ResTokens = Result<Vec<Token>, LexError>;
 type ResToken = Result<Token, LexError>;
 
-/// A lexer to produce tokens from a source.
+/// Produces tokens from source codes.
 pub struct Lexer<'a> {
     scanner: SourceScanner<'a>,
 }

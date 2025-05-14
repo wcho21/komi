@@ -4,12 +4,13 @@ pub mod err;
 pub use engine::EMPTY_REPR;
 pub use err::ExecError;
 use komi_lexer::Lexer;
+use komi_parser::Parser;
 
 pub type ExecResult = Result<String, ExecError>;
 
 pub fn execute(source: &str) -> ExecResult {
     let tokens = Lexer::new(&source).lex()?;
-    let ast = engine::parse(&tokens)?;
+    let ast = Parser::new(&tokens).parse()?;
     let value = engine::evaluate(&ast)?;
     let representation = engine::represent(&value);
 

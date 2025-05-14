@@ -7,3 +7,4 @@ edition = "2024"
 komi_util = { path = "../komi_util" }
 komi_syntax = { path = "../komi_syntax" }
 komi_lexer = { path = "../komi_lexer" }
+komi_parser = { path = "../komi_parser" }
