@@ -1,6 +1,4 @@
-mod eval;
-
-pub use eval::EvalError;
+pub use komi_evaluator::EvalError;
 pub use komi_lexer::LexError;
 pub use komi_parser::ParseError;
 use std::error::Error;
