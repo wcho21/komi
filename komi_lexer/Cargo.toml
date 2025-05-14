@@ -1,9 +1,8 @@
 [package]
-name = "komi"
+name = "komi_lexer"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 komi_util = { path = "../komi_util" }
 komi_syntax = { path = "../komi_syntax" }
-komi_lexer = { path = "../komi_lexer" }

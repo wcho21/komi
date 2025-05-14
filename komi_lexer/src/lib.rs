@@ -1,7 +1,13 @@
+//! # Lexer
+//!
+//! Reads a source code and returns tokens as defined in the `komi_syntax` crate.
+//! Designed to be loosely coupled, so it does not rely on the implementation details of the parser.
+
+mod err;
 mod source_scanner;
 mod utf8_tape;
 
-use crate::core::err::LexError;
+pub use err::LexError;
 use komi_syntax::Token;
 use komi_util::string;
 use komi_util::{Range, Scanner};
@@ -11,7 +17,7 @@ type ResTokens = Result<Vec<Token>, LexError>;
 type ResToken = Result<Token, LexError>;
 
 /// A lexer to produce tokens from a source.
-struct Lexer<'a> {
+pub struct Lexer<'a> {
     scanner: SourceScanner<'a>,
 }
 
@@ -165,11 +171,6 @@ impl<'a> Lexer<'a> {
         let token = Token::from_num(num, Range::new(begin, end));
         return Ok(token);
     }
-}
-
-pub fn lex(source: &str) -> ResTokens {
-    let tokens = Lexer::new(source).lex()?;
-    Ok(tokens)
 }
 
 #[cfg(test)]

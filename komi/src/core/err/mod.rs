@@ -1,9 +1,8 @@
 mod eval;
-mod lex;
 mod parse;
 
 pub use eval::EvalError;
-pub use lex::LexError;
+pub use komi_lexer::LexError;
 pub use parse::ParseError;
 use std::error::Error;
 use std::fmt;
