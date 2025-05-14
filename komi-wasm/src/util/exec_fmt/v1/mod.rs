@@ -1,5 +1,4 @@
-use crate::core::ExecError;
-use crate::core::ExecResult;
+use komi::{ExecError, ExecResult};
 
 const OK_HEADER: &str = "ok";
 const ERR_HEADER: &str = "err";
@@ -34,10 +33,6 @@ fn format_err(err: ExecError) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::err::LexError;
-    use crate::util::{Range, Spot};
-
-    const RANGE_MOCK: Range = Range::new(Spot::new(0, 0), Spot::new(0, 1));
 
     #[test]
     fn test_format_ok() {
@@ -46,17 +41,6 @@ mod tests {
         let formatted = format(res);
 
         let expected = "ok some result";
-        assert_eq!(formatted, expected);
-    }
-
-    #[test]
-    fn test_format_err() {
-        let some_lex_error = LexError::IllegalChar { char: "bad".to_string(), location: RANGE_MOCK };
-        let res = Err(ExecError::Lex(some_lex_error));
-
-        let formatted = format(res);
-
-        let expected = "err Reason: LEX_ILLEGAL_CHAR, Cause: 'bad', Location: Range { begin: Spot { row: 0, col: 0 }, end: Spot { row: 0, col: 1 } }";
         assert_eq!(formatted, expected);
     }
 

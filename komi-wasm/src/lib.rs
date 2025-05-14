@@ -1,4 +1,3 @@
-mod core;
 mod util;
 
 use util::exec_fmt::format;
@@ -7,13 +6,13 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn execute(source: &str) -> String {
-    format(core::execute(source))
+    format(komi::execute(source))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::EMPTY_REPR;
+    use komi::EMPTY_REPR;
 
     #[test]
     fn test_execute_num() {

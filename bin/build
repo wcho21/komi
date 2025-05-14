@@ -9,8 +9,8 @@ COMMAND="build"
 
 # script body
 build() {
-  cd komi
-  wasm-pack build --no-typescript --target web ${BUILD_MODE} --out-dir ${OUT_DIR}
+  cd komi-wasm
+  wasm-pack build --no-typescript --target web ${BUILD_MODE} --out-dir ${OUT_DIR} --out-name komi
 
   if [ $? -ne 0 ]; then
     echo "Build failed"
