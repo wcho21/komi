@@ -185,6 +185,32 @@ mod tests {
         }
 
         #[test]
+        fn test_parse_infix_minus() -> Res {
+            let tokens = vec![
+                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                Token::new(TokenKind::Minus, Range::from_nums(0, 1, 0, 2)),
+                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+            ];
+
+            let ast = parse(&tokens)?;
+
+            let expected = Ast::new(
+                AstKind::Program {
+                    expressions: vec![Ast::new(
+                        AstKind::InfixMinus {
+                            left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                            right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                        },
+                        Range::from_nums(0, 0, 0, 3),
+                    )],
+                },
+                Range::from_nums(0, 0, 0, 3),
+            );
+            assert_eq!(ast, expected);
+            Ok(())
+        }
+
+        #[test]
         fn test_parse_infix_asterisk() -> Res {
             let tokens = vec![
                 Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
@@ -198,6 +224,58 @@ mod tests {
                 AstKind::Program {
                     expressions: vec![Ast::new(
                         AstKind::InfixAsterisk {
+                            left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                            right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                        },
+                        Range::from_nums(0, 0, 0, 3),
+                    )],
+                },
+                Range::from_nums(0, 0, 0, 3),
+            );
+            assert_eq!(ast, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_parse_infix_slash() -> Res {
+            let tokens = vec![
+                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                Token::new(TokenKind::Slash, Range::from_nums(0, 1, 0, 2)),
+                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+            ];
+
+            let ast = parse(&tokens)?;
+
+            let expected = Ast::new(
+                AstKind::Program {
+                    expressions: vec![Ast::new(
+                        AstKind::InfixSlash {
+                            left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                            right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                        },
+                        Range::from_nums(0, 0, 0, 3),
+                    )],
+                },
+                Range::from_nums(0, 0, 0, 3),
+            );
+            assert_eq!(ast, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_parse_infix_percent() -> Res {
+            let tokens = vec![
+                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                Token::new(TokenKind::Percent, Range::from_nums(0, 1, 0, 2)),
+                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+            ];
+
+            let ast = parse(&tokens)?;
+
+            let expected = Ast::new(
+                AstKind::Program {
+                    expressions: vec![Ast::new(
+                        AstKind::InfixPercent {
                             left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
                             right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
                         },
