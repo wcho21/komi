@@ -58,7 +58,7 @@ impl<'a> Parser<'a> {
         match self.scanner.read() {
             Some(Token { kind, location: _ }) => match kind {
                 TokenKind::Plus => {
-                    let bp = Bp::get_summative();
+                    let bp = Bp::get_additive();
                     if threshold_bp.right >= bp.left {
                         return None;
                     }
@@ -70,6 +70,21 @@ impl<'a> Parser<'a> {
                     };
 
                     let parsed_ast = Ast::from_infix_plus(left.clone(), right);
+                    Some(Ok(parsed_ast))
+                }
+                TokenKind::Asterisk => {
+                    let bp = Bp::get_multiplicative();
+                    if threshold_bp.right >= bp.left {
+                        return None;
+                    }
+
+                    self.scanner.advance();
+                    let right = match self.parse_expression(bp) {
+                        Ok(x) => x,
+                        x => return Some(x),
+                    };
+
+                    let parsed_ast = Ast::from_infix_asterisk(left.clone(), right);
                     Some(Ok(parsed_ast))
                 }
                 _ => None,
@@ -160,6 +175,32 @@ mod tests {
                 AstKind::Program {
                     expressions: vec![Ast::new(
                         AstKind::InfixPlus {
+                            left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                            right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                        },
+                        Range::from_nums(0, 0, 0, 3),
+                    )],
+                },
+                Range::from_nums(0, 0, 0, 3),
+            );
+            assert_eq!(ast, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_parse_infix_asterisk() -> Res {
+            let tokens = vec![
+                Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1)),
+                Token::new(TokenKind::Asterisk, Range::from_nums(0, 1, 0, 2)),
+                Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
+            ];
+
+            let ast = parse(&tokens)?;
+
+            let expected = Ast::new(
+                AstKind::Program {
+                    expressions: vec![Ast::new(
+                        AstKind::InfixAsterisk {
                             left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
                             right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
                         },

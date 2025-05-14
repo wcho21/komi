@@ -31,6 +31,10 @@ impl<'a> Evaluator<'a> {
                 kind: AstKind::InfixPlus { left, right },
                 location: _,
             } => Self::eval_infix_plus(left, right),
+            Ast {
+                kind: AstKind::InfixAsterisk { left, right },
+                location: _,
+            } => Self::eval_infix_asterisk(left, right),
         }
     }
 
@@ -61,6 +65,16 @@ impl<'a> Evaluator<'a> {
         let right_val = Self::eval_infix_operand_num(right)?;
 
         let evaluated = left_val + right_val;
+
+        let location = Range::new(left.location.begin, right.location.end);
+        Ok(Value::new(ValueKind::Number(evaluated), location))
+    }
+
+    fn eval_infix_asterisk(left: &Ast, right: &Ast) -> ResVal {
+        let left_val = Self::eval_infix_operand_num(left)?;
+        let right_val = Self::eval_infix_operand_num(right)?;
+
+        let evaluated = left_val * right_val;
 
         let location = Range::new(left.location.begin, right.location.end);
         Ok(Value::new(ValueKind::Number(evaluated), location))
@@ -125,6 +139,29 @@ mod tests {
         let value = evaluate(&program)?;
 
         let expected = Value::from_num(3.0, Range::from_nums(0, 0, 0, 3));
+        assert_eq!(value, expected);
+        Ok(())
+    }
+
+    /// Represents `2*3`.
+    #[test]
+    fn test_multiplication() -> Res {
+        let program = Ast::new(
+            AstKind::Program {
+                expressions: vec![Ast::new(
+                    AstKind::InfixAsterisk {
+                        left: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 0, 0, 1))),
+                        right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 2, 0, 3))),
+                    },
+                    Range::from_nums(0, 0, 0, 3),
+                )],
+            },
+            Range::from_nums(0, 0, 0, 1),
+        );
+
+        let value = evaluate(&program)?;
+
+        let expected = Value::from_num(6.0, Range::from_nums(0, 0, 0, 3));
         assert_eq!(value, expected);
         Ok(())
     }
