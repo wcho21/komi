@@ -1,9 +1,10 @@
-use crate::util::Range;
+use crate::util::{Range, range};
 
 /// Kinds of AST produced during parsing.
 /// Serves as the interface between a parser and its user.
 #[derive(Debug, PartialEq, Clone)]
 pub enum AstKind {
+    Program { expressions: Vec<Ast> },
     Number(f64),
     InfixPlus { left: Box<Ast>, right: Box<Ast> },
 }
@@ -20,6 +21,12 @@ impl Ast {
         Ast { kind, location }
     }
 
+    pub fn from_program(expressions: Vec<Ast>) -> Self {
+        let location = Self::locate_expressions(&expressions);
+
+        Ast::new(AstKind::Program { expressions }, location)
+    }
+
     pub fn from_num(num: f64, location: Range) -> Self {
         Ast::new(AstKind::Number(num), location)
     }
@@ -31,6 +38,17 @@ impl Ast {
             right: Box::new(right),
         };
         Ast::new(kind, location)
+    }
+
+    fn locate_expressions(expressions: &Vec<Ast>) -> Range {
+        if expressions.len() == 0 {
+            return range::ORIGIN;
+        }
+
+        Range {
+            begin: expressions[0].location.begin,
+            end: expressions[expressions.len() - 1].location.end,
+        }
     }
 }
 

@@ -23,7 +23,14 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_program(&mut self) -> ResAst {
-        self.parse_expression(Bp::get_lowest())
+        let mut expressions: Vec<Ast> = vec![];
+
+        while self.scanner.read() != None {
+            let e = self.parse_expression(Bp::get_lowest())?;
+            expressions.push(e);
+        }
+
+        return Ok(Ast::from_program(expressions));
     }
 
     fn parse_expression(&mut self, threshold_bp: &Bp) -> ResAst {
@@ -92,6 +99,8 @@ pub fn parse(tokens: &Vec<Token>) -> ResAst {
     Parser::new(tokens).parse()
 }
 
+/// Note: The `expected` variable in each test case should be build manually, not by using helper functions such as `from_program()`,
+/// since its value would otherwise depend on the internal logic of those functions.
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -99,20 +108,36 @@ mod tests {
 
     type Res = Result<(), ParseError>;
 
-    const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
+    mod empty {
+        use super::*;
 
-    // TODO: test empty tokens input
+        #[test]
+        fn test_parse_empty() -> Res {
+            let tokens = vec![];
 
-    mod single {
+            let ast = parse(&tokens)?;
+
+            let expected = Ast::new(AstKind::Program { expressions: vec![] }, Range::from_nums(0, 0, 0, 0));
+            assert_eq!(ast, expected);
+            Ok(())
+        }
+    }
+
+    mod leaves {
         use super::*;
 
         #[test]
         fn test_parse_num() -> Res {
-            let tokens = vec![Token::new(TokenKind::Number(1.0), RANGE_MOCKS[0])];
+            let tokens = vec![Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1))];
 
             let ast = parse(&tokens)?;
 
-            let expected = Ast::new(AstKind::Number(1.0), RANGE_MOCKS[0]);
+            let expected = Ast::new(
+                AstKind::Program {
+                    expressions: vec![Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))],
+                },
+                Range::from_nums(0, 0, 0, 1),
+            );
             assert_eq!(ast, expected);
             Ok(())
         }
@@ -132,9 +157,14 @@ mod tests {
             let ast = parse(&tokens)?;
 
             let expected = Ast::new(
-                AstKind::InfixPlus {
-                    left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                    right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                AstKind::Program {
+                    expressions: vec![Ast::new(
+                        AstKind::InfixPlus {
+                            left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                            right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                        },
+                        Range::from_nums(0, 0, 0, 3),
+                    )],
                 },
                 Range::from_nums(0, 0, 0, 3),
             );

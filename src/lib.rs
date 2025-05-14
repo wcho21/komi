@@ -13,10 +13,10 @@ pub fn execute(source: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use util::exec_fmt::is_err_format;
+    use crate::core::EMPTY_REPR;
 
     #[test]
-    fn test_execute() {
+    fn test_execute_num() {
         let source = "1";
         let executed = execute(source);
 
@@ -24,10 +24,10 @@ mod tests {
     }
 
     #[test]
-    fn test_execute_fail() {
+    fn test_execute_empty() {
         let source = " ";
         let executed = execute(source);
 
-        assert!(executed.starts_with("komi v1 err"));
+        assert_eq!(executed, format!("komi v1 ok {}", EMPTY_REPR))
     }
 }

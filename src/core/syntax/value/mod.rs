@@ -5,6 +5,7 @@ use crate::util::Range;
 #[derive(Debug, PartialEq)]
 pub enum ValueKind {
     Number(f64),
+    Empty,
 }
 
 /// A representation of the value produced during evaluation.
@@ -21,5 +22,9 @@ impl Value {
 
     pub fn from_num(num: f64, location: Range) -> Self {
         Value::new(ValueKind::Number(num), location)
+    }
+
+    pub fn from_empty(location: Range) -> Self {
+        Value::new(ValueKind::Empty, location)
     }
 }
