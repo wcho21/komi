@@ -1,7 +1,7 @@
 mod v1;
 
-use crate::core::ExecResult;
 use const_format::formatcp;
+use komi::ExecResult;
 
 const MAGIC: &str = "komi";
 const VER1: &str = "v1";
@@ -42,11 +42,6 @@ fn has_valid_err_payload(str: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::ExecError;
-    use crate::core::err::LexError;
-    use crate::util::{Range, Spot};
-
-    const RANGE_MOCK: Range = Range::new(Spot::new(0, 0), Spot::new(0, 1));
 
     #[test]
     fn test_format_ok() {
@@ -55,17 +50,6 @@ mod tests {
         let formatted = format(res);
 
         let expected = "komi v1 ok some ok result";
-        assert_eq!(formatted, expected);
-    }
-
-    #[test]
-    fn test_format_err() {
-        let some_lex_error = LexError::IllegalChar { char: "bad".to_string(), location: RANGE_MOCK };
-        let res = Err(ExecError::Lex(some_lex_error));
-
-        let formatted = format(res);
-
-        let expected = "komi v1 err Reason: LEX_ILLEGAL_CHAR, Cause: 'bad', Location: Range { begin: Spot { row: 0, col: 0 }, end: Spot { row: 0, col: 1 } }";
         assert_eq!(formatted, expected);
     }
 

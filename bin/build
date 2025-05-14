@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # configuration
-OUT_DIR=./dist
+OUT_DIR=${PWD}/dist
 
 # internal variables
 BUILD_MODE="--release"
@@ -9,7 +9,8 @@ COMMAND="build"
 
 # script body
 build() {
-  wasm-pack build --no-typescript --target web ${BUILD_MODE} --out-dir ${OUT_DIR}
+  cd komi-wasm
+  wasm-pack build --no-typescript --target web ${BUILD_MODE} --out-dir ${OUT_DIR} --out-name komi
 
   if [ $? -ne 0 ]; then
     echo "Build failed"
@@ -21,7 +22,7 @@ build() {
   fi
 
   # clean up
-  rm ${OUT_DIR}/.gitignore ${OUT_DIR}/package.json ${OUT_DIR}/README.md
+  rm ${OUT_DIR}/.gitignore ${OUT_DIR}/package.json
 }
 
 clean() {

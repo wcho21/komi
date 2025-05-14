@@ -37,8 +37,13 @@ dependencies = [
 [[package]]
 name = "komi"
 version = "0.1.0"
+
+[[package]]
+name = "komi-wasm"
+version = "0.1.0"
 dependencies = [
  "const_format",
+ "komi",
  "wasm-bindgen",
 ]
 

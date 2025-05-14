@@ -1,3 +1,5 @@
+# rust build artifacts
 target/
 
+# mac os config
 .DS_Store
