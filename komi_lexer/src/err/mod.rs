@@ -4,7 +4,7 @@ use std::fmt;
 
 /// Errors that can occur during the lexing process.
 /// Serves as the interface between a lexer and its user.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum LexError {
     /// An illegal char, not in the syntax.
     IllegalChar { char: String, location: Range },

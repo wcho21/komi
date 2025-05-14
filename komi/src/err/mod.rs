@@ -5,7 +5,7 @@ use std::error::Error;
 use std::fmt;
 
 /// Errors that can occur during the execution process.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ExecError {
     Lex(LexError),
     Parse(ParseError),
