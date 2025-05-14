@@ -1,6 +1,6 @@
 //! # Lexer
 //!
-//! Reads a source code and returns tokens as defined in the `komi_syntax` crate.
+//! Reads a source code and returns *tokens* as defined in the `komi_syntax` crate.
 //! Designed to be loosely coupled, so it does not rely on the implementation details of the parser.
 
 mod err;

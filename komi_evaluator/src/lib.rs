@@ -1,7 +1,7 @@
 //! # Evaluator
 //!
-//! Reads an abstract syntax tree (AST) and returns a value as defined in the `komi_syntax` crate.
-//! Note that value is a technical term referring to the result of evaluation.
+//! Reads *an abstract syntax tree (AST)* and returns a *value* as defined in the `komi_syntax` crate.
+//! Note that *value* is a technical term referring to the result of evaluation.
 //! Designed to be loosely coupled, so it does not rely on the implementation details of the parser.
 
 mod err;
