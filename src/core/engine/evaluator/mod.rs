@@ -32,10 +32,21 @@ impl<'a> Evaluator<'a> {
                 location: _,
             } => Self::eval_infix_plus(left, right),
             Ast {
+                kind: AstKind::InfixMinus { left, right },
+                location: _,
+            } => Self::eval_infix_minus(left, right),
+            Ast {
                 kind: AstKind::InfixAsterisk { left, right },
                 location: _,
             } => Self::eval_infix_asterisk(left, right),
-            _ => panic!("todo"),
+            Ast {
+                kind: AstKind::InfixSlash { left, right },
+                location: _,
+            } => Self::eval_infix_slash(left, right),
+            Ast {
+                kind: AstKind::InfixPercent { left, right },
+                location: _,
+            } => Self::eval_infix_percent(left, right),
         }
     }
 
@@ -174,6 +185,29 @@ mod tests {
         Ok(())
     }
 
+    /// Represents `3-2`.
+    #[test]
+    fn test_subtraction() -> Res {
+        let program = Ast::new(
+            AstKind::Program {
+                expressions: vec![Ast::new(
+                    AstKind::InfixMinus {
+                        left: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 0, 0, 1))),
+                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                    },
+                    Range::from_nums(0, 0, 0, 3),
+                )],
+            },
+            Range::from_nums(0, 0, 0, 1),
+        );
+
+        let value = evaluate(&program)?;
+
+        let expected = Value::from_num(1.0, Range::from_nums(0, 0, 0, 3));
+        assert_eq!(value, expected);
+        Ok(())
+    }
+
     /// Represents `2*3`.
     #[test]
     fn test_multiplication() -> Res {
@@ -193,6 +227,52 @@ mod tests {
         let value = evaluate(&program)?;
 
         let expected = Value::from_num(6.0, Range::from_nums(0, 0, 0, 3));
+        assert_eq!(value, expected);
+        Ok(())
+    }
+
+    /// Represents `6/3`.
+    #[test]
+    fn test_division() -> Res {
+        let program = Ast::new(
+            AstKind::Program {
+                expressions: vec![Ast::new(
+                    AstKind::InfixSlash {
+                        left: Box::new(Ast::new(AstKind::Number(6.0), Range::from_nums(0, 0, 0, 1))),
+                        right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 2, 0, 3))),
+                    },
+                    Range::from_nums(0, 0, 0, 3),
+                )],
+            },
+            Range::from_nums(0, 0, 0, 1),
+        );
+
+        let value = evaluate(&program)?;
+
+        let expected = Value::from_num(2.0, Range::from_nums(0, 0, 0, 3));
+        assert_eq!(value, expected);
+        Ok(())
+    }
+
+    /// Represents `6%4`.
+    #[test]
+    fn test_mod() -> Res {
+        let program = Ast::new(
+            AstKind::Program {
+                expressions: vec![Ast::new(
+                    AstKind::InfixPercent {
+                        left: Box::new(Ast::new(AstKind::Number(6.0), Range::from_nums(0, 0, 0, 1))),
+                        right: Box::new(Ast::new(AstKind::Number(4.0), Range::from_nums(0, 2, 0, 3))),
+                    },
+                    Range::from_nums(0, 0, 0, 3),
+                )],
+            },
+            Range::from_nums(0, 0, 0, 1),
+        );
+
+        let value = evaluate(&program)?;
+
+        let expected = Value::from_num(2.0, Range::from_nums(0, 0, 0, 3));
         assert_eq!(value, expected);
         Ok(())
     }
