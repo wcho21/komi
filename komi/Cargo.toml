@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-komi-util = { path = "../komi-util" }
+komi_util = { path = "../komi_util" }

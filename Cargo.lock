@@ -38,15 +38,15 @@ dependencies = [
 name = "komi"
 version = "0.1.0"
 dependencies = [
- "komi-util",
+ "komi_util",
 ]
 
 [[package]]
-name = "komi-util"
+name = "komi_util"
 version = "0.1.0"
 
 [[package]]
-name = "komi-wasm"
+name = "komi_wasm"
 version = "0.1.0"
 dependencies = [
  "const_format",
