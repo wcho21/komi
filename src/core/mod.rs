@@ -48,4 +48,13 @@ mod tests {
         assert_eq!(executed, "3");
         Ok(())
     }
+
+    #[test]
+    fn test_arithmetic_expression() -> Res {
+        let source = "9*8%7-6+5/4";
+        let executed = execute(source)?;
+
+        assert_eq!(executed, "-2.75");
+        Ok(())
+    }
 }
