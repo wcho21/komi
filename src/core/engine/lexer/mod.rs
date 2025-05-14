@@ -27,12 +27,13 @@ impl<'a> Lexer<'a> {
 
         loop {
             match self.scanner.read() {
-                Some(s) if string::is_ascii_single_digit(s) => tokens.push(self.lex_num()?),
+                Some(s) if string::is_digit(s) => tokens.push(self.lex_num()?),
                 Some("+") => tokens.push(self.lex_plus()?),
-                Some(s) if string::is_ascii_single_whitespace(s) || s == "\r\n" => {
+                Some("#") => {
                     self.scanner.advance();
-                    continue;
+                    self.skip_comment();
                 }
+                Some(s) if string::is_whitespace(s) => self.scanner.advance(),
                 Some(x) => {
                     return Err(LexError::IllegalChar {
                         char: x.to_string(),
@@ -46,6 +47,20 @@ impl<'a> Lexer<'a> {
         }
 
         Ok(tokens)
+    }
+
+    fn skip_comment(&mut self) -> () {
+        loop {
+            match self.scanner.read() {
+                Some("\n") | Some("\r") | Some("\r\n") | None => {
+                    self.scanner.advance();
+                    break;
+                }
+                _ => {
+                    self.scanner.advance();
+                }
+            }
+        }
     }
 
     fn lex_plus(&mut self) -> ResToken {
@@ -71,7 +86,7 @@ impl<'a> Lexer<'a> {
         // read whole number part
         loop {
             match self.scanner.read() {
-                Some(s) if string::is_ascii_single_digit(s) => {
+                Some(s) if string::is_digit(s) => {
                     lexeme.push_str(s);
                     self.scanner.advance();
                 }
@@ -95,7 +110,7 @@ impl<'a> Lexer<'a> {
         // read decimal part
         loop {
             match self.scanner.read() {
-                Some(s) if string::is_ascii_single_digit(s) => {
+                Some(s) if string::is_digit(s) => {
                     lexeme.push_str(s);
                     self.scanner.advance();
                 }
@@ -164,6 +179,28 @@ mod tests {
         #[test]
         fn test_lex_new_lines() -> Res {
             let source = "\n\n\r\r\r\n\r\n";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_comment() -> Res {
+            let source = "# comment";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_multi_line_comment() -> Res {
+            let source = "# comment line 1\r\n# comment line 2";
 
             let token = Lexer::new(source).lex()?;
 
