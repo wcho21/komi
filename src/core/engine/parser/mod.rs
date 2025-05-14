@@ -37,14 +37,19 @@ impl<'a> Parser<'a> {
         let mut top = self.parse_expression_start()?;
 
         loop {
-            let infix = match self.parse_expression_middle(&top, threshold_bp) {
-                Some(x) => x?,
-                None => {
-                    break;
-                }
+            let token = if let Some(x) = self.scanner.read() {
+                x
+            } else {
+                break;
             };
 
-            top = infix;
+            let bp = Bp::get_from_token(token);
+            if threshold_bp.right >= bp.left {
+                break;
+            }
+
+            self.scanner.advance();
+            top = self.parse_infix_expression(&top, token)?;
         }
 
         Ok(top)
@@ -54,42 +59,19 @@ impl<'a> Parser<'a> {
         self.parse_num()
     }
 
-    fn parse_expression_middle(&mut self, left: &Ast, threshold_bp: &Bp) -> Option<ResAst> {
-        match self.scanner.read() {
-            Some(Token { kind, location: _ }) => match kind {
-                TokenKind::Plus => {
-                    let bp = Bp::get_additive();
-                    if threshold_bp.right >= bp.left {
-                        return None;
-                    }
-
-                    self.scanner.advance();
-                    let right = match self.parse_expression(bp) {
-                        Ok(x) => x,
-                        x => return Some(x),
-                    };
-
-                    let parsed_ast = Ast::from_infix_plus(left.clone(), right);
-                    Some(Ok(parsed_ast))
-                }
-                TokenKind::Asterisk => {
-                    let bp = Bp::get_multiplicative();
-                    if threshold_bp.right >= bp.left {
-                        return None;
-                    }
-
-                    self.scanner.advance();
-                    let right = match self.parse_expression(bp) {
-                        Ok(x) => x,
-                        x => return Some(x),
-                    };
-
-                    let parsed_ast = Ast::from_infix_asterisk(left.clone(), right);
-                    Some(Ok(parsed_ast))
-                }
-                _ => None,
-            },
-            _ => None,
+    fn parse_infix_expression(&mut self, left: &Ast, infix: &Token) -> ResAst {
+        match infix.kind {
+            TokenKind::Plus => {
+                let right = self.parse_expression(Bp::get_additive())?;
+                let expression = Ast::from_infix_plus(left.clone(), right);
+                Ok(expression)
+            }
+            TokenKind::Asterisk => {
+                let right = self.parse_expression(Bp::get_multiplicative())?;
+                let expression = Ast::from_infix_asterisk(left.clone(), right);
+                Ok(expression)
+            }
+            _ => panic!("todo"),
         }
     }
 

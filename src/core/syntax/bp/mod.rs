@@ -1,3 +1,5 @@
+use crate::core::syntax::{Token, TokenKind};
+
 /// Binding powers for an infix token.
 pub struct Bp {
     pub left: u8,
@@ -25,5 +27,13 @@ impl Bp {
 
     pub fn get_multiplicative() -> &'static Bp {
         &MULTIPLICATIVE_BP
+    }
+
+    pub fn get_from_token(token: &Token) -> &'static Bp {
+        match token.kind {
+            TokenKind::Plus | TokenKind::Minus => &ADDITIVE_BP,
+            TokenKind::Asterisk | TokenKind::Slash | TokenKind::Percent => &MULTIPLICATIVE_BP,
+            _ => &LOWEST_BP,
+        }
     }
 }
