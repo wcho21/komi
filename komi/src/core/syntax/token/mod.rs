@@ -1,4 +1,4 @@
-use crate::util::Range;
+use komi_util::Range;
 
 /// Kinds of tokens produced during lexing.
 /// Serves as the interface between a lexer and its user.
@@ -58,7 +58,7 @@ impl Token {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::Spot;
+    use komi_util::Spot;
 
     const RANGE_MOCK: Range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
 

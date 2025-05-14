@@ -3,8 +3,8 @@ mod utf8_tape;
 
 use crate::core::err::LexError;
 use crate::core::syntax::Token;
-use crate::util::string;
-use crate::util::{Range, Scanner};
+use komi_util::string;
+use komi_util::{Range, Scanner};
 use source_scanner::SourceScanner;
 
 type ResTokens = Result<Vec<Token>, LexError>;

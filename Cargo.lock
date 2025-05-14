@@ -37,6 +37,13 @@ dependencies = [
 [[package]]
 name = "komi"
 version = "0.1.0"
+dependencies = [
+ "komi-util",
+]
+
+[[package]]
+name = "komi-util"
+version = "0.1.0"
 
 [[package]]
 name = "komi-wasm"

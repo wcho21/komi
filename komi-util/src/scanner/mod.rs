@@ -1,4 +1,4 @@
-use crate::util::Range;
+use crate::Range;
 
 /// Reading units one by one with spanning the location.
 pub trait Scanner {

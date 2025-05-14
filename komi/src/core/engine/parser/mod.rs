@@ -1,8 +1,8 @@
 mod token_scanner;
 
 use crate::core::err::ParseError;
-use crate::core::syntax::{Ast, AstKind, Bp, Token, TokenKind};
-use crate::util::{Range, Scanner, Spot};
+use crate::core::syntax::{Ast, Bp, Token, TokenKind};
+use komi_util::{Range, Scanner, Spot};
 use token_scanner::TokenScanner;
 
 type ResAst = Result<Ast, ParseError>;

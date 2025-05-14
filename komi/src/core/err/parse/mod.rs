@@ -1,4 +1,4 @@
-use crate::util::Range;
+use komi_util::Range;
 use std::error::Error;
 use std::fmt;
 

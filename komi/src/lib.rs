@@ -1,5 +1,4 @@
 mod core;
-mod util;
 
 pub use core::{EMPTY_REPR, ExecError, ExecResult};
 

@@ -1,5 +1,5 @@
 use super::utf8_tape::Utf8Tape;
-use crate::util::{Range, Scanner, Tape};
+use komi_util::{Range, Scanner, Tape};
 
 /// A character scaner from a source.
 /// It reads characters one by one, but treats CRLF ("\r\n") as a single character.

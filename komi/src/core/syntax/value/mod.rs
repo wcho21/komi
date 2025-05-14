@@ -1,4 +1,4 @@
-use crate::util::Range;
+use komi_util::Range;
 
 /// Kinds of values produced during evaluation.
 /// Serves as the interface between an evaluator and its user.

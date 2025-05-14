@@ -1,4 +1,4 @@
-use crate::util::{Range, range};
+use komi_util::{Range, range};
 
 /// Kinds of AST produced during parsing.
 /// Serves as the interface between a parser and its user.

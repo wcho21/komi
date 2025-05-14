@@ -1,5 +1,5 @@
 use crate::core::syntax::Token;
-use crate::util::{Range, Scanner, range};
+use komi_util::{Range, Scanner, range};
 
 pub struct TokenScanner<'a> {
     tokens: &'a Vec<Token>,
@@ -51,7 +51,7 @@ impl<'a> Scanner for TokenScanner<'a> {
 mod tests {
     use super::*;
     use crate::core::syntax::TokenKind;
-    use crate::util::Range;
+    use komi_util::Range;
 
     const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
     const TOKEN_KIND_MOCKS: &[TokenKind] = &[TokenKind::Number(1.0), TokenKind::Number(2.0)];
