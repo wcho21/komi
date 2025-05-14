@@ -17,9 +17,7 @@ struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
-        Self {
-            scanner: SourceScanner::new(source),
-        }
+        Self { scanner: SourceScanner::new(source) }
     }
 
     pub fn lex(&mut self) -> ResTokens {
@@ -57,10 +55,7 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if string::is_whitespace(s) => self.scanner.advance(),
                 Some(x) => {
-                    return Err(LexError::IllegalChar {
-                        char: x.to_string(),
-                        location: self.scanner.locate(),
-                    });
+                    return Err(LexError::IllegalChar { char: x.to_string(), location: self.scanner.locate() });
                 }
                 None => {
                     break;

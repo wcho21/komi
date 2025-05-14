@@ -37,46 +37,31 @@ impl Ast {
 
     pub fn from_infix_plus(left: Ast, right: Ast) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
-        let kind = AstKind::InfixPlus {
-            left: Box::new(left),
-            right: Box::new(right),
-        };
+        let kind = AstKind::InfixPlus { left: Box::new(left), right: Box::new(right) };
         Ast::new(kind, location)
     }
 
     pub fn from_infix_minus(left: Ast, right: Ast) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
-        let kind = AstKind::InfixMinus {
-            left: Box::new(left),
-            right: Box::new(right),
-        };
+        let kind = AstKind::InfixMinus { left: Box::new(left), right: Box::new(right) };
         Ast::new(kind, location)
     }
 
     pub fn from_infix_asterisk(left: Ast, right: Ast) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
-        let kind = AstKind::InfixAsterisk {
-            left: Box::new(left),
-            right: Box::new(right),
-        };
+        let kind = AstKind::InfixAsterisk { left: Box::new(left), right: Box::new(right) };
         Ast::new(kind, location)
     }
 
     pub fn from_infix_slash(left: Ast, right: Ast) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
-        let kind = AstKind::InfixSlash {
-            left: Box::new(left),
-            right: Box::new(right),
-        };
+        let kind = AstKind::InfixSlash { left: Box::new(left), right: Box::new(right) };
         Ast::new(kind, location)
     }
 
     pub fn from_infix_percent(left: Ast, right: Ast) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
-        let kind = AstKind::InfixPercent {
-            left: Box::new(left),
-            right: Box::new(right),
-        };
+        let kind = AstKind::InfixPercent { left: Box::new(left), right: Box::new(right) };
         Ast::new(kind, location)
     }
 
@@ -101,12 +86,6 @@ mod tests {
         let range = Range::from_nums(1, 2, 3, 4);
         let ast = Ast::new(AstKind::Number(1.0), range.clone());
 
-        assert_eq!(
-            ast,
-            Ast {
-                kind: AstKind::Number(1.0),
-                location: range
-            }
-        )
+        assert_eq!(ast, Ast { kind: AstKind::Number(1.0), location: range })
     }
 }

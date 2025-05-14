@@ -9,11 +9,7 @@ pub enum LexError {
     /// An illegal char, not in the syntax.
     IllegalChar { char: String, location: Range },
     /// An internal error impossible to occur if lexed as expected.
-    Unexpected {
-        expected: String,
-        received: String,
-        location: Range,
-    },
+    Unexpected { expected: String, received: String, location: Range },
 }
 
 impl fmt::Display for LexError {
@@ -24,11 +20,7 @@ impl fmt::Display for LexError {
                 "Reason: LEX_ILLEGAL_CHAR, Cause: '{}', Location: {:?}",
                 char, location
             ),
-            LexError::Unexpected {
-                expected,
-                received,
-                location,
-            } => write!(
+            LexError::Unexpected { expected, received, location } => write!(
                 f,
                 "Reason: LEX_UNEXPECTED, Cause: '{}', Expected: '{}', Location: {:?}",
                 received, expected, location
