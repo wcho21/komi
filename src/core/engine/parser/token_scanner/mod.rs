@@ -9,11 +9,7 @@ pub struct TokenScanner<'a> {
 
 impl<'a> TokenScanner<'a> {
     pub fn new(tokens: &'a Vec<Token>) -> Self {
-        Self {
-            tokens,
-            base_index: 0,
-            last_location: range::ORIGIN,
-        }
+        Self { tokens, base_index: 0, last_location: range::ORIGIN }
     }
 
     fn is_end(&self) -> bool {

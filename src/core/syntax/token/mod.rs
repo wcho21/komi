@@ -66,90 +66,48 @@ mod tests {
     fn test_new() {
         let token = Token::new(TokenKind::Number(1.0), RANGE_MOCK);
 
-        assert_eq!(
-            token,
-            Token {
-                kind: TokenKind::Number(1.0),
-                location: RANGE_MOCK,
-            }
-        )
+        assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
     }
 
     #[test]
     fn test_from_num() {
         let token = Token::from_num(1.0, RANGE_MOCK);
 
-        assert_eq!(
-            token,
-            Token {
-                kind: TokenKind::Number(1.0),
-                location: RANGE_MOCK,
-            }
-        )
+        assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
     }
 
     #[test]
     fn test_from_plus() {
         let token = Token::from_plus(RANGE_MOCK);
 
-        assert_eq!(
-            token,
-            Token {
-                kind: TokenKind::Plus,
-                location: RANGE_MOCK,
-            }
-        )
+        assert_eq!(token, Token { kind: TokenKind::Plus, location: RANGE_MOCK })
     }
 
     #[test]
     fn test_from_minus() {
         let token = Token::from_minus(RANGE_MOCK);
 
-        assert_eq!(
-            token,
-            Token {
-                kind: TokenKind::Minus,
-                location: RANGE_MOCK,
-            }
-        )
+        assert_eq!(token, Token { kind: TokenKind::Minus, location: RANGE_MOCK })
     }
 
     #[test]
     fn test_from_asterisk() {
         let token = Token::from_asterisk(RANGE_MOCK);
 
-        assert_eq!(
-            token,
-            Token {
-                kind: TokenKind::Asterisk,
-                location: RANGE_MOCK,
-            }
-        )
+        assert_eq!(token, Token { kind: TokenKind::Asterisk, location: RANGE_MOCK })
     }
 
     #[test]
     fn test_from_slash() {
         let token = Token::from_slash(RANGE_MOCK);
 
-        assert_eq!(
-            token,
-            Token {
-                kind: TokenKind::Slash,
-                location: RANGE_MOCK,
-            }
-        )
+        assert_eq!(token, Token { kind: TokenKind::Slash, location: RANGE_MOCK })
     }
 
     #[test]
     fn test_from_percent() {
         let token = Token::from_percent(RANGE_MOCK);
 
-        assert_eq!(
-            token,
-            Token {
-                kind: TokenKind::Percent,
-                location: RANGE_MOCK,
-            }
-        )
+        assert_eq!(token, Token { kind: TokenKind::Percent, location: RANGE_MOCK })
     }
 }

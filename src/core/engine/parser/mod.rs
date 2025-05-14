@@ -13,9 +13,7 @@ struct Parser<'a> {
 
 impl<'a> Parser<'a> {
     pub fn new(tokens: &'a Vec<Token>) -> Self {
-        Self {
-            scanner: TokenScanner::new(tokens),
-        }
+        Self { scanner: TokenScanner::new(tokens) }
     }
 
     pub fn parse(&mut self) -> ResAst {
@@ -92,10 +90,7 @@ impl<'a> Parser<'a> {
 
     fn parse_num(&mut self) -> ResAst {
         match self.scanner.read() {
-            Some(Token {
-                kind: TokenKind::Number(n),
-                location,
-            }) => {
+            Some(Token { kind: TokenKind::Number(n), location }) => {
                 self.scanner.advance();
                 Ok(Ast::from_num(*n, *location))
             }

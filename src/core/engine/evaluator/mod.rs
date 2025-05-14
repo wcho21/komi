@@ -19,34 +19,13 @@ impl<'a> Evaluator<'a> {
 
     fn eval_ast(ast: &Ast) -> ResVal {
         match ast {
-            Ast {
-                kind: AstKind::Program { expressions },
-                location,
-            } => Self::eval_program(expressions, location),
-            Ast {
-                kind: AstKind::Number(n),
-                location,
-            } => Self::eval_number(n, location),
-            Ast {
-                kind: AstKind::InfixPlus { left, right },
-                location: _,
-            } => Self::eval_infix_plus(left, right),
-            Ast {
-                kind: AstKind::InfixMinus { left, right },
-                location: _,
-            } => Self::eval_infix_minus(left, right),
-            Ast {
-                kind: AstKind::InfixAsterisk { left, right },
-                location: _,
-            } => Self::eval_infix_asterisk(left, right),
-            Ast {
-                kind: AstKind::InfixSlash { left, right },
-                location: _,
-            } => Self::eval_infix_slash(left, right),
-            Ast {
-                kind: AstKind::InfixPercent { left, right },
-                location: _,
-            } => Self::eval_infix_percent(left, right),
+            Ast { kind: AstKind::Program { expressions }, location } => Self::eval_program(expressions, location),
+            Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
+            Ast { kind: AstKind::InfixPlus { left, right }, location: _ } => Self::eval_infix_plus(left, right),
+            Ast { kind: AstKind::InfixMinus { left, right }, location: _ } => Self::eval_infix_minus(left, right),
+            Ast { kind: AstKind::InfixAsterisk { left, right }, location: _ } => Self::eval_infix_asterisk(left, right),
+            Ast { kind: AstKind::InfixSlash { left, right }, location: _ } => Self::eval_infix_slash(left, right),
+            Ast { kind: AstKind::InfixPercent { left, right }, location: _ } => Self::eval_infix_percent(left, right),
         }
     }
 

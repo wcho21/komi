@@ -11,11 +11,7 @@ pub struct SourceScanner<'a> {
 
 impl<'a> SourceScanner<'a> {
     pub fn new(source: &'a str) -> Self {
-        Self {
-            tape: Utf8Tape::new(source),
-            col: 0,
-            row: 0,
-        }
+        Self { tape: Utf8Tape::new(source), col: 0, row: 0 }
     }
 }
 

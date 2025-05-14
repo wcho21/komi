@@ -7,5 +7,7 @@ newline_style="auto"
 remove_nested_parens=true
 reorder_imports=true
 reorder_modules=true
+struct_lit_width=60
+struct_variant_width=60
 tab_spaces=4
 edition="2024"
