@@ -20,14 +20,27 @@ impl<'a> Evaluator<'a> {
     fn eval_ast(ast: &Ast) -> ResVal {
         match ast {
             Ast {
+                kind: AstKind::Program { expressions },
+                location,
+            } => Self::eval_program(expressions, location),
+            Ast {
                 kind: AstKind::Number(n),
                 location,
             } => Self::eval_number(n, location),
             Ast {
                 kind: AstKind::InfixPlus { left, right },
-                location,
+                location: _,
             } => Self::eval_infix_plus(left, right),
         }
+    }
+
+    fn eval_program(expressions: &Vec<Ast>, location: &Range) -> ResVal {
+        let mut last_value = Value::from_empty(*location);
+
+        for expression in expressions {
+            last_value = Self::eval_ast(expression)?;
+        }
+        Ok(last_value)
     }
 
     fn eval_number(num: &f64, location: &Range) -> ResVal {
@@ -64,30 +77,52 @@ mod tests {
 
     type Res = Result<(), EvalError>;
 
-    const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
-
+    /// Represents ``.
     #[test]
-    fn test_single_num() -> Res {
-        let ast = Ast::new(AstKind::Number(1.0), RANGE_MOCKS[0]);
+    fn test_empty() -> Res {
+        let program = Ast::new(AstKind::Program { expressions: vec![] }, Range::from_nums(0, 0, 0, 0));
 
-        let value = evaluate(&ast)?;
+        let value = evaluate(&program)?;
 
-        let expected = Value::from_num(1.0, RANGE_MOCKS[0]);
+        let expected = Value::new(ValueKind::Empty, Range::from_nums(0, 0, 0, 0));
         assert_eq!(value, expected);
         Ok(())
     }
 
+    /// Represents `1`.
     #[test]
-    fn test_addition() -> Res {
-        let ast = Ast::new(
-            AstKind::InfixPlus {
-                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+    fn test_single_num() -> Res {
+        let program = Ast::new(
+            AstKind::Program {
+                expressions: vec![Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))],
             },
-            Range::from_nums(0, 0, 0, 3),
+            Range::from_nums(0, 0, 0, 1),
         );
 
-        let value = evaluate(&ast)?;
+        let value = evaluate(&program)?;
+
+        let expected = Value::from_num(1.0, Range::from_nums(0, 0, 0, 1));
+        assert_eq!(value, expected);
+        Ok(())
+    }
+
+    /// Represents `1+2`.
+    #[test]
+    fn test_addition() -> Res {
+        let program = Ast::new(
+            AstKind::Program {
+                expressions: vec![Ast::new(
+                    AstKind::InfixPlus {
+                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
+                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
+                    },
+                    Range::from_nums(0, 0, 0, 3),
+                )],
+            },
+            Range::from_nums(0, 0, 0, 1),
+        );
+
+        let value = evaluate(&program)?;
 
         let expected = Value::from_num(3.0, Range::from_nums(0, 0, 0, 3));
         assert_eq!(value, expected);

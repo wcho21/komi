@@ -2,6 +2,7 @@ mod engine;
 pub mod err;
 mod syntax;
 
+pub use engine::EMPTY_REPR;
 pub use err::ExecError;
 
 pub type ExecResult = Result<String, ExecError>;
