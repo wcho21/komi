@@ -1,0 +1,11 @@
+hard_tabs=false
+match_arm_leading_pipes="never"
+match_block_trailing_comma=false
+max_width=120
+merge_derives=true
+newline_style="auto"
+remove_nested_parens=true
+reorder_imports=true
+reorder_modules=true
+tab_spaces=4
+edition="2024"

@@ -20,10 +20,7 @@ impl<'a> Utf8Tape<'a> {
             base += size;
         }
 
-        Self {
-            chars,
-            base_index: 0,
-        }
+        Self { chars, base_index: 0 }
     }
 }
 

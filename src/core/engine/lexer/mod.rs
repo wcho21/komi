@@ -28,34 +28,28 @@ impl<'a> Lexer<'a> {
         loop {
             match self.scanner.read() {
                 Some(s) if string::is_digit(s) => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_num(first_location, s)?);
+                    let token = self.advance_and_lex_with_first_char(Self::lex_num, s)?;
+                    tokens.push(token);
                 }
                 Some("+") => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_plus(first_location)?);
+                    let token = self.advance_and_lex(Self::lex_plus)?;
+                    tokens.push(token);
                 }
                 Some("-") => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_minus(first_location)?);
+                    let token = self.advance_and_lex(Self::lex_minus)?;
+                    tokens.push(token);
                 }
                 Some("*") => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_asterisk(first_location)?);
+                    let token = self.advance_and_lex(Self::lex_asterisk)?;
+                    tokens.push(token);
                 }
                 Some("/") => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_slash(first_location)?);
+                    let token = self.advance_and_lex(Self::lex_slash)?;
+                    tokens.push(token);
                 }
                 Some("%") => {
-                    let first_location = self.scanner.locate();
-                    self.scanner.advance();
-                    tokens.push(self.lex_percent(first_location)?);
+                    let token = self.advance_and_lex(Self::lex_percent)?;
+                    tokens.push(token);
                 }
                 Some("#") => {
                     self.scanner.advance();
@@ -89,6 +83,24 @@ impl<'a> Lexer<'a> {
                 }
             }
         }
+    }
+
+    fn advance_and_lex<F>(&mut self, lex: F) -> ResToken
+    where
+        F: FnOnce(&mut Self, Range) -> ResToken,
+    {
+        let first_location = self.scanner.locate();
+        self.scanner.advance();
+        lex(self, first_location)
+    }
+
+    fn advance_and_lex_with_first_char<F>(&mut self, lex: F, first_char: &'a str) -> ResToken
+    where
+        F: FnOnce(&mut Self, Range, &'a str) -> ResToken,
+    {
+        let first_location = self.scanner.locate();
+        self.scanner.advance();
+        lex(self, first_location, first_char)
     }
 
     fn lex_plus(&mut self, first_location: Range) -> ResToken {
@@ -274,19 +286,60 @@ mod tests {
         }
     }
 
-    mod plus {
+    mod single_chars {
         use super::*;
 
         #[test]
-        fn test_lex() -> Res {
+        fn test_lex_plus() -> Res {
             let source = "+";
 
             let token = Lexer::new(source).lex()?;
 
-            let expected = vec![Token::new(
-                TokenKind::Plus,
-                Range::from_nums(0, 0, 0, "+".len() as u64),
-            )];
+            let expected = vec![Token::new(TokenKind::Plus, Range::from_nums(0, 0, 0, 1))];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_minus() -> Res {
+            let source = "-";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![Token::new(TokenKind::Minus, Range::from_nums(0, 0, 0, 1))];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_asterisk() -> Res {
+            let source = "*";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![Token::new(TokenKind::Asterisk, Range::from_nums(0, 0, 0, 1))];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_slash() -> Res {
+            let source = "/";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![Token::new(TokenKind::Slash, Range::from_nums(0, 0, 0, 1))];
+            assert_eq!(token, expected);
+            Ok(())
+        }
+
+        #[test]
+        fn test_lex_percent() -> Res {
+            let source = "%";
+
+            let token = Lexer::new(source).lex()?;
+
+            let expected = vec![Token::new(TokenKind::Percent, Range::from_nums(0, 0, 0, 1))];
             assert_eq!(token, expected);
             Ok(())
         }
@@ -302,10 +355,7 @@ mod tests {
             let token = Lexer::new(source).lex()?;
 
             let expected = vec![
-                Token::new(
-                    TokenKind::Number(12.0),
-                    Range::from_nums(0, 0, 0, "12".len() as u64),
-                ),
+                Token::new(TokenKind::Number(12.0), Range::from_nums(0, 0, 0, "12".len() as u64)),
                 Token::new(
                     TokenKind::Plus,
                     Range::from_nums(0, "12 ".len() as u64, 0, "12 +".len() as u64),

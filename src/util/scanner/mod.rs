@@ -4,7 +4,7 @@ use crate::util::Range;
 pub trait Scanner {
     type Item;
 
-    fn read(&self) -> Option<Self::Item>;
+    fn read(&self) -> Self::Item;
     fn advance(&mut self) -> ();
     fn locate(&self) -> Range;
 }

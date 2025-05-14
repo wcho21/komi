@@ -18,11 +18,9 @@ impl<'a> fmt::Display for EvalError {
                 "Reason: EVAL_BAD_ADDITION_OPERAND, Cause: '{}', Location: {:?}",
                 str, location
             ),
-            EvalError::Unexpected(str, location) => write!(
-                f,
-                "Reason: EVAL_UNEXPECTED, Cause: '{}', Location: {:?}",
-                str, location
-            ),
+            EvalError::Unexpected(str, location) => {
+                write!(f, "Reason: EVAL_UNEXPECTED, Cause: '{}', Location: {:?}", str, location)
+            }
         }
     }
 }
