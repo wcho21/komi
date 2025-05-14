@@ -4,6 +4,7 @@ pub use komi_parser::ParseError;
 use std::error::Error;
 use std::fmt;
 
+/// Errors that can occur during the execution process.
 #[derive(Debug)]
 pub enum ExecError {
     Lex(LexError),

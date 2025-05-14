@@ -1,7 +1,13 @@
+//! Representer
+//!
+//! Returns *a string representation* from *a value*.
+
 use komi_syntax::{Value, ValueKind};
 
+/// The representation of the empty value.
 pub const EMPTY_REPR: &str = "(EMPTY)";
 
+/// Produces the string representation for a given value.
 pub fn represent(val: &Value) -> String {
     match val.kind {
         ValueKind::Number(n) => n.to_string(),
