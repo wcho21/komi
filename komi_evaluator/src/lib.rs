@@ -13,7 +13,7 @@ use komi_util::Range;
 type ResVal = Result<Value, EvalError>;
 
 /// Produces a value from an AST.
-pub struct Evaluator<'a> {
+struct Evaluator<'a> {
     ast: &'a Ast,
 }
 
@@ -111,9 +111,14 @@ impl<'a> Evaluator<'a> {
     }
 }
 
+/// Produces a value from an AST.
+pub fn eval(ast: &Ast) -> ResVal {
+    Evaluator::new(ast).eval()
+}
+
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Ast, AstKind, EvalError, Range, Value, ValueKind, eval};
 
     type Res = Result<(), EvalError>;
 
@@ -125,7 +130,7 @@ mod tests {
         fn test_empty() -> Res {
             let program = Ast::new(AstKind::Program { expressions: vec![] }, Range::from_nums(0, 0, 0, 0));
 
-            let value = Evaluator::new(&program).eval()?;
+            let value = eval(&program)?;
 
             let expected = Value::new(ValueKind::Empty, Range::from_nums(0, 0, 0, 0));
             assert_eq!(value, expected);
@@ -146,7 +151,7 @@ mod tests {
                 Range::from_nums(0, 0, 0, 1),
             );
 
-            let value = Evaluator::new(&program).eval()?;
+            let value = eval(&program)?;
 
             let expected = Value::from_num(1.0, Range::from_nums(0, 0, 0, 1));
             assert_eq!(value, expected);
@@ -176,7 +181,7 @@ mod tests {
                     Range::from_nums(0, 0, 0, 1),
                 );
 
-                let value = Evaluator::new(&program).eval()?;
+                let value = eval(&program)?;
 
                 let expected = Value::from_num(3.0, Range::from_nums(0, 0, 0, 3));
                 assert_eq!(value, expected);
@@ -199,7 +204,7 @@ mod tests {
                     Range::from_nums(0, 0, 0, 1),
                 );
 
-                let value = Evaluator::new(&program).eval()?;
+                let value = eval(&program)?;
 
                 let expected = Value::from_num(1.0, Range::from_nums(0, 0, 0, 3));
                 assert_eq!(value, expected);
@@ -222,7 +227,7 @@ mod tests {
                     Range::from_nums(0, 0, 0, 1),
                 );
 
-                let value = Evaluator::new(&program).eval()?;
+                let value = eval(&program)?;
 
                 let expected = Value::from_num(6.0, Range::from_nums(0, 0, 0, 3));
                 assert_eq!(value, expected);
@@ -245,7 +250,7 @@ mod tests {
                     Range::from_nums(0, 0, 0, 1),
                 );
 
-                let value = Evaluator::new(&program).eval()?;
+                let value = eval(&program)?;
 
                 let expected = Value::from_num(2.0, Range::from_nums(0, 0, 0, 3));
                 assert_eq!(value, expected);
@@ -268,7 +273,7 @@ mod tests {
                     Range::from_nums(0, 0, 0, 1),
                 );
 
-                let value = Evaluator::new(&program).eval()?;
+                let value = eval(&program)?;
 
                 let expected = Value::from_num(2.0, Range::from_nums(0, 0, 0, 3));
                 assert_eq!(value, expected);
@@ -321,7 +326,7 @@ mod tests {
                     Range::from_nums(0, 0, 0, 11),
                 );
 
-                let value = Evaluator::new(&program).eval()?;
+                let value = eval(&program)?;
 
                 let expected = Value::from_num(-2.75, Range::from_nums(0, 0, 0, 11));
                 assert_eq!(value, expected);

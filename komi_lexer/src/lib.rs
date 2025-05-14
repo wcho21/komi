@@ -17,7 +17,7 @@ type ResTokens = Result<Vec<Token>, LexError>;
 type ResToken = Result<Token, LexError>;
 
 /// Produces tokens from source codes.
-pub struct Lexer<'a> {
+struct Lexer<'a> {
     scanner: SourceScanner<'a>,
 }
 
@@ -173,9 +173,14 @@ impl<'a> Lexer<'a> {
     }
 }
 
+/// Produces tokens from source codes.
+pub fn lex(source: &str) -> ResTokens {
+    Lexer::new(source).lex()
+}
+
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{LexError, Range, Token, lex};
     use komi_syntax::TokenKind;
 
     type Res = Result<(), LexError>;
@@ -187,7 +192,7 @@ mod tests {
         fn test_lex_empty() -> Res {
             let source = "";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![];
             assert_eq!(token, expected);
@@ -198,7 +203,7 @@ mod tests {
         fn test_lex_whitespaces() -> Res {
             let source = "   ";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![];
             assert_eq!(token, expected);
@@ -209,7 +214,7 @@ mod tests {
         fn test_lex_tabs() -> Res {
             let source = "\t\t";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![];
             assert_eq!(token, expected);
@@ -220,7 +225,7 @@ mod tests {
         fn test_lex_new_lines() -> Res {
             let source = "\n\n\r\r\r\n\r\n";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![];
             assert_eq!(token, expected);
@@ -231,7 +236,7 @@ mod tests {
         fn test_lex_comment() -> Res {
             let source = "# comment";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![];
             assert_eq!(token, expected);
@@ -242,7 +247,7 @@ mod tests {
         fn test_lex_multi_line_comment() -> Res {
             let source = "# comment line 1\r\n# comment line 2";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![];
             assert_eq!(token, expected);
@@ -257,7 +262,7 @@ mod tests {
         fn test_lex_without_decimal() -> Res {
             let source = "123";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![Token::new(
                 TokenKind::Number(123.0),
@@ -271,7 +276,7 @@ mod tests {
         fn test_lex_with_decimal() -> Res {
             let source = "12.25"; // chosen to be equal on float comparison
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![Token::new(
                 TokenKind::Number(12.25),
@@ -289,7 +294,7 @@ mod tests {
         fn test_lex_plus() -> Res {
             let source = "+";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![Token::new(TokenKind::Plus, Range::from_nums(0, 0, 0, 1))];
             assert_eq!(token, expected);
@@ -300,7 +305,7 @@ mod tests {
         fn test_lex_minus() -> Res {
             let source = "-";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![Token::new(TokenKind::Minus, Range::from_nums(0, 0, 0, 1))];
             assert_eq!(token, expected);
@@ -311,7 +316,7 @@ mod tests {
         fn test_lex_asterisk() -> Res {
             let source = "*";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![Token::new(TokenKind::Asterisk, Range::from_nums(0, 0, 0, 1))];
             assert_eq!(token, expected);
@@ -322,7 +327,7 @@ mod tests {
         fn test_lex_slash() -> Res {
             let source = "/";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![Token::new(TokenKind::Slash, Range::from_nums(0, 0, 0, 1))];
             assert_eq!(token, expected);
@@ -333,7 +338,7 @@ mod tests {
         fn test_lex_percent() -> Res {
             let source = "%";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![Token::new(TokenKind::Percent, Range::from_nums(0, 0, 0, 1))];
             assert_eq!(token, expected);
@@ -348,7 +353,7 @@ mod tests {
         fn test_lex() -> Res {
             let source = "12 + 34.675";
 
-            let token = Lexer::new(source).lex()?;
+            let token = lex(source)?;
 
             let expected = vec![
                 Token::new(TokenKind::Number(12.0), Range::from_nums(0, 0, 0, "12".len() as u64)),
@@ -373,7 +378,7 @@ mod tests {
         fn test_illegal_char() -> Res {
             let source = "^";
 
-            let token = Lexer::new(source).lex();
+            let token = lex(source);
 
             let _expected = LexError::IllegalChar {
                 char: "^".to_string(),

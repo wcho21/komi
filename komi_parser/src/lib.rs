@@ -14,7 +14,7 @@ use token_scanner::TokenScanner;
 type ResAst = Result<Ast, ParseError>;
 
 /// Produces an AST from tokens.
-pub struct Parser<'a> {
+struct Parser<'a> {
     scanner: TokenScanner<'a>,
 }
 
@@ -109,11 +109,16 @@ impl<'a> Parser<'a> {
     }
 }
 
+/// Produces an AST from tokens.
+pub fn parse(tokens: &Vec<Token>) -> ResAst {
+    Parser::new(tokens).parse()
+}
+
 /// Note: The `expected` variable in each test case should be build manually, not by using helper functions such as `from_program()`,
 /// since its value would otherwise depend on the internal logic of those functions.
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{Ast, ParseError, Range, Token, TokenKind, parse};
     use komi_syntax::AstKind;
 
     type Res = Result<(), ParseError>;
@@ -126,7 +131,7 @@ mod tests {
         fn test_parse_empty() -> Res {
             let tokens = vec![];
 
-            let ast = Parser::new(&tokens).parse()?;
+            let ast = parse(&tokens)?;
 
             let expected = Ast::new(AstKind::Program { expressions: vec![] }, Range::from_nums(0, 0, 0, 0));
             assert_eq!(ast, expected);
@@ -142,7 +147,7 @@ mod tests {
         fn test_parse_num() -> Res {
             let tokens = vec![Token::new(TokenKind::Number(1.0), Range::from_nums(0, 0, 0, 1))];
 
-            let ast = Parser::new(&tokens).parse()?;
+            let ast = parse(&tokens)?;
 
             let expected = Ast::new(
                 AstKind::Program {
@@ -170,7 +175,7 @@ mod tests {
                     Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -197,7 +202,7 @@ mod tests {
                     Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -224,7 +229,7 @@ mod tests {
                     Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -251,7 +256,7 @@ mod tests {
                     Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -278,7 +283,7 @@ mod tests {
                     Token::new(TokenKind::Number(2.0), Range::from_nums(0, 2, 0, 3)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -311,7 +316,7 @@ mod tests {
                     Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -346,7 +351,7 @@ mod tests {
                     Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -381,7 +386,7 @@ mod tests {
                     Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -416,7 +421,7 @@ mod tests {
                     Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -451,7 +456,7 @@ mod tests {
                     Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -490,7 +495,7 @@ mod tests {
                     Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -525,7 +530,7 @@ mod tests {
                     Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
@@ -560,7 +565,7 @@ mod tests {
                     Token::new(TokenKind::Number(3.0), Range::from_nums(0, 4, 0, 5)),
                 ];
 
-                let ast = Parser::new(&tokens).parse()?;
+                let ast = parse(&tokens)?;
 
                 let expected = Ast::new(
                     AstKind::Program {
