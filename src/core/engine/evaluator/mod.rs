@@ -35,6 +35,7 @@ impl<'a> Evaluator<'a> {
                 kind: AstKind::InfixAsterisk { left, right },
                 location: _,
             } => Self::eval_infix_asterisk(left, right),
+            _ => panic!("todo"),
         }
     }
 
@@ -70,11 +71,41 @@ impl<'a> Evaluator<'a> {
         Ok(Value::new(ValueKind::Number(evaluated), location))
     }
 
+    fn eval_infix_minus(left: &Ast, right: &Ast) -> ResVal {
+        let left_val = Self::eval_infix_operand_num(left)?;
+        let right_val = Self::eval_infix_operand_num(right)?;
+
+        let evaluated = left_val - right_val;
+
+        let location = Range::new(left.location.begin, right.location.end);
+        Ok(Value::new(ValueKind::Number(evaluated), location))
+    }
+
     fn eval_infix_asterisk(left: &Ast, right: &Ast) -> ResVal {
         let left_val = Self::eval_infix_operand_num(left)?;
         let right_val = Self::eval_infix_operand_num(right)?;
 
         let evaluated = left_val * right_val;
+
+        let location = Range::new(left.location.begin, right.location.end);
+        Ok(Value::new(ValueKind::Number(evaluated), location))
+    }
+
+    fn eval_infix_slash(left: &Ast, right: &Ast) -> ResVal {
+        let left_val = Self::eval_infix_operand_num(left)?;
+        let right_val = Self::eval_infix_operand_num(right)?;
+
+        let evaluated = left_val / right_val;
+
+        let location = Range::new(left.location.begin, right.location.end);
+        Ok(Value::new(ValueKind::Number(evaluated), location))
+    }
+
+    fn eval_infix_percent(left: &Ast, right: &Ast) -> ResVal {
+        let left_val = Self::eval_infix_operand_num(left)?;
+        let right_val = Self::eval_infix_operand_num(right)?;
+
+        let evaluated = left_val % right_val;
 
         let location = Range::new(left.location.begin, right.location.end);
         Ok(Value::new(ValueKind::Number(evaluated), location))

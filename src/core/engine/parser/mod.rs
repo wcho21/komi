@@ -66,9 +66,24 @@ impl<'a> Parser<'a> {
                 let expression = Ast::from_infix_plus(left.clone(), right);
                 Ok(expression)
             }
+            TokenKind::Minus => {
+                let right = self.parse_expression(Bp::get_additive())?;
+                let expression = Ast::from_infix_minus(left.clone(), right);
+                Ok(expression)
+            }
             TokenKind::Asterisk => {
                 let right = self.parse_expression(Bp::get_multiplicative())?;
                 let expression = Ast::from_infix_asterisk(left.clone(), right);
+                Ok(expression)
+            }
+            TokenKind::Slash => {
+                let right = self.parse_expression(Bp::get_multiplicative())?;
+                let expression = Ast::from_infix_slash(left.clone(), right);
+                Ok(expression)
+            }
+            TokenKind::Percent => {
+                let right = self.parse_expression(Bp::get_multiplicative())?;
+                let expression = Ast::from_infix_percent(left.clone(), right);
                 Ok(expression)
             }
             _ => panic!("todo"),

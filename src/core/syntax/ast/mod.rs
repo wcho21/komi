@@ -7,7 +7,10 @@ pub enum AstKind {
     Program { expressions: Vec<Ast> },
     Number(f64),
     InfixPlus { left: Box<Ast>, right: Box<Ast> },
+    InfixMinus { left: Box<Ast>, right: Box<Ast> },
     InfixAsterisk { left: Box<Ast>, right: Box<Ast> },
+    InfixSlash { left: Box<Ast>, right: Box<Ast> },
+    InfixPercent { left: Box<Ast>, right: Box<Ast> },
 }
 
 /// An abstract syntax tree, or AST produced during parsing.
@@ -41,9 +44,36 @@ impl Ast {
         Ast::new(kind, location)
     }
 
+    pub fn from_infix_minus(left: Ast, right: Ast) -> Self {
+        let location = Range::new(left.clone().location.begin, right.clone().location.end);
+        let kind = AstKind::InfixMinus {
+            left: Box::new(left),
+            right: Box::new(right),
+        };
+        Ast::new(kind, location)
+    }
+
     pub fn from_infix_asterisk(left: Ast, right: Ast) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
         let kind = AstKind::InfixAsterisk {
+            left: Box::new(left),
+            right: Box::new(right),
+        };
+        Ast::new(kind, location)
+    }
+
+    pub fn from_infix_slash(left: Ast, right: Ast) -> Self {
+        let location = Range::new(left.clone().location.begin, right.clone().location.end);
+        let kind = AstKind::InfixSlash {
+            left: Box::new(left),
+            right: Box::new(right),
+        };
+        Ast::new(kind, location)
+    }
+
+    pub fn from_infix_percent(left: Ast, right: Ast) -> Self {
+        let location = Range::new(left.clone().location.begin, right.clone().location.end);
+        let kind = AstKind::InfixPercent {
             left: Box::new(left),
             right: Box::new(right),
         };
