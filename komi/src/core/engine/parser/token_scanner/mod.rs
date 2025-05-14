@@ -1,4 +1,4 @@
-use crate::core::syntax::Token;
+use komi_syntax::Token;
 use komi_util::{Range, Scanner, range};
 
 pub struct TokenScanner<'a> {
@@ -50,7 +50,7 @@ impl<'a> Scanner for TokenScanner<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::syntax::TokenKind;
+    use komi_syntax::TokenKind;
     use komi_util::Range;
 
     const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];

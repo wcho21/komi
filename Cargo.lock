@@ -38,6 +38,14 @@ dependencies = [
 name = "komi"
 version = "0.1.0"
 dependencies = [
+ "komi_syntax",
+ "komi_util",
+]
+
+[[package]]
+name = "komi_syntax"
+version = "0.1.0"
+dependencies = [
  "komi_util",
 ]
 

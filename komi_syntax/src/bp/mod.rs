@@ -1,4 +1,4 @@
-use crate::core::syntax::{Token, TokenKind};
+use crate::{Token, TokenKind};
 
 /// Binding powers for an infix token.
 pub struct Bp {

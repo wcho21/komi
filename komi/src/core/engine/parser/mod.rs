@@ -1,7 +1,7 @@
 mod token_scanner;
 
 use crate::core::err::ParseError;
-use crate::core::syntax::{Ast, Bp, Token, TokenKind};
+use komi_syntax::{Ast, Bp, Token, TokenKind};
 use komi_util::{Range, Scanner, Spot};
 use token_scanner::TokenScanner;
 
@@ -111,7 +111,7 @@ pub fn parse(tokens: &Vec<Token>) -> ResAst {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::syntax::AstKind;
+    use komi_syntax::AstKind;
 
     type Res = Result<(), ParseError>;
 

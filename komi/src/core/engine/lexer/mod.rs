@@ -2,7 +2,7 @@ mod source_scanner;
 mod utf8_tape;
 
 use crate::core::err::LexError;
-use crate::core::syntax::Token;
+use komi_syntax::Token;
 use komi_util::string;
 use komi_util::{Range, Scanner};
 use source_scanner::SourceScanner;
@@ -175,7 +175,7 @@ pub fn lex(source: &str) -> ResTokens {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::syntax::TokenKind;
+    use komi_syntax::TokenKind;
 
     type Res = Result<(), LexError>;
 

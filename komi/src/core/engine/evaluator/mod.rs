@@ -1,5 +1,5 @@
 use crate::core::err::EvalError;
-use crate::core::syntax::{Ast, AstKind, Value, ValueKind};
+use komi_syntax::{Ast, AstKind, Value, ValueKind};
 use komi_util::Range;
 
 type ResVal = Result<Value, EvalError>;

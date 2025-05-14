@@ -1,4 +1,4 @@
-use crate::core::syntax::{Value, ValueKind};
+use komi_syntax::{Value, ValueKind};
 
 pub const EMPTY_REPR: &str = "(EMPTY)";
 
