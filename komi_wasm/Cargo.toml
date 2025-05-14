@@ -1,0 +1,12 @@
+[package]
+name = "komi_wasm"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wasm-bindgen = "0.2.100"
+const_format = "0.2.34"
+komi = { path = "../komi" }
+
+[lib]
+crate-type = ["cdylib"]

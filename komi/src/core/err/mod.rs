@@ -1,13 +1,10 @@
-mod eval;
-mod lex;
-mod parse;
-
-pub use eval::EvalError;
-pub use lex::LexError;
-pub use parse::ParseError;
+pub use komi_evaluator::EvalError;
+pub use komi_lexer::LexError;
+pub use komi_parser::ParseError;
 use std::error::Error;
 use std::fmt;
 
+/// Errors that can occur during the execution process.
 #[derive(Debug)]
 pub enum ExecError {
     Lex(LexError),

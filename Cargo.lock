@@ -37,9 +37,60 @@ dependencies = [
 [[package]]
 name = "komi"
 version = "0.1.0"
+dependencies = [
+ "komi_evaluator",
+ "komi_lexer",
+ "komi_parser",
+ "komi_representer",
+ "komi_syntax",
+ "komi_util",
+]
 
 [[package]]
-name = "komi-wasm"
+name = "komi_evaluator"
+version = "0.1.0"
+dependencies = [
+ "komi_syntax",
+ "komi_util",
+]
+
+[[package]]
+name = "komi_lexer"
+version = "0.1.0"
+dependencies = [
+ "komi_syntax",
+ "komi_util",
+]
+
+[[package]]
+name = "komi_parser"
+version = "0.1.0"
+dependencies = [
+ "komi_syntax",
+ "komi_util",
+]
+
+[[package]]
+name = "komi_representer"
+version = "0.1.0"
+dependencies = [
+ "komi_syntax",
+ "komi_util",
+]
+
+[[package]]
+name = "komi_syntax"
+version = "0.1.0"
+dependencies = [
+ "komi_util",
+]
+
+[[package]]
+name = "komi_util"
+version = "0.1.0"
+
+[[package]]
+name = "komi_wasm"
 version = "0.1.0"
 dependencies = [
  "const_format",

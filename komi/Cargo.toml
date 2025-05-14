@@ -4,3 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+komi_util = { path = "../komi_util" }
+komi_syntax = { path = "../komi_syntax" }
+komi_lexer = { path = "../komi_lexer" }
+komi_parser = { path = "../komi_parser" }
+komi_evaluator = { path = "../komi_evaluator" }
+komi_representer = { path = "../komi_representer" }

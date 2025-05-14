@@ -1,8 +1,9 @@
 mod core;
-mod util;
 
-pub use core::{EMPTY_REPR, ExecError, ExecResult};
+pub use core::{ExecError, ExecResult};
+pub use komi_representer::EMPTY_REPR;
 
+/// Get an execution result from a source code.
 pub fn execute(source: &str) -> ExecResult {
     core::execute(source)
 }
