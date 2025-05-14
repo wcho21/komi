@@ -38,7 +38,7 @@ impl<'a> Evaluator<'a> {
         }
     }
 
-    fn eval_program(expressions: &Vec<Ast>, location: &Range) -> ResVal {
+    fn eval_program(expressions: &Vec<Box<Ast>>, location: &Range) -> ResVal {
         let mut last_value = Value::from_empty(*location);
 
         for expression in expressions {
@@ -146,7 +146,7 @@ mod tests {
         fn test_single_num() -> Res {
             let program = Ast::new(
                 AstKind::Program {
-                    expressions: vec![Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))],
+                    expressions: vec![Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1)))],
                 },
                 Range::from_nums(0, 0, 0, 1),
             );
@@ -170,13 +170,13 @@ mod tests {
             fn test_addition() -> Res {
                 let program = Ast::new(
                     AstKind::Program {
-                        expressions: vec![Ast::new(
+                        expressions: vec![Box::new(Ast::new(
                             AstKind::InfixPlus {
                                 left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
                                 right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
                             },
                             Range::from_nums(0, 0, 0, 3),
-                        )],
+                        ))],
                     },
                     Range::from_nums(0, 0, 0, 1),
                 );
@@ -193,13 +193,13 @@ mod tests {
             fn test_subtraction() -> Res {
                 let program = Ast::new(
                     AstKind::Program {
-                        expressions: vec![Ast::new(
+                        expressions: vec![Box::new(Ast::new(
                             AstKind::InfixMinus {
                                 left: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 0, 0, 1))),
                                 right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
                             },
                             Range::from_nums(0, 0, 0, 3),
-                        )],
+                        ))],
                     },
                     Range::from_nums(0, 0, 0, 1),
                 );
@@ -216,13 +216,13 @@ mod tests {
             fn test_multiplication() -> Res {
                 let program = Ast::new(
                     AstKind::Program {
-                        expressions: vec![Ast::new(
+                        expressions: vec![Box::new(Ast::new(
                             AstKind::InfixAsterisk {
                                 left: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 0, 0, 1))),
                                 right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 2, 0, 3))),
                             },
                             Range::from_nums(0, 0, 0, 3),
-                        )],
+                        ))],
                     },
                     Range::from_nums(0, 0, 0, 1),
                 );
@@ -239,13 +239,13 @@ mod tests {
             fn test_division() -> Res {
                 let program = Ast::new(
                     AstKind::Program {
-                        expressions: vec![Ast::new(
+                        expressions: vec![Box::new(Ast::new(
                             AstKind::InfixSlash {
                                 left: Box::new(Ast::new(AstKind::Number(6.0), Range::from_nums(0, 0, 0, 1))),
                                 right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 2, 0, 3))),
                             },
                             Range::from_nums(0, 0, 0, 3),
-                        )],
+                        ))],
                     },
                     Range::from_nums(0, 0, 0, 1),
                 );
@@ -262,13 +262,13 @@ mod tests {
             fn test_mod() -> Res {
                 let program = Ast::new(
                     AstKind::Program {
-                        expressions: vec![Ast::new(
+                        expressions: vec![Box::new(Ast::new(
                             AstKind::InfixPercent {
                                 left: Box::new(Ast::new(AstKind::Number(6.0), Range::from_nums(0, 0, 0, 1))),
                                 right: Box::new(Ast::new(AstKind::Number(4.0), Range::from_nums(0, 2, 0, 3))),
                             },
                             Range::from_nums(0, 0, 0, 3),
-                        )],
+                        ))],
                     },
                     Range::from_nums(0, 0, 0, 1),
                 );
@@ -318,10 +318,10 @@ mod tests {
                 ));
                 let program = Ast::new(
                     AstKind::Program {
-                        expressions: vec![Ast::new(
+                        expressions: vec![Box::new(Ast::new(
                             AstKind::InfixPlus { left, right },
                             Range::from_nums(0, 0, 0, 11),
-                        )],
+                        ))],
                     },
                     Range::from_nums(0, 0, 0, 11),
                 );
