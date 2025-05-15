@@ -70,10 +70,10 @@ impl<'a> Parser<'a> {
                 self.scanner.advance();
                 self.parse_grouped_expression(first_token)
             }
-            _ => Err(ParseError::new(
-                ParseErrorKind::Unexpected,
-                Range::from_nums(0, 0, 0, 0),
-            )),
+            _ => {
+                let location = first_token.location;
+                Err(ParseError::new(ParseErrorKind::InvalidExprStart, location))
+            }
         }
     }
 
@@ -105,18 +105,21 @@ impl<'a> Parser<'a> {
 
     fn parse_grouped_expression(&mut self, first_token: &'a Token) -> ResAst {
         let mut grouped_ast = match self.scanner.read() {
-            Some(x) => self.parse_expression(x, Bp::get_lowest())?,
-            None => panic!("no token in grouped? (todo make error kind)"),
-        };
+            Some(x) => self.parse_expression(x, Bp::get_lowest()),
+            None => Err(ParseError::new(ParseErrorKind::LParenNotClosed, first_token.location)),
+        }?;
 
         match self.scanner.read() {
             Some(x) if x.kind == TokenKind::RParen => {
-                grouped_ast.location.begin = first_token.location.begin;
-                grouped_ast.location.end = self.scanner.locate().end;
+                let location = Range::new(first_token.location.begin, self.scanner.locate().end);
+                grouped_ast.location = location;
                 self.scanner.advance();
                 Ok(grouped_ast)
             }
-            _ => panic!("no matching right paren (todo make error kind)"),
+            _ => {
+                let location = Range::new(first_token.location.begin, self.scanner.locate().end);
+                Err(ParseError::new(ParseErrorKind::LParenNotClosed, location))
+            }
         }
     }
 
@@ -126,7 +129,8 @@ impl<'a> Parser<'a> {
             let infix_ast = Box::new(make_ast(*left, *right));
             Ok(infix_ast)
         } else {
-            panic!("no right");
+            let location = Range::new(left.location.begin, self.scanner.locate().end);
+            Err(ParseError::new(ParseErrorKind::NoRightOperand, location))
         }
     }
 
@@ -144,7 +148,7 @@ pub fn parse(tokens: &Vec<Token>) -> ResAst {
 /// since its value would otherwise depend on the internal logic of those functions.
 #[cfg(test)]
 mod tests {
-    use super::{Ast, ParseError, Range, Token, TokenKind, parse};
+    use super::{Ast, ParseError, ParseErrorKind, Range, Token, TokenKind, parse};
     use komi_syntax::{AstKind, mkast, mktoken};
 
     type Res = Result<(), ParseError>;
@@ -152,11 +156,24 @@ mod tests {
     /// Asserts given tokens to be parsed into the expected AST.
     /// Helps write a test more declaratively.
     macro_rules! assert_parse {
-        ($tokens:expr, $expected:expr) => {
+        ($tokens:expr, $expected:expr $(,)?) => {
             assert_eq!(
                 parse($tokens)?,
                 $expected,
                 "received an ast (left) parsed from the tokens, but expected the different ast (right)",
+            );
+            return Ok(())
+        };
+    }
+
+    /// Asserts parsing given tokens will fail.
+    /// Helps write a test more declaratively.
+    macro_rules! assert_parse_fail {
+        ($tokens:expr, $expected:expr $(,)?) => {
+            assert_eq!(
+                parse($tokens),
+                Err($expected),
+                "received a result (left), but expected parsing the tokens to fail (right)",
             );
             return Ok(())
         };
@@ -280,6 +297,66 @@ mod tests {
                             right mkast!(num 2.0, loc 0, 2, 0, 3),
                         ),
                     ])
+                );
+            }
+
+            /// Represents `1+`.
+            #[test]
+            fn test_plus_without_right() -> Res {
+                assert_parse_fail!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+                    ],
+                    ParseError::new(ParseErrorKind::NoRightOperand, Range::from_nums(0, 0, 0, 2))
+                );
+            }
+
+            /// Represents `1-`.
+            #[test]
+            fn test_minus_without_right() -> Res {
+                assert_parse_fail!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
+                    ],
+                    ParseError::new(ParseErrorKind::NoRightOperand, Range::from_nums(0, 0, 0, 2))
+                );
+            }
+
+            /// Represents `1*`.
+            #[test]
+            fn test_asterisk_without_right() -> Res {
+                assert_parse_fail!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
+                    ],
+                    ParseError::new(ParseErrorKind::NoRightOperand, Range::from_nums(0, 0, 0, 2))
+                );
+            }
+
+            /// Represents `1/`.
+            #[test]
+            fn test_slash_without_right() -> Res {
+                assert_parse_fail!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
+                    ],
+                    ParseError::new(ParseErrorKind::NoRightOperand, Range::from_nums(0, 0, 0, 2))
+                );
+            }
+
+            /// Represents `1%`.
+            #[test]
+            fn test_percent_without_right() -> Res {
+                assert_parse_fail!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
+                    ],
+                    ParseError::new(ParseErrorKind::NoRightOperand, Range::from_nums(0, 0, 0, 2))
                 );
             }
         }
@@ -535,6 +612,54 @@ mod tests {
                     ])
                 );
             }
+
+            /// Represents `(1+2`.
+            #[test]
+            fn test_lparen_not_closed() -> Res {
+                assert_parse_fail!(
+                    &vec![
+                        mktoken!(TokenKind::LParen, loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Plus, loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 3, 0, 4),
+                    ],
+                    ParseError::new(ParseErrorKind::LParenNotClosed, Range::from_nums(0, 0, 0, 4))
+                );
+            }
+
+            /// Represents `(1+2 3`.
+            #[test]
+            fn test_rparen_not_appear_but_other() -> Res {
+                assert_parse_fail!(
+                    &vec![
+                        mktoken!(TokenKind::LParen, loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Plus, loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+                    ],
+                    ParseError::new(ParseErrorKind::LParenNotClosed, Range::from_nums(0, 0, 0, 5))
+                );
+            }
+        }
+    }
+
+    mod multiple_expressions {
+        use super::*;
+
+        /// Represents `1 2`.
+        #[test]
+        fn test_plus() -> Res {
+            assert_parse!(
+                &vec![
+                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                ],
+                mkast!(prog loc 0, 0, 0, 3, vec![
+                    mkast!(num 1.0, loc 0, 0, 0, 1),
+                    mkast!(num 2.0, loc 0, 2, 0, 3),
+                ])
+            );
         }
     }
 
@@ -548,11 +673,63 @@ mod tests {
             #[test]
             #[ignore]
             fn test_plus() -> Res {
-                assert_parse!(
+                assert_parse_fail!(
                     &vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)],
-                    mkast!(prog loc 0, 0, 0, 1, vec![
-                        mkast!(num 1.0, loc 0, 0, 0, 1),
-                    ])
+                    ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+                );
+            }
+
+            /// Represents `-`.
+            #[test]
+            fn test_minus() -> Res {
+                assert_parse_fail!(
+                    &vec![mktoken!(TokenKind::Minus, loc 0, 0, 0, 1)],
+                    ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+                );
+            }
+
+            /// Represents `*`.
+            #[test]
+            fn test_asterisk() -> Res {
+                assert_parse_fail!(
+                    &vec![mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1)],
+                    ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+                );
+            }
+
+            /// Represents `/`.
+            #[test]
+            fn test_slash() -> Res {
+                assert_parse_fail!(
+                    &vec![mktoken!(TokenKind::Slash, loc 0, 0, 0, 1)],
+                    ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+                );
+            }
+
+            /// Represents `%`.
+            #[test]
+            fn test_percent() -> Res {
+                assert_parse_fail!(
+                    &vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)],
+                    ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+                );
+            }
+
+            /// Represents `(`.
+            #[test]
+            fn test_lparen() -> Res {
+                assert_parse_fail!(
+                    &vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)],
+                    ParseError::new(ParseErrorKind::LParenNotClosed, Range::from_nums(0, 0, 0, 1))
+                );
+            }
+
+            /// Represents `)`.
+            #[test]
+            fn test_rparen() -> Res {
+                assert_parse_fail!(
+                    &vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)],
+                    ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
                 );
             }
         }

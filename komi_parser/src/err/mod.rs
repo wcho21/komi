@@ -5,6 +5,13 @@ use std::fmt;
 /// Serves as the interface between a parser and its user.
 #[derive(Debug, PartialEq)]
 pub enum ParseErrorKind {
+    // An invalid token at the start of an expression, such as `*2` and `/3.
+    InvalidExprStart,
+    // A left parenthesis `(` not closed, such as `(1+2`.
+    LParenNotClosed,
+    // No right operand, such as `1+`.
+    NoRightOperand,
+    /// An internal error impossible to occur if parsed as expected.
     Unexpected,
 }
 
@@ -13,6 +20,9 @@ pub type ParseError = EngineError<ParseErrorKind>;
 impl fmt::Display for ParseErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self {
+            ParseErrorKind::InvalidExprStart => "InvalidExprStart",
+            ParseErrorKind::LParenNotClosed => "LParenNotClosed",
+            ParseErrorKind::NoRightOperand => "NoRightOperand",
             ParseErrorKind::Unexpected => "Unexpected",
         };
         write!(f, "{}", s)
