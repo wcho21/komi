@@ -61,7 +61,16 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression_start(&mut self, first_token: &'a Token) -> ResAst {
-        self.parse_num(first_token)
+        match first_token.kind {
+            TokenKind::Number(n) => {
+                self.scanner.advance();
+                self.make_num_ast(n, first_token.location)
+            }
+            _ => Err(ParseError::Unexpected(
+                "Unexpected".to_string(),
+                Range::new(Spot::new(0, 0), Spot::new(0, 0)), // TODO: fix location
+            )),
+        }
     }
 
     fn parse_infix_expression(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
@@ -100,17 +109,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_num(&mut self, token: &'a Token) -> ResAst {
-        match token {
-            Token { kind: TokenKind::Number(n), location } => {
-                self.scanner.advance();
-                Ok(Box::new(Ast::from_num(*n, *location)))
-            }
-            _ => Err(ParseError::Unexpected(
-                "Unexpected".to_string(),
-                Range::new(Spot::new(0, 0), Spot::new(0, 0)), // TODO: fix location
-            )),
-        }
+    fn make_num_ast(&mut self, num: f64, location: Range) -> ResAst {
+        Ok(Box::new(Ast::from_num(num, location)))
     }
 }
 
