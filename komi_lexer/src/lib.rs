@@ -383,6 +383,18 @@ mod tests {
                 ]
             );
         }
+
+        /// Should not fail, since the lexer does not know the syntax.
+        #[test]
+        fn test_two_pluses() -> Res {
+            assert_lex!(
+                "+ +",
+                vec![
+                    mktoken!(TokenKind::Plus, loc 0, 0, 0, "+".len()),
+                    mktoken!(TokenKind::Plus, loc 0, "+ ".len(), 0, "+ +".len()),
+                ]
+            );
+        }
     }
 
     mod illegal {
