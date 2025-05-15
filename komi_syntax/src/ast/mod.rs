@@ -6,6 +6,8 @@ use komi_util::{Range, range};
 pub enum AstKind {
     Program { expressions: Vec<Box<Ast>> },
     Number(f64),
+    PrefixPlus { operand: Box<Ast> },
+    PrefixMinus { operand: Box<Ast> },
     InfixPlus { left: Box<Ast>, right: Box<Ast> },
     InfixMinus { left: Box<Ast>, right: Box<Ast> },
     InfixAsterisk { left: Box<Ast>, right: Box<Ast> },
@@ -33,6 +35,16 @@ impl Ast {
 
     pub fn from_num(num: f64, location: Range) -> Self {
         Ast::new(AstKind::Number(num), location)
+    }
+
+    pub fn from_prefix_plus(operand: Ast, prefix_location: Range) -> Self {
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ast::new(AstKind::PrefixPlus { operand: Box::new(operand) }, location)
+    }
+
+    pub fn from_prefix_minus(operand: Ast, prefix_location: Range) -> Self {
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ast::new(AstKind::PrefixMinus { operand: Box::new(operand) }, location)
     }
 
     pub fn from_infix_plus(left: Ast, right: Ast) -> Self {
@@ -83,6 +95,12 @@ macro_rules! mkast {
     (prog loc $br:expr, $bc:expr, $er:expr, $ec: expr, $exprs:expr) => {
         Box::new(Ast::new(
             AstKind::Program { expressions: $exprs },
+            Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
+        ))
+    };
+    (prefix $kind:ident, loc $br:expr, $bc:expr, $er:expr, $ec: expr, operand $oprnd:expr $(,)?) => {
+        Box::new(Ast::new(
+            AstKind::$kind { operand: $oprnd },
             Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
         ))
     };

@@ -9,8 +9,10 @@ pub enum ParseErrorKind {
     InvalidExprStart,
     // A left parenthesis `(` not closed, such as `(1+2`.
     LParenNotClosed,
-    // No right operand, such as `1+`.
-    NoRightOperand,
+    // No infix right operand, such as `1+`.
+    NoInfixRightOperand,
+    // No prefix operand, such as `+`.
+    NoPrefixOperand,
     /// An internal error impossible to occur if parsed as expected.
     Unexpected,
 }
@@ -22,7 +24,8 @@ impl fmt::Display for ParseErrorKind {
         let s = match self {
             ParseErrorKind::InvalidExprStart => "InvalidExprStart",
             ParseErrorKind::LParenNotClosed => "LParenNotClosed",
-            ParseErrorKind::NoRightOperand => "NoRightOperand",
+            ParseErrorKind::NoInfixRightOperand => "NoInfixRightOperand",
+            ParseErrorKind::NoPrefixOperand => "NoPrefixOperand",
             ParseErrorKind::Unexpected => "Unexpected",
         };
         write!(f, "{}", s)

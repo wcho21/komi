@@ -62,6 +62,14 @@ impl<'a> Parser<'a> {
 
     fn parse_expression_start(&mut self, first_token: &'a Token) -> ResAst {
         match first_token.kind {
+            TokenKind::Plus => {
+                self.scanner.advance();
+                self.parse_plus_prefix_expression(first_token.location)
+            }
+            TokenKind::Minus => {
+                self.scanner.advance();
+                self.parse_minus_prefix_expression(first_token.location)
+            }
             TokenKind::Number(n) => {
                 self.scanner.advance();
                 self.make_num_ast(n, first_token.location)
@@ -75,6 +83,14 @@ impl<'a> Parser<'a> {
                 Err(ParseError::new(ParseErrorKind::InvalidExprStart, location))
             }
         }
+    }
+
+    fn parse_plus_prefix_expression(&mut self, prefix_location: Range) -> ResAst {
+        self.read_operand_and_make_prefix_ast(prefix_location, Ast::from_prefix_plus)
+    }
+
+    fn parse_minus_prefix_expression(&mut self, prefix_location: Range) -> ResAst {
+        self.read_operand_and_make_prefix_ast(prefix_location, Ast::from_prefix_minus)
     }
 
     fn parse_infix_expression(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
@@ -123,6 +139,17 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn read_operand_and_make_prefix_ast(&mut self, prefix_location: Range, make_ast: fn(Ast, Range) -> Ast) -> ResAst {
+        if let Some(x) = self.scanner.read() {
+            let operand_ast = self.parse_expression(x, Bp::get_prefix())?;
+            let prefix_ast = Box::new(make_ast(*operand_ast, prefix_location));
+            Ok(prefix_ast)
+        } else {
+            let location = Range::new(prefix_location.begin, self.scanner.locate().end);
+            Err(ParseError::new(ParseErrorKind::NoPrefixOperand, location))
+        }
+    }
+
     fn read_right_and_make_infix_ast(&mut self, left: Box<Ast>, bp: &Bp, make_ast: fn(Ast, Ast) -> Ast) -> ResAst {
         if let Some(x) = self.scanner.read() {
             let right = self.parse_expression(x, bp)?;
@@ -130,7 +157,7 @@ impl<'a> Parser<'a> {
             Ok(infix_ast)
         } else {
             let location = Range::new(left.location.begin, self.scanner.locate().end);
-            Err(ParseError::new(ParseErrorKind::NoRightOperand, location))
+            Err(ParseError::new(ParseErrorKind::NoInfixRightOperand, location))
         }
     }
 
@@ -199,6 +226,81 @@ mod tests {
                 &vec![mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1)],
                 mkast!(prog loc 0, 0, 0, 1, vec![
                     mkast!(num 1.0, loc 0, 0, 0, 1),
+                ])
+            );
+        }
+    }
+
+    mod prefixes {
+        use super::*;
+
+        /// Represents `+1`.
+        #[test]
+        fn test_plus_num() -> Res {
+            assert_parse!(
+                &vec![
+                    mktoken!(TokenKind::Plus, loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+                ],
+                mkast!(prog loc 0, 0, 0, 2, vec![
+                    mkast!(prefix PrefixPlus, loc 0, 0, 0, 2,
+                        operand mkast!(num 1.0, loc 0, 1, 0, 2),
+                    ),
+                ])
+            );
+        }
+
+        /// Represents `-1`.
+        #[test]
+        fn test_minus_num() -> Res {
+            assert_parse!(
+                &vec![
+                    mktoken!(TokenKind::Minus, loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+                ],
+                mkast!(prog loc 0, 0, 0, 2, vec![
+                    mkast!(prefix PrefixMinus, loc 0, 0, 0, 2,
+                        operand mkast!(num 1.0, loc 0, 1, 0, 2),
+                    ),
+                ])
+            );
+        }
+
+        /// Represents `++1`.
+        #[test]
+        fn test_two_pluses_num() -> Res {
+            assert_parse!(
+                &vec![
+                    mktoken!(TokenKind::Plus, loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+                ],
+                mkast!(prog loc 0, 0, 0, 3, vec![
+                    mkast!(prefix PrefixPlus, loc 0, 0, 0, 3,
+                        operand mkast!(prefix PrefixPlus, loc 0, 1, 0, 3,
+                            operand mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ),
+                ])
+            );
+        }
+
+        /// Represents `--1`.
+        #[test]
+        fn test_two_minuses_num() -> Res {
+            // Should panic
+            assert_parse!(
+                &vec![
+                    mktoken!(TokenKind::Minus, loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+                ],
+                mkast!(prog loc 0, 0, 0, 3, vec![
+                    mkast!(prefix PrefixMinus, loc 0, 0, 0, 3,
+                        operand mkast!(prefix PrefixMinus, loc 0, 1, 0, 3,
+                            operand mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ),
                 ])
             );
         }
@@ -308,7 +410,7 @@ mod tests {
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
                         mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
                     ],
-                    ParseError::new(ParseErrorKind::NoRightOperand, Range::from_nums(0, 0, 0, 2))
+                    ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
                 );
             }
 
@@ -320,7 +422,7 @@ mod tests {
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
                         mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
                     ],
-                    ParseError::new(ParseErrorKind::NoRightOperand, Range::from_nums(0, 0, 0, 2))
+                    ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
                 );
             }
 
@@ -332,7 +434,7 @@ mod tests {
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
                         mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
                     ],
-                    ParseError::new(ParseErrorKind::NoRightOperand, Range::from_nums(0, 0, 0, 2))
+                    ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
                 );
             }
 
@@ -344,7 +446,7 @@ mod tests {
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
                         mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
                     ],
-                    ParseError::new(ParseErrorKind::NoRightOperand, Range::from_nums(0, 0, 0, 2))
+                    ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
                 );
             }
 
@@ -356,7 +458,7 @@ mod tests {
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
                         mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
                     ],
-                    ParseError::new(ParseErrorKind::NoRightOperand, Range::from_nums(0, 0, 0, 2))
+                    ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
                 );
             }
         }
@@ -675,7 +777,7 @@ mod tests {
             fn test_plus() -> Res {
                 assert_parse_fail!(
                     &vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)],
-                    ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+                    ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
                 );
             }
 
@@ -684,7 +786,7 @@ mod tests {
             fn test_minus() -> Res {
                 assert_parse_fail!(
                     &vec![mktoken!(TokenKind::Minus, loc 0, 0, 0, 1)],
-                    ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+                    ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
                 );
             }
 
