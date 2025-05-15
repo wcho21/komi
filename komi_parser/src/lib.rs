@@ -538,4 +538,23 @@ mod tests {
             }
         }
     }
+
+    mod fail {
+        use super::*;
+
+        mod single_tokens {
+            use super::*;
+
+            /// Represents `+`.
+            #[test]
+            fn test_plus() -> Res {
+                assert_parse!(
+                    &vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)],
+                    mkast!(prog loc 0, 0, 0, 1, vec![
+                        mkast!(num 1.0, loc 0, 0, 0, 1),
+                    ])
+                );
+            }
+        }
+    }
 }

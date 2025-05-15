@@ -1,4 +1,4 @@
-use komi_util::Range;
+use komi_util::{ErrorReason, Range};
 use std::error::Error;
 use std::fmt;
 
@@ -7,7 +7,7 @@ use std::fmt;
 #[derive(Debug, PartialEq)]
 pub struct ParseError {
     pub kind: ParseErrorKind,
-    pub reason: ParseErrorReason,
+    pub reason: ErrorReason,
 }
 
 #[derive(Debug, PartialEq)]
@@ -15,22 +15,9 @@ pub enum ParseErrorKind {
     Unexpected,
 }
 
-/// Reason of the error, with the string `cause` and its location `location` in the source.
-#[derive(Debug, PartialEq)]
-pub struct ParseErrorReason {
-    pub cause: String,
-    pub location: Range,
-}
-
 impl ParseError {
     pub fn new(kind: ParseErrorKind, cause: String, location: Range) -> Self {
-        Self { kind, reason: ParseErrorReason::new(cause, location) }
-    }
-}
-
-impl ParseErrorReason {
-    pub fn new(cause: String, location: Range) -> Self {
-        Self { cause, location }
+        Self { kind, reason: ErrorReason::new(cause, location) }
     }
 }
 

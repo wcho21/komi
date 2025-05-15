@@ -1,4 +1,4 @@
-use komi_util::Range;
+use komi_util::{ErrorReason, Range};
 use std::error::Error;
 use std::fmt;
 
@@ -7,7 +7,7 @@ use std::fmt;
 #[derive(Debug, PartialEq)]
 pub struct LexError {
     pub kind: LexErrorKind,
-    pub reason: LexErrorReason,
+    pub reason: ErrorReason,
 }
 
 /// Kinds of errors due to the lexing.
@@ -21,22 +21,9 @@ pub enum LexErrorKind {
     Unexpected,
 }
 
-/// Reason of the error, with the string `cause` and its location `location` in the source.
-#[derive(Debug, PartialEq)]
-pub struct LexErrorReason {
-    pub cause: String,
-    pub location: Range,
-}
-
 impl LexError {
     pub fn new(kind: LexErrorKind, cause: String, location: Range) -> Self {
-        Self { kind, reason: LexErrorReason::new(cause, location) }
-    }
-}
-
-impl LexErrorReason {
-    pub fn new(cause: String, location: Range) -> Self {
-        Self { cause, location }
+        Self { kind, reason: ErrorReason::new(cause, location) }
     }
 }
 

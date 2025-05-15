@@ -7,7 +7,7 @@ mod err;
 mod source_scanner;
 mod utf8_tape;
 
-pub use err::{LexError, LexErrorKind, LexErrorReason};
+pub use err::{LexError, LexErrorKind};
 use komi_syntax::Token;
 use komi_util::string;
 use komi_util::{Range, Scanner};
