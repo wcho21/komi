@@ -72,7 +72,6 @@ impl<'a> Parser<'a> {
             }
             _ => Err(ParseError::new(
                 ParseErrorKind::Unexpected,
-                "".to_string(),
                 Range::from_nums(0, 0, 0, 0),
             )),
         }

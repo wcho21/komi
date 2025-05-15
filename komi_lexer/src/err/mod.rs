@@ -22,18 +22,14 @@ pub enum LexErrorKind {
 }
 
 impl LexError {
-    pub fn new(kind: LexErrorKind, cause: String, location: Range) -> Self {
-        Self { kind, reason: ErrorReason::new(cause, location) }
+    pub fn new(kind: LexErrorKind, location: Range) -> Self {
+        Self { kind, reason: ErrorReason::new(location) }
     }
 }
 
 impl fmt::Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Reason: '{}', Cause: {}, Location: {:?}",
-            self.kind, self.reason.cause, self.reason.location
-        )
+        write!(f, "Reason: '{}', Location: {:?}", self.kind, self.reason.location)
     }
 }
 

@@ -16,18 +16,14 @@ pub enum ParseErrorKind {
 }
 
 impl ParseError {
-    pub fn new(kind: ParseErrorKind, cause: String, location: Range) -> Self {
-        Self { kind, reason: ErrorReason::new(cause, location) }
+    pub fn new(kind: ParseErrorKind, location: Range) -> Self {
+        Self { kind, reason: ErrorReason::new(location) }
     }
 }
 
 impl<'a> fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Reason: '{}', Cause: '{}', Location: {:?}",
-            self.kind, self.reason.cause, self.reason.location
-        )
+        write!(f, "Reason: '{}', Location: {:?}", self.kind, self.reason.location)
     }
 }
 
