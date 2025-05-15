@@ -54,7 +54,7 @@ impl<'a> Parser<'a> {
             }
 
             self.scanner.advance();
-            top = self.parse_infix_expression(&top, token)?;
+            top = self.parse_infix_expression(top, token)?;
         }
 
         Ok(top)
@@ -64,7 +64,7 @@ impl<'a> Parser<'a> {
         self.parse_num(first_token)
     }
 
-    fn parse_infix_expression(&mut self, left: &Ast, infix: &'a Token) -> ResAst {
+    fn parse_infix_expression(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
         match infix.kind {
             TokenKind::Plus => {
                 let bp = Bp::get_additive();
@@ -90,10 +90,10 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn read_right_and_make_infix_ast(&mut self, left: &Ast, bp: &Bp, make_ast: fn(Ast, Ast) -> Ast) -> ResAst {
+    fn read_right_and_make_infix_ast(&mut self, left: Box<Ast>, bp: &Bp, make_ast: fn(Ast, Ast) -> Ast) -> ResAst {
         if let Some(x) = self.scanner.read() {
             let right = self.parse_expression(x, bp)?;
-            let infix_ast = Box::new(make_ast(left.clone(), *right));
+            let infix_ast = Box::new(make_ast(*left, *right));
             Ok(infix_ast)
         } else {
             panic!("no right");
