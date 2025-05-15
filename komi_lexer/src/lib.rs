@@ -124,7 +124,7 @@ impl<'a> Lexer<'a> {
             Some(s) if string::is_digit(s) => (),
             other => {
                 let cause = format!("{}{}", lexeme, other.unwrap_or(""));
-                let location = Range::new(begin, self.scanner.locate().begin);
+                let location = Range::new(begin, self.scanner.locate().end);
                 return Err(LexError::new(LexErrorKind::IllegalNumLiteral, cause, location));
             }
         }
@@ -287,6 +287,14 @@ mod tests {
             use super::*;
 
             #[test]
+            fn test_illegal() -> Res {
+                assert_lex_fail!(
+                    "12^",
+                    LexError::new(LexErrorKind::IllegalChar, "^".to_string(), Range::from_nums(0, 2, 0, 3),)
+                );
+            }
+
+            #[test]
             fn test_beginning_with_dot() -> Res {
                 assert_lex_fail!(
                     ".25",
@@ -302,6 +310,18 @@ mod tests {
                         LexErrorKind::IllegalNumLiteral,
                         "12.".to_string(),
                         Range::from_nums(0, 0, 0, 3),
+                    )
+                );
+            }
+
+            #[test]
+            fn test_illegal_decimal() -> Res {
+                assert_lex_fail!(
+                    "12.^",
+                    LexError::new(
+                        LexErrorKind::IllegalNumLiteral,
+                        "12.^".to_string(),
+                        Range::from_nums(0, 0, 0, 4),
                     )
                 );
             }
