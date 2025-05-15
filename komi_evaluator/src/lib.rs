@@ -6,7 +6,7 @@
 
 mod err;
 
-pub use err::EvalError;
+pub use err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, AstKind, Value, ValueKind};
 use komi_util::Range;
 
@@ -57,7 +57,7 @@ impl<'a> Evaluator<'a> {
         if let ValueKind::Number(num) = val.kind {
             Ok(num)
         } else {
-            Err(EvalError::BadAdditionOperand(format!("{:?}", val.kind), val.location))
+            Err(EvalError::new(EvalErrorKind::InvalidAdditionOperand, val.location))
         }
     }
 
