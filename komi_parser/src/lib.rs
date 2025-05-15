@@ -66,6 +66,10 @@ impl<'a> Parser<'a> {
                 self.scanner.advance();
                 self.make_num_ast(n, first_token.location)
             }
+            TokenKind::LParen => {
+                self.scanner.advance();
+                self.parse_grouped_expression(first_token)
+            }
             _ => Err(ParseError::Unexpected(
                 "Unexpected".to_string(),
                 Range::new(Spot::new(0, 0), Spot::new(0, 0)), // TODO: fix location
@@ -96,6 +100,23 @@ impl<'a> Parser<'a> {
                 self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_percent)
             }
             _ => panic!("todo"),
+        }
+    }
+
+    fn parse_grouped_expression(&mut self, first_token: &'a Token) -> ResAst {
+        let mut grouped_ast = match self.scanner.read() {
+            Some(x) => self.parse_expression(x, Bp::get_lowest())?,
+            None => panic!("no token in grouped? (todo make error kind)"),
+        };
+
+        match self.scanner.read() {
+            Some(x) if x.kind == TokenKind::RParen => {
+                grouped_ast.location.begin = first_token.location.begin;
+                grouped_ast.location.end = self.scanner.locate().end;
+                self.scanner.advance();
+                Ok(grouped_ast)
+            }
+            _ => panic!("no matching right paren (todo make error kind)"),
         }
     }
 
@@ -460,7 +481,6 @@ mod tests {
 
             /// Represents `(1-2)*3`
             #[test]
-            #[ignore] // TODO
             fn test_grouping() -> Res {
                 assert_parse!(
                     &vec![
@@ -473,12 +493,12 @@ mod tests {
                         mktoken!(TokenKind::Number(3.0), loc 0, 6, 0, 7),
                     ],
                     mkast!(prog loc 0, 0, 0, 7, vec![
-                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 5,
+                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 7,
                             left mkast!(infix InfixMinus, loc 0, 0, 0, 5,
                                 left mkast!(num 1.0, loc 0, 1, 0, 2),
                                 right mkast!(num 2.0, loc 0, 3, 0, 4),
                             ),
-                            right mkast!(num 1.0, loc 0, 6, 0, 7),
+                            right mkast!(num 3.0, loc 0, 6, 0, 7),
                         ),
                     ])
                 );
@@ -486,7 +506,6 @@ mod tests {
 
             /// Represents `1-(2*(3-4))`
             #[test]
-            #[ignore] // TODO
             fn test_nested_grouping() -> Res {
                 assert_parse!(
                     &vec![
@@ -502,10 +521,10 @@ mod tests {
                         mktoken!(TokenKind::RParen, loc 0, 9, 0, 10),
                         mktoken!(TokenKind::RParen, loc 0, 10, 0, 11),
                     ],
-                    mkast!(prog loc 0, 0, 0, 5, vec![
-                        mkast!(infix InfixPlus, loc 0, 0, 0, 11,
+                    mkast!(prog loc 0, 0, 0, 11, vec![
+                        mkast!(infix InfixMinus, loc 0, 0, 0, 11,
                             left mkast!(num 1.0, loc 0, 0, 0, 1),
-                            right mkast!(infix InfixPercent, loc 0, 2, 0, 11,
+                            right mkast!(infix InfixAsterisk, loc 0, 2, 0, 11,
                                 left mkast!(num 2.0, loc 0, 3, 0, 4),
                                 right mkast!(infix InfixMinus, loc 0, 5, 0, 10,
                                     left mkast!(num 3.0, loc 0, 6, 0, 7),
