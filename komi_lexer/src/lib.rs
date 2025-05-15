@@ -230,32 +230,32 @@ mod tests {
         use super::*;
 
         #[test]
-        fn test_lex_empty() -> Res {
+        fn test_empty() -> Res {
             assert_lex!("", vec![]);
         }
 
         #[test]
-        fn test_lex_whitespaces() -> Res {
+        fn test_whitespaces() -> Res {
             assert_lex!("   ", vec![]);
         }
 
         #[test]
-        fn test_lex_tabs() -> Res {
+        fn test_tabs() -> Res {
             assert_lex!("\t\t", vec![]);
         }
 
         #[test]
-        fn test_lex_new_lines() -> Res {
+        fn test_new_lines() -> Res {
             assert_lex!("\n\n\r\r\r\n\r\n", vec![]);
         }
 
         #[test]
-        fn test_lex_comment() -> Res {
+        fn test_comment() -> Res {
             assert_lex!("# comment", vec![]);
         }
 
         #[test]
-        fn test_lex_multi_line_comment() -> Res {
+        fn test_multi_line_comment() -> Res {
             assert_lex!("# comment line 1\r\n# comment line 2", vec![]);
         }
     }
@@ -263,20 +263,48 @@ mod tests {
     mod num {
         use super::*;
 
-        #[test]
-        fn test_lex_without_decimal() -> Res {
-            assert_lex!(
-                "123",
-                vec![mktoken!(TokenKind::Number(123.0), loc 0, 0, 0, "123".len())]
-            );
+        mod success {
+            use super::*;
+
+            #[test]
+            fn test_without_decimal() -> Res {
+                assert_lex!(
+                    "123",
+                    vec![mktoken!(TokenKind::Number(123.0), loc 0, 0, 0, "123".len())]
+                );
+            }
+
+            #[test]
+            fn test_with_decimal() -> Res {
+                assert_lex!(
+                    "12.25",
+                    vec![mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, "12.25".len())]
+                );
+            }
         }
 
-        #[test]
-        fn test_lex_with_decimal() -> Res {
-            assert_lex!(
-                "12.25",
-                vec![mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, "12.25".len())]
-            );
+        mod fail {
+            use super::*;
+
+            #[test]
+            fn test_beginning_with_dot() -> Res {
+                assert_lex_fail!(
+                    ".25",
+                    LexError::new(LexErrorKind::IllegalChar, ".".to_string(), Range::from_nums(0, 0, 0, 1),)
+                );
+            }
+
+            #[test]
+            fn test_ending_with_dot() -> Res {
+                assert_lex_fail!(
+                    "12.",
+                    LexError::new(
+                        LexErrorKind::IllegalNumLiteral,
+                        "12.".to_string(),
+                        Range::from_nums(0, 0, 0, 3),
+                    )
+                );
+            }
         }
     }
 
@@ -284,27 +312,27 @@ mod tests {
         use super::*;
 
         #[test]
-        fn test_lex_plus() -> Res {
+        fn test_plus() -> Res {
             assert_lex!("+", vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)]);
         }
 
         #[test]
-        fn test_lex_minus() -> Res {
+        fn test_minus() -> Res {
             assert_lex!("-", vec![mktoken!(TokenKind::Minus, loc 0, 0, 0, 1)]);
         }
 
         #[test]
-        fn test_lex_asterisk() -> Res {
+        fn test_asterisk() -> Res {
             assert_lex!("*", vec![mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1)]);
         }
 
         #[test]
-        fn test_lex_slash() -> Res {
+        fn test_slash() -> Res {
             assert_lex!("/", vec![mktoken!(TokenKind::Slash, loc 0, 0, 0, 1)]);
         }
 
         #[test]
-        fn test_lex_percent() -> Res {
+        fn test_percent() -> Res {
             assert_lex!("%", vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)]);
         }
     }
@@ -313,7 +341,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn test_lex() -> Res {
+        fn test_addition() -> Res {
             assert_lex!(
                 "12 + 34.675",
                 vec![
@@ -325,34 +353,14 @@ mod tests {
         }
     }
 
-    mod fail {
+    mod illegal {
         use super::*;
 
         #[test]
-        fn test_illegal_char() -> Res {
+        fn test_unrecognizable() -> Res {
             assert_lex_fail!(
                 "^",
                 LexError::new(LexErrorKind::IllegalChar, "^".to_string(), Range::from_nums(0, 0, 0, 1),)
-            );
-        }
-
-        #[test]
-        fn test_num_beginning_with_dot() -> Res {
-            assert_lex_fail!(
-                ".25",
-                LexError::new(LexErrorKind::IllegalChar, ".".to_string(), Range::from_nums(0, 0, 0, 1),)
-            );
-        }
-
-        #[test]
-        fn test_num_ending_with_dot() -> Res {
-            assert_lex_fail!(
-                "12.",
-                LexError::new(
-                    LexErrorKind::IllegalNumLiteral,
-                    "12.".to_string(),
-                    Range::from_nums(0, 0, 0, 3),
-                )
             );
         }
     }
