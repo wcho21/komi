@@ -74,7 +74,7 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if string::is_whitespace(s) => self.scanner.advance(),
                 Some(x) => {
-                    return Err(LexError::IllegalChar { char: x.to_string(), location: self.scanner.locate() });
+                    return Err(LexError::IllegalChar { cause: x.to_string(), location: self.scanner.locate() });
                 }
                 None => {
                     break;
@@ -119,9 +119,9 @@ impl<'a> Lexer<'a> {
         match self.scanner.read() {
             Some(s) if string::is_digit(s) => (),
             other => {
-                let bad_literal = format!("{}{}", lexeme, other.unwrap_or(""));
+                let cause = format!("{}{}", lexeme, other.unwrap_or(""));
                 let location = Range::new(begin, self.scanner.locate().begin);
-                return Err(LexError::IllegalNumLiteral { bad_literal, location });
+                return Err(LexError::IllegalNumLiteral { cause, location });
             }
         }
 
@@ -328,7 +328,7 @@ mod tests {
             assert_lex_fail!(
                 "^",
                 LexError::IllegalChar {
-                    char: "^".to_string(),
+                    cause: "^".to_string(),
                     location: Range::from_nums(0, 0, 0, 1),
                 }
             );
@@ -339,7 +339,7 @@ mod tests {
             assert_lex_fail!(
                 ".25",
                 LexError::IllegalChar {
-                    char: ".".to_string(),
+                    cause: ".".to_string(),
                     location: Range::from_nums(0, 0, 0, 1)
                 }
             );
@@ -350,7 +350,7 @@ mod tests {
             assert_lex_fail!(
                 "12.",
                 LexError::IllegalNumLiteral {
-                    bad_literal: "12.".to_string(),
+                    cause: "12.".to_string(),
                     location: Range::from_nums(0, 0, 0, "12.".len() as u64)
                 }
             );

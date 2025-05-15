@@ -183,7 +183,7 @@ mod tests {
             assert_exec_fail!(
                 ".",
                 ExecError::Lex(LexError::IllegalChar {
-                    char: ".".to_string(),
+                    cause: ".".to_string(),
                     location: Range::from_nums(0, 0, 0, 1),
                 })
             );
@@ -194,7 +194,7 @@ mod tests {
             assert_exec_fail!(
                 "..",
                 ExecError::Lex(LexError::IllegalChar {
-                    char: ".".to_string(),
+                    cause: ".".to_string(),
                     location: Range::from_nums(0, 0, 0, 1),
                 })
             );
@@ -206,7 +206,7 @@ mod tests {
             assert_exec_fail!(
                 "++",
                 ExecError::Lex(LexError::IllegalChar {
-                    char: "+".to_string(),
+                    cause: "+".to_string(),
                     location: Range::from_nums(0, 1, 0, 2),
                 })
             );
@@ -218,7 +218,7 @@ mod tests {
             assert_exec_fail!(
                 "--",
                 ExecError::Lex(LexError::IllegalChar {
-                    char: "-".to_string(),
+                    cause: "-".to_string(),
                     location: Range::from_nums(0, 1, 0, 2),
                 })
             );

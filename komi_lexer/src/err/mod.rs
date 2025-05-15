@@ -7,31 +7,25 @@ use std::fmt;
 #[derive(Debug, PartialEq)]
 pub enum LexError {
     /// An illegal char, not in the syntax.
-    IllegalChar { char: String, location: Range },
+    IllegalChar { cause: String, location: Range },
     /// An illegal number literal, such as `12.`.
-    IllegalNumLiteral { bad_literal: String, location: Range },
+    IllegalNumLiteral { cause: String, location: Range },
     /// An internal error impossible to occur if lexed as expected.
-    Unexpected { expected: String, received: String, location: Range },
+    Unexpected { cause: String, location: Range },
+}
+
+macro_rules! write_lex_err {
+    ($fmt:ident, $reason:literal, $cause:ident, $loc: ident) => {
+        write!($fmt, "Reason: {}, Cause: '{}', Location: {:?}", $reason, $cause, $loc)
+    };
 }
 
 impl fmt::Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            LexError::IllegalChar { char, location } => write!(
-                f,
-                "Reason: LEX_ILLEGAL_CHAR, Cause: '{}', Location: {:?}",
-                char, location
-            ),
-            LexError::IllegalNumLiteral { bad_literal, location } => write!(
-                f,
-                "Reason: LEX_ILLEGAL_CHAR, Cause: '{}', Location: {:?}",
-                bad_literal, location
-            ),
-            LexError::Unexpected { expected, received, location } => write!(
-                f,
-                "Reason: LEX_UNEXPECTED, Cause: '{}', Expected: '{}', Location: {:?}",
-                received, expected, location
-            ),
+            LexError::IllegalChar { cause: c, location: l } => write_lex_err!(f, "LEX_ILLEGAL_CHAR", c, l),
+            LexError::IllegalNumLiteral { cause: c, location: l } => write_lex_err!(f, "LEX_ILLEGAL_NUM_LITERAL", c, l),
+            LexError::Unexpected { cause: c, location: l } => write_lex_err!(f, "LEX_UNEXPECTED", c, l),
         }
     }
 }
