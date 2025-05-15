@@ -180,26 +180,28 @@ mod tests {
 
     type Res = Result<(), LexError>;
 
-    /// Assert a given literal to be lexed into the expected tokens.
+    /// Asserts a given literal to be lexed into the expected tokens.
+    /// Helps write a test more declaratively.
     macro_rules! assert_lex {
         ($source:literal, $expected:expr) => {
             assert_eq!(
                 lex($source)?,
                 $expected,
-                "received tokens (left) from the source '{}', but expected different tokens (right)",
+                "received tokens (left) from the source '{}', but expected the different tokens (right)",
                 $source,
             );
             return Ok(())
         };
     }
 
-    /// Assert lexing a given literal will fail.
+    /// Asserts lexing a given literal will fail.
+    /// Helps write a test more declaratively.
     macro_rules! assert_lex_fail {
         ($source:literal, $expected:expr) => {
             assert_eq!(
                 lex($source),
                 Err($expected),
-                "received result (left), but expected lexing the source '{}' to fail (right)",
+                "received a result (left), but expected lexing the source '{}' to fail (right)",
                 $source,
             );
             return Ok(())

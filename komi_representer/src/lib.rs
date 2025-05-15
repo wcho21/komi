@@ -23,19 +23,31 @@ mod tests {
 
     const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
 
+    /// Asserts a given value to be represented into the expected representation.
+    /// Helps write a test more declaratively.
+    macro_rules! assert_repr {
+        ($val:expr, $expected:expr) => {
+            assert_eq!(
+                represent($val),
+                $expected,
+                "received a representation (left) from the value, but expected the different representation (right)",
+            );
+        };
+    }
+
     mod parts {
         use super::*;
 
-        /// Represents `1`.
+        /// Represents `12.25`.
         #[test]
-        fn test_num() {
-            let value = Value::new(ValueKind::Number(1.0), RANGE_MOCKS[0]);
+        fn test_positive_num() {
+            assert_repr!(&Value::new(ValueKind::Number(12.25), RANGE_MOCKS[0]), "12.25");
+        }
 
-            let repr = represent(&value);
-
-            let expected = "1";
-
-            assert_eq!(repr, expected);
+        /// Represents `-12.25`.
+        #[test]
+        fn test_negative_num() {
+            assert_repr!(&Value::new(ValueKind::Number(-12.25), RANGE_MOCKS[0]), "-12.25");
         }
     }
 
@@ -45,13 +57,7 @@ mod tests {
         /// Represents ``.
         #[test]
         fn test_empty() {
-            let value = Value::new(ValueKind::Empty, Range::from_nums(0, 0, 0, 0));
-
-            let repr = represent(&value);
-
-            let expected = EMPTY_REPR;
-
-            assert_eq!(repr, expected);
+            assert_repr!(&Value::new(ValueKind::Empty, RANGE_MOCKS[0]), EMPTY_REPR);
         }
     }
 }

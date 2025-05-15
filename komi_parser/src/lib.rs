@@ -123,19 +123,26 @@ mod tests {
 
     type Res = Result<(), ParseError>;
 
+    /// Asserts given tokens to be parsed into the expected AST.
+    /// Helps write a test more declaratively.
+    macro_rules! assert_parse {
+        ($tokens:expr, $expected:expr) => {
+            assert_eq!(
+                parse($tokens)?,
+                $expected,
+                "received an ast (left) parsed from the tokens, but expected the different ast (right)",
+            );
+            return Ok(())
+        };
+    }
+
     mod empty {
         use super::*;
 
         /// Represents ``.
         #[test]
         fn test_parse_empty() -> Res {
-            let tokens = vec![];
-
-            let ast = parse(&tokens)?;
-
-            let expected = mkast!(prog loc 0, 0, 0, 0, vec![]);
-            assert_eq!(ast, expected);
-            Ok(())
+            assert_parse!(&vec![], mkast!(prog loc 0, 0, 0, 0, vec![]));
         }
     }
 
@@ -145,15 +152,12 @@ mod tests {
         /// Represents `1`.
         #[test]
         fn test_parse_num() -> Res {
-            let tokens = vec![mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1)];
-
-            let ast = parse(&tokens)?;
-
-            let expected = mkast!(prog loc 0, 0, 0, 1, vec![
-                mkast!(num 1.0, loc 0, 0, 0, 1),
-            ]);
-            assert_eq!(ast, expected);
-            Ok(())
+            assert_parse!(
+                &vec![mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1)],
+                mkast!(prog loc 0, 0, 0, 1, vec![
+                    mkast!(num 1.0, loc 0, 0, 0, 1),
+                ])
+            );
         }
     }
 
@@ -166,106 +170,91 @@ mod tests {
             /// Represents `1+2`.
             #[test]
             fn test_parse_plus() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 3, vec![
-                    mkast!(infix InfixPlus, loc 0, 0, 0, 3,
-                        left mkast!(num 1.0, loc 0, 0, 0, 1),
-                        right mkast!(num 2.0, loc 0, 2, 0, 3)
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3),
+                        ),
+                    ])
+                );
             }
 
             /// Represents `1-2`.
             #[test]
             fn test_parse_minus() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 3, vec![
-                    mkast!(infix InfixMinus, loc 0, 0, 0, 3,
-                        left mkast!(num 1.0, loc 0, 0, 0, 1),
-                        right mkast!(num 2.0, loc 0, 2, 0, 3)
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixMinus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3),
+                        ),
+                    ])
+                );
             }
 
             /// Represents `1*2`.
             #[test]
             fn test_parse_asterisk() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 3, vec![
-                    mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
-                        left mkast!(num 1.0, loc 0, 0, 0, 1),
-                        right mkast!(num 2.0, loc 0, 2, 0, 3)
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3),
+                        ),
+                    ])
+                );
             }
 
             /// Represents `1/2`.
             #[test]
             fn test_parse_slash() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 3, vec![
-                    mkast!(infix InfixSlash, loc 0, 0, 0, 3,
-                        left mkast!(num 1.0, loc 0, 0, 0, 1),
-                        right mkast!(num 2.0, loc 0, 2, 0, 3)
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixSlash, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3),
+                        ),
+                    ])
+                );
             }
 
             /// Represents `1%2`.
             #[test]
             fn test_parse_percent() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 3, vec![
-                    mkast!(infix InfixPercent, loc 0, 0, 0, 3,
-                        left mkast!(num 1.0, loc 0, 0, 0, 1),
-                        right mkast!(num 2.0, loc 0, 2, 0, 3)
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPercent, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3),
+                        ),
+                    ])
+                );
             }
         }
 
@@ -275,126 +264,116 @@ mod tests {
             /// Represents `1+2+3`, and expects to be parsed into `(1+2)+3`.
             #[test]
             fn test_parse_plus_left_assoc() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                    mktoken!(TokenKind::Plus, loc 0, 3, 0, 4),
-                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
-                    mkast!(infix InfixPlus, loc 0, 0, 0, 5,
-                        left mkast!(infix InfixPlus, loc 0, 0, 0, 3,
-                            left mkast!(num 1.0, loc 0, 0, 0, 1),
-                            right mkast!(num 2.0, loc 0, 2, 0, 3)),
-                        right mkast!(num 3.0, loc 0, 4, 0, 5)
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Plus, loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 5, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 5,
+                            left mkast!(infix InfixPlus, loc 0, 0, 0, 3,
+                                left mkast!(num 1.0, loc 0, 0, 0, 1),
+                                right mkast!(num 2.0, loc 0, 2, 0, 3),
+                            ),
+                            right mkast!(num 3.0, loc 0, 4, 0, 5),
+                        ),
+                    ])
+                );
             }
 
             /// Represents `1-2-3`, and expects to be parsed into `(1-2)-3`.
             #[test]
             fn test_parse_minus_left_assoc() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                    mktoken!(TokenKind::Minus, loc 0, 3, 0, 4),
-                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
-                    mkast!(infix InfixMinus, loc 0, 0, 0, 5,
-                        left mkast!(infix InfixMinus, loc 0, 0, 0, 3,
-                            left mkast!(num 1.0, loc 0, 0, 0, 1),
-                            right mkast!(num 2.0, loc 0, 2, 0, 3)),
-                        right mkast!(num 3.0, loc 0, 4, 0, 5)
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Minus, loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 5, vec![
+                        mkast!(infix InfixMinus, loc 0, 0, 0, 5,
+                            left mkast!(infix InfixMinus, loc 0, 0, 0, 3,
+                                left mkast!(num 1.0, loc 0, 0, 0, 1),
+                                right mkast!(num 2.0, loc 0, 2, 0, 3),
+                            ),
+                            right mkast!(num 3.0, loc 0, 4, 0, 5),
+                        ),
+                    ])
+                );
             }
 
             /// Represents `1*2*3`, and expects to be parsed into `(1*2)*3`.
             #[test]
             fn test_parse_asterisk_left_assoc() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                    mktoken!(TokenKind::Asterisk, loc 0, 3, 0, 4),
-                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
-                    mkast!(infix InfixAsterisk, loc 0, 0, 0, 5,
-                        left mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
-                            left mkast!(num 1.0, loc 0, 0, 0, 1),
-                            right mkast!(num 2.0, loc 0, 2, 0, 3)),
-                        right mkast!(num 3.0, loc 0, 4, 0, 5)
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Asterisk, loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 5, vec![
+                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 5,
+                            left mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                                left mkast!(num 1.0, loc 0, 0, 0, 1),
+                                right mkast!(num 2.0, loc 0, 2, 0, 3),
+                            ),
+                            right mkast!(num 3.0, loc 0, 4, 0, 5),
+                        ),
+                    ])
+                );
             }
 
             /// Represents `1/2/3`, and expects to be parsed into `(1/2)/3`.
             #[test]
             fn test_parse_slash_left_assoc() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                    mktoken!(TokenKind::Slash, loc 0, 3, 0, 4),
-                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
-                    mkast!(infix InfixSlash, loc 0, 0, 0, 5,
-                        left mkast!(infix InfixSlash, loc 0, 0, 0, 3,
-                            left mkast!(num 1.0, loc 0, 0, 0, 1),
-                            right mkast!(num 2.0, loc 0, 2, 0, 3)),
-                        right mkast!(num 3.0, loc 0, 4, 0, 5)
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Slash, loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 5, vec![
+                        mkast!(infix InfixSlash, loc 0, 0, 0, 5,
+                            left mkast!(infix InfixSlash, loc 0, 0, 0, 3,
+                                left mkast!(num 1.0, loc 0, 0, 0, 1),
+                                right mkast!(num 2.0, loc 0, 2, 0, 3),
+                            ),
+                            right mkast!(num 3.0, loc 0, 4, 0, 5),
+                        ),
+                    ])
+                );
             }
 
             /// Represents `1%2%3`, and expects to be parsed into `(1%2)%3`.
             #[test]
             fn test_parse_percent_left_assoc() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                    mktoken!(TokenKind::Percent, loc 0, 3, 0, 4),
-                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
-                    mkast!(infix InfixPercent, loc 0, 0, 0, 5,
-                        left mkast!(infix InfixPercent, loc 0, 0, 0, 3,
-                            left mkast!(num 1.0, loc 0, 0, 0, 1),
-                            right mkast!(num 2.0, loc 0, 2, 0, 3)),
-                        right mkast!(num 3.0, loc 0, 4, 0, 5)
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Percent, loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 5, vec![
+                        mkast!(infix InfixPercent, loc 0, 0, 0, 5,
+                            left mkast!(infix InfixPercent, loc 0, 0, 0, 3,
+                                left mkast!(num 1.0, loc 0, 0, 0, 1),
+                                right mkast!(num 2.0, loc 0, 2, 0, 3),
+                            ),
+                            right mkast!(num 3.0, loc 0, 4, 0, 5),
+                        ),
+                    ])
+                );
             }
         }
 
@@ -404,79 +383,70 @@ mod tests {
             /// Represents `1+2*3`, and expects to be parsed into `1+(2*3)`.
             #[test]
             fn test_parse_asterisk_prioritized_over_plus() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                    mktoken!(TokenKind::Asterisk, loc 0, 3, 0, 4),
-                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
-                    mkast!(infix InfixPlus, loc 0, 0, 0, 5,
-                        left mkast!(num 1.0, loc 0, 0, 0, 1),
-                        right mkast!(infix InfixAsterisk, loc 0, 2, 0, 5,
-                            left mkast!(num 2.0, loc 0, 2, 0, 3),
-                            right mkast!(num 3.0, loc 0, 4, 0, 5)
-                        )
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Asterisk, loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 5, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 5,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(infix InfixAsterisk, loc 0, 2, 0, 5,
+                                left mkast!(num 2.0, loc 0, 2, 0, 3),
+                                right mkast!(num 3.0, loc 0, 4, 0, 5),
+                            ),
+                        ),
+                    ])
+                );
             }
 
             /// Represents `1-2/3`, and expects to be parsed into `1-(2/3)`.
             #[test]
             fn test_parse_slash_prioritized_over_minus() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                    mktoken!(TokenKind::Slash, loc 0, 3, 0, 4),
-                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
-                    mkast!(infix InfixMinus, loc 0, 0, 0, 5,
-                        left mkast!(num 1.0, loc 0, 0, 0, 1),
-                        right mkast!(infix InfixSlash, loc 0, 2, 0, 5,
-                            left mkast!(num 2.0, loc 0, 2, 0, 3),
-                            right mkast!(num 3.0, loc 0, 4, 0, 5)
-                        )
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Slash, loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 5, vec![
+                        mkast!(infix InfixMinus, loc 0, 0, 0, 5,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(infix InfixSlash, loc 0, 2, 0, 5,
+                                left mkast!(num 2.0, loc 0, 2, 0, 3),
+                                right mkast!(num 3.0, loc 0, 4, 0, 5),
+                            ),
+                        ),
+                    ])
+                );
             }
 
             /// Represents `1+2%3`, and expects to be parsed into `1+(2%3)`.
             #[test]
             fn test_parse_percent_prioritized_over_plus() -> Res {
-                let tokens = vec![
-                    mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-                    mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
-                    mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-                    mktoken!(TokenKind::Percent, loc 0, 3, 0, 4),
-                    mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
-                ];
-
-                let ast = parse(&tokens)?;
-
-                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
-                    mkast!(infix InfixPlus, loc 0, 0, 0, 5,
-                        left mkast!(num 1.0, loc 0, 0, 0, 1),
-                        right mkast!(infix InfixPercent, loc 0, 2, 0, 5,
-                            left mkast!(num 2.0, loc 0, 2, 0, 3),
-                            right mkast!(num 3.0, loc 0, 4, 0, 5)
-                        )
-                    ),
-                ]);
-                assert_eq!(ast, expected);
-                Ok(())
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Percent, loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 5, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 5,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(infix InfixPercent, loc 0, 2, 0, 5,
+                                left mkast!(num 2.0, loc 0, 2, 0, 3),
+                                right mkast!(num 3.0, loc 0, 4, 0, 5),
+                            ),
+                        ),
+                    ])
+                );
             }
         }
     }

@@ -55,7 +55,7 @@ impl Token {
     }
 }
 
-/// Make a token with the kind and the location specified by four numbers.
+/// Makes a token with the kind and the location specified by four numbers.
 #[macro_export]
 macro_rules! mktoken {
     ($kind:expr, loc $br:expr, $bc:expr, $er:expr, $ec:expr) => {

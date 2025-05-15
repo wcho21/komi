@@ -123,19 +123,29 @@ mod tests {
 
     type Res = Result<(), EvalError>;
 
+    /// Asserts a given AST to be evaluated into the expected value.
+    /// Helps write a test more declaratively.
+    macro_rules! assert_eval {
+        ($ast:expr, $expected:expr) => {
+            assert_eq!(
+                eval($ast)?,
+                $expected,
+                "received a value (left) evaluated from the ast, but expected the different value (right)",
+            );
+            return Ok(())
+        };
+    }
+
     mod empty {
         use super::*;
 
         /// Represents ``.
         #[test]
         fn test_empty() -> Res {
-            let program = mkast!(prog loc 0, 0, 0, 0, vec![]);
-
-            let value = eval(&program)?;
-
-            let expected = Value::new(ValueKind::Empty, Range::from_nums(0, 0, 0, 0));
-            assert_eq!(value, expected);
-            Ok(())
+            assert_eval!(
+                &mkast!(prog loc 0, 0, 0, 0, vec![]),
+                Value::new(ValueKind::Empty, Range::from_nums(0, 0, 0, 0))
+            );
         }
     }
 
@@ -145,15 +155,12 @@ mod tests {
         /// Represents `1`.
         #[test]
         fn test_single_num() -> Res {
-            let program = mkast!(prog loc 0, 0, 0, 1, vec![
-                mkast!(num 1.0, loc 0, 0, 0, 1),
-            ]);
-
-            let value = eval(&program)?;
-
-            let expected = Value::from_num(1.0, Range::from_nums(0, 0, 0, 1));
-            assert_eq!(value, expected);
-            Ok(())
+            assert_eval!(
+                &mkast!(prog loc 0, 0, 0, 1, vec![
+                    mkast!(num 1.0, loc 0, 0, 0, 1),
+                ]),
+                Value::from_num(1.0, Range::from_nums(0, 0, 0, 1))
+            );
         }
     }
 
@@ -166,86 +173,71 @@ mod tests {
             /// Represents `1+2`.
             #[test]
             fn test_addition() -> Res {
-                let program = mkast!(prog loc 0, 0, 0, 3, vec![
-                    mkast!(infix InfixPlus, loc 0, 0, 0, 3,
-                        left mkast!(num 1.0, loc 0, 0, 0, 1),
-                        right mkast!(num 2.0, loc 0, 2, 0, 3),
-                    ),
-                ]);
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(3.0, Range::from_nums(0, 0, 0, 3));
-                assert_eq!(value, expected);
-                Ok(())
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    Value::from_num(3.0, Range::from_nums(0, 0, 0, 3))
+                );
             }
 
             /// Represents `1-2`.
             #[test]
             fn test_subtraction() -> Res {
-                let program = mkast!(prog loc 0, 0, 0, 3, vec![
-                    mkast!(infix InfixMinus, loc 0, 0, 0, 3,
-                        left mkast!(num 1.0, loc 0, 0, 0, 1),
-                        right mkast!(num 2.0, loc 0, 2, 0, 3),
-                    ),
-                ]);
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(-1.0, Range::from_nums(0, 0, 0, 3));
-                assert_eq!(value, expected);
-                Ok(())
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixMinus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    Value::from_num(-1.0, Range::from_nums(0, 0, 0, 3))
+                );
             }
 
             /// Represents `3*4`.
             #[test]
             fn test_multiplication() -> Res {
-                let program = mkast!(prog loc 0, 0, 0, 3, vec![
-                    mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
-                        left mkast!(num 3.0, loc 0, 0, 0, 1),
-                        right mkast!(num 4.0, loc 0, 2, 0, 3),
-                    ),
-                ]);
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(12.0, Range::from_nums(0, 0, 0, 3));
-                assert_eq!(value, expected);
-                Ok(())
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                            left mkast!(num 3.0, loc 0, 0, 0, 1),
+                            right mkast!(num 4.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    Value::from_num(12.0, Range::from_nums(0, 0, 0, 3))
+                );
             }
 
             /// Represents `3/4`.
             #[test]
             fn test_division() -> Res {
-                let program = mkast!(prog loc 0, 0, 0, 3, vec![
-                    mkast!(infix InfixSlash, loc 0, 0, 0, 3,
-                        left mkast!(num 3.0, loc 0, 0, 0, 1),
-                        right mkast!(num 4.0, loc 0, 2, 0, 3),
-                    ),
-                ]);
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(0.75, Range::from_nums(0, 0, 0, 3));
-                assert_eq!(value, expected);
-                Ok(())
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixSlash, loc 0, 0, 0, 3,
+                            left mkast!(num 3.0, loc 0, 0, 0, 1),
+                            right mkast!(num 4.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    Value::from_num(0.75, Range::from_nums(0, 0, 0, 3))
+                );
             }
 
             /// Represents `3%4`.
             #[test]
             fn test_mod() -> Res {
-                let program = mkast!(prog loc 0, 0, 0, 3, vec![
-                    mkast!(infix InfixPercent, loc 0, 0, 0, 3,
-                        left mkast!(num 3.0, loc 0, 0, 0, 1),
-                        right mkast!(num 4.0, loc 0, 2, 0, 3),
-                    ),
-                ]);
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(3.0, Range::from_nums(0, 0, 0, 3));
-                assert_eq!(value, expected);
-                Ok(())
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPercent, loc 0, 0, 0, 3,
+                            left mkast!(num 3.0, loc 0, 0, 0, 1),
+                            right mkast!(num 4.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    Value::from_num(3.0, Range::from_nums(0, 0, 0, 3))
+                );
             }
         }
 
@@ -256,30 +248,27 @@ mod tests {
             /// Represents `9*8%7-6+5/4` (parsed into `(((9*8)%7)-6)+(5/4)`.
             #[test]
             fn test_subtraction_left_assoc() -> Res {
-                let program = mkast!(prog loc 0, 0, 0, 11, vec![
-                    mkast!(infix InfixPlus, loc 0, 0, 0, 11,
-                        left mkast!(infix InfixMinus, loc 0, 0, 0, 7,
-                            left mkast!(infix InfixPercent, loc 0, 0, 0, 5,
-                                left mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
-                                    left mkast!(num 9.0, loc 0, 0, 0, 1),
-                                    right mkast!(num 8.0, loc 0, 2, 0, 3),
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 11, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 11,
+                            left mkast!(infix InfixMinus, loc 0, 0, 0, 7,
+                                left mkast!(infix InfixPercent, loc 0, 0, 0, 5,
+                                    left mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                                        left mkast!(num 9.0, loc 0, 0, 0, 1),
+                                        right mkast!(num 8.0, loc 0, 2, 0, 3),
+                                    ),
+                                    right mkast!(num 7.0, loc 0, 4, 0, 5),
                                 ),
-                                right mkast!(num 7.0, loc 0, 4, 0, 5),
+                                right mkast!(num 6.0, loc 0, 6, 0, 7),
                             ),
-                            right mkast!(num 6.0, loc 0, 6, 0, 7),
+                            right mkast!(infix InfixSlash, loc 0, 8, 0, 11,
+                                left mkast!(num 5.0, loc 0, 8, 0, 9),
+                                right mkast!(num 4.0, loc 0, 10, 0, 11),
+                            ),
                         ),
-                        right mkast!(infix InfixSlash, loc 0, 8, 0, 11,
-                            left mkast!(num 5.0, loc 0, 8, 0, 9),
-                            right mkast!(num 4.0, loc 0, 10, 0, 11),
-                        ),
-                    ),
-                ]);
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(-2.75, Range::from_nums(0, 0, 0, 11));
-                assert_eq!(value, expected);
-                Ok(())
+                    ]),
+                    Value::from_num(-2.75, Range::from_nums(0, 0, 0, 11))
+                );
             }
         }
     }
