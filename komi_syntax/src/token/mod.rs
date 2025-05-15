@@ -16,6 +16,10 @@ pub enum TokenKind {
     Slash,
     /// A percent `%`
     Percent,
+    /// A left parenthesis `(`
+    LParen,
+    /// A right parenthesis `(`
+    RParen,
 }
 
 /// A token produced during lexing.
@@ -52,6 +56,14 @@ impl Token {
 
     pub const fn from_percent(location: Range) -> Self {
         Token::new(TokenKind::Percent, location)
+    }
+
+    pub const fn from_lparen(location: Range) -> Self {
+        Token::new(TokenKind::LParen, location)
+    }
+
+    pub const fn from_rparen(location: Range) -> Self {
+        Token::new(TokenKind::RParen, location)
     }
 }
 
@@ -117,5 +129,19 @@ mod tests {
         let token = Token::from_percent(RANGE_MOCK);
 
         assert_eq!(token, Token { kind: TokenKind::Percent, location: RANGE_MOCK })
+    }
+
+    #[test]
+    fn test_from_lparen() {
+        let token = Token::from_lparen(RANGE_MOCK);
+
+        assert_eq!(token, Token { kind: TokenKind::LParen, location: RANGE_MOCK })
+    }
+
+    #[test]
+    fn test_from_rparen() {
+        let token = Token::from_rparen(RANGE_MOCK);
+
+        assert_eq!(token, Token { kind: TokenKind::RParen, location: RANGE_MOCK })
     }
 }
