@@ -38,7 +38,7 @@ impl<'a> Evaluator<'a> {
         }
     }
 
-    fn eval_program(expressions: &Vec<Ast>, location: &Range) -> ResVal {
+    fn eval_program(expressions: &Vec<Box<Ast>>, location: &Range) -> ResVal {
         let mut last_value = Value::from_empty(*location);
 
         for expression in expressions {
@@ -119,8 +119,22 @@ pub fn eval(ast: &Ast) -> ResVal {
 #[cfg(test)]
 mod tests {
     use super::{Ast, AstKind, EvalError, Range, Value, ValueKind, eval};
+    use komi_syntax::mkast;
 
     type Res = Result<(), EvalError>;
+
+    /// Asserts a given AST to be evaluated into the expected value.
+    /// Helps write a test more declaratively.
+    macro_rules! assert_eval {
+        ($ast:expr, $expected:expr) => {
+            assert_eq!(
+                eval($ast)?,
+                $expected,
+                "received a value (left) evaluated from the ast, but expected the different value (right)",
+            );
+            return Ok(())
+        };
+    }
 
     mod empty {
         use super::*;
@@ -128,13 +142,10 @@ mod tests {
         /// Represents ``.
         #[test]
         fn test_empty() -> Res {
-            let program = Ast::new(AstKind::Program { expressions: vec![] }, Range::from_nums(0, 0, 0, 0));
-
-            let value = eval(&program)?;
-
-            let expected = Value::new(ValueKind::Empty, Range::from_nums(0, 0, 0, 0));
-            assert_eq!(value, expected);
-            Ok(())
+            assert_eval!(
+                &mkast!(prog loc 0, 0, 0, 0, vec![]),
+                Value::new(ValueKind::Empty, Range::from_nums(0, 0, 0, 0))
+            );
         }
     }
 
@@ -144,18 +155,12 @@ mod tests {
         /// Represents `1`.
         #[test]
         fn test_single_num() -> Res {
-            let program = Ast::new(
-                AstKind::Program {
-                    expressions: vec![Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))],
-                },
-                Range::from_nums(0, 0, 0, 1),
+            assert_eval!(
+                &mkast!(prog loc 0, 0, 0, 1, vec![
+                    mkast!(num 1.0, loc 0, 0, 0, 1),
+                ]),
+                Value::from_num(1.0, Range::from_nums(0, 0, 0, 1))
             );
-
-            let value = eval(&program)?;
-
-            let expected = Value::from_num(1.0, Range::from_nums(0, 0, 0, 1));
-            assert_eq!(value, expected);
-            Ok(())
         }
     }
 
@@ -168,116 +173,71 @@ mod tests {
             /// Represents `1+2`.
             #[test]
             fn test_addition() -> Res {
-                let program = Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Ast::new(
-                            AstKind::InfixPlus {
-                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                            },
-                            Range::from_nums(0, 0, 0, 3),
-                        )],
-                    },
-                    Range::from_nums(0, 0, 0, 1),
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    Value::from_num(3.0, Range::from_nums(0, 0, 0, 3))
                 );
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(3.0, Range::from_nums(0, 0, 0, 3));
-                assert_eq!(value, expected);
-                Ok(())
             }
 
-            /// Represents `3-2`.
+            /// Represents `1-2`.
             #[test]
             fn test_subtraction() -> Res {
-                let program = Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Ast::new(
-                            AstKind::InfixMinus {
-                                left: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                            },
-                            Range::from_nums(0, 0, 0, 3),
-                        )],
-                    },
-                    Range::from_nums(0, 0, 0, 1),
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixMinus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    Value::from_num(-1.0, Range::from_nums(0, 0, 0, 3))
                 );
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(1.0, Range::from_nums(0, 0, 0, 3));
-                assert_eq!(value, expected);
-                Ok(())
             }
 
-            /// Represents `2*3`.
+            /// Represents `3*4`.
             #[test]
             fn test_multiplication() -> Res {
-                let program = Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Ast::new(
-                            AstKind::InfixAsterisk {
-                                left: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 2, 0, 3))),
-                            },
-                            Range::from_nums(0, 0, 0, 3),
-                        )],
-                    },
-                    Range::from_nums(0, 0, 0, 1),
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                            left mkast!(num 3.0, loc 0, 0, 0, 1),
+                            right mkast!(num 4.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    Value::from_num(12.0, Range::from_nums(0, 0, 0, 3))
                 );
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(6.0, Range::from_nums(0, 0, 0, 3));
-                assert_eq!(value, expected);
-                Ok(())
             }
 
-            /// Represents `6/3`.
+            /// Represents `3/4`.
             #[test]
             fn test_division() -> Res {
-                let program = Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Ast::new(
-                            AstKind::InfixSlash {
-                                left: Box::new(Ast::new(AstKind::Number(6.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 2, 0, 3))),
-                            },
-                            Range::from_nums(0, 0, 0, 3),
-                        )],
-                    },
-                    Range::from_nums(0, 0, 0, 1),
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixSlash, loc 0, 0, 0, 3,
+                            left mkast!(num 3.0, loc 0, 0, 0, 1),
+                            right mkast!(num 4.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    Value::from_num(0.75, Range::from_nums(0, 0, 0, 3))
                 );
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(2.0, Range::from_nums(0, 0, 0, 3));
-                assert_eq!(value, expected);
-                Ok(())
             }
 
-            /// Represents `6%4`.
+            /// Represents `3%4`.
             #[test]
             fn test_mod() -> Res {
-                let program = Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Ast::new(
-                            AstKind::InfixPercent {
-                                left: Box::new(Ast::new(AstKind::Number(6.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(AstKind::Number(4.0), Range::from_nums(0, 2, 0, 3))),
-                            },
-                            Range::from_nums(0, 0, 0, 3),
-                        )],
-                    },
-                    Range::from_nums(0, 0, 0, 1),
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPercent, loc 0, 0, 0, 3,
+                            left mkast!(num 3.0, loc 0, 0, 0, 1),
+                            right mkast!(num 4.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    Value::from_num(3.0, Range::from_nums(0, 0, 0, 3))
                 );
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(2.0, Range::from_nums(0, 0, 0, 3));
-                assert_eq!(value, expected);
-                Ok(())
             }
         }
 
@@ -288,49 +248,27 @@ mod tests {
             /// Represents `9*8%7-6+5/4` (parsed into `(((9*8)%7)-6)+(5/4)`.
             #[test]
             fn test_subtraction_left_assoc() -> Res {
-                // Represents the left `9*8%7-6` part.
-                let left = Box::new(Ast::new(
-                    AstKind::InfixMinus {
-                        left: Box::new(Ast::new(
-                            AstKind::InfixPercent {
-                                left: Box::new(Ast::new(
-                                    AstKind::InfixAsterisk {
-                                        left: Box::new(Ast::new(AstKind::Number(9.0), Range::from_nums(0, 0, 0, 1))),
-                                        right: Box::new(Ast::new(AstKind::Number(8.0), Range::from_nums(0, 2, 0, 3))),
-                                    },
-                                    Range::from_nums(0, 0, 0, 3),
-                                )),
-                                right: Box::new(Ast::new(AstKind::Number(7.0), Range::from_nums(0, 4, 0, 5))),
-                            },
-                            Range::from_nums(0, 0, 0, 5),
-                        )),
-                        right: Box::new(Ast::new(AstKind::Number(6.0), Range::from_nums(0, 6, 0, 7))),
-                    },
-                    Range::from_nums(0, 0, 0, 7),
-                ));
-                // Represents the right `5/4` part.
-                let right = Box::new(Ast::new(
-                    AstKind::InfixSlash {
-                        left: Box::new(Ast::new(AstKind::Number(5.0), Range::from_nums(0, 8, 0, 9))),
-                        right: Box::new(Ast::new(AstKind::Number(4.0), Range::from_nums(0, 10, 0, 11))),
-                    },
-                    Range::from_nums(0, 8, 0, 11),
-                ));
-                let program = Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Ast::new(
-                            AstKind::InfixPlus { left, right },
-                            Range::from_nums(0, 0, 0, 11),
-                        )],
-                    },
-                    Range::from_nums(0, 0, 0, 11),
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 11, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 11,
+                            left mkast!(infix InfixMinus, loc 0, 0, 0, 7,
+                                left mkast!(infix InfixPercent, loc 0, 0, 0, 5,
+                                    left mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                                        left mkast!(num 9.0, loc 0, 0, 0, 1),
+                                        right mkast!(num 8.0, loc 0, 2, 0, 3),
+                                    ),
+                                    right mkast!(num 7.0, loc 0, 4, 0, 5),
+                                ),
+                                right mkast!(num 6.0, loc 0, 6, 0, 7),
+                            ),
+                            right mkast!(infix InfixSlash, loc 0, 8, 0, 11,
+                                left mkast!(num 5.0, loc 0, 8, 0, 9),
+                                right mkast!(num 4.0, loc 0, 10, 0, 11),
+                            ),
+                        ),
+                    ]),
+                    Value::from_num(-2.75, Range::from_nums(0, 0, 0, 11))
                 );
-
-                let value = eval(&program)?;
-
-                let expected = Value::from_num(-2.75, Range::from_nums(0, 0, 0, 11));
-                assert_eq!(value, expected);
-                Ok(())
             }
         }
     }

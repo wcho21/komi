@@ -55,6 +55,14 @@ impl Token {
     }
 }
 
+/// Makes a token with the kind and the location specified by four numbers.
+#[macro_export]
+macro_rules! mktoken {
+    ($kind:expr, loc $br:expr, $bc:expr, $er:expr, $ec:expr) => {
+        Token::new($kind, Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64))
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

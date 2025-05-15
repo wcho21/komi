@@ -4,7 +4,7 @@ use std::fmt;
 
 /// Errors that can occur during the parsing process.
 /// Serves as the interface between a parser and its user.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ParseError {
     Unexpected(String, Range),
 }

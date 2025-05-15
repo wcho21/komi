@@ -4,7 +4,7 @@ use komi_util::{Range, range};
 /// Serves as the interface between a parser and its user.
 #[derive(Debug, PartialEq, Clone)]
 pub enum AstKind {
-    Program { expressions: Vec<Ast> },
+    Program { expressions: Vec<Box<Ast>> },
     Number(f64),
     InfixPlus { left: Box<Ast>, right: Box<Ast> },
     InfixMinus { left: Box<Ast>, right: Box<Ast> },
@@ -25,7 +25,7 @@ impl Ast {
         Ast { kind, location }
     }
 
-    pub fn from_program(expressions: Vec<Ast>) -> Self {
+    pub fn from_program(expressions: Vec<Box<Ast>>) -> Self {
         let location = Self::locate_expressions(&expressions);
 
         Ast::new(AstKind::Program { expressions }, location)
@@ -65,7 +65,7 @@ impl Ast {
         Ast::new(kind, location)
     }
 
-    fn locate_expressions(expressions: &Vec<Ast>) -> Range {
+    fn locate_expressions(expressions: &Vec<Box<Ast>>) -> Range {
         if expressions.len() == 0 {
             return range::ORIGIN;
         }
@@ -75,6 +75,26 @@ impl Ast {
             end: expressions[expressions.len() - 1].location.end,
         }
     }
+}
+
+/// Makes an AST with the kind, and the location specified by four numbers.
+#[macro_export]
+macro_rules! mkast {
+    (prog loc $br:expr, $bc:expr, $er:expr, $ec: expr, $exprs:expr) => {
+        Box::new(Ast::new(
+            AstKind::Program { expressions: $exprs },
+            Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
+        ))
+    };
+    (infix $kind:ident, loc $br:expr, $bc:expr, $er:expr, $ec: expr, left $left:expr, right $right:expr $(,)?) => {
+        Box::new(Ast::new(
+            AstKind::$kind { left: $left, right: $right },
+            Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
+        ))
+    };
+    (num $val:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {
+        Box::new(Ast::new(AstKind::Number($val), Range::from_nums($br, $bc, $er, $ec)))
+    };
 }
 
 #[cfg(test)]

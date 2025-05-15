@@ -4,7 +4,7 @@ use std::fmt;
 
 /// Errors that can occur during the evaluating process.
 /// Serves as the interface between a evaluator and its user.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum EvalError {
     BadAdditionOperand(String, Range),
     Unexpected(String, Range),
