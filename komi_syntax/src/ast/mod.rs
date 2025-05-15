@@ -98,6 +98,12 @@ macro_rules! mkast {
             Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
         ))
     };
+    (prefix $kind:ident, loc $br:expr, $bc:expr, $er:expr, $ec: expr, operand $oprnd:expr $(,)?) => {
+        Box::new(Ast::new(
+            AstKind::$kind { operand: $oprnd },
+            Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
+        ))
+    };
     (infix $kind:ident, loc $br:expr, $bc:expr, $er:expr, $ec: expr, left $left:expr, right $right:expr $(,)?) => {
         Box::new(Ast::new(
             AstKind::$kind { left: $left, right: $right },
