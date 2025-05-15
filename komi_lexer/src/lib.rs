@@ -7,7 +7,7 @@ mod err;
 mod source_scanner;
 mod utf8_tape;
 
-pub use err::{LexError, LexErrorKind, LexErrorReason};
+pub use err::{LexError, LexErrorKind};
 use komi_syntax::Token;
 use komi_util::string;
 use komi_util::{Range, Scanner};
@@ -81,12 +81,8 @@ impl<'a> Lexer<'a> {
                     self.skip_comment();
                 }
                 Some(s) if string::is_whitespace(s) => self.scanner.advance(),
-                Some(x) => {
-                    return Err(LexError::new(
-                        LexErrorKind::IllegalChar,
-                        x.to_string(),
-                        self.scanner.locate(),
-                    ));
+                Some(_) => {
+                    return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
                 }
                 None => {
                     break;
@@ -130,10 +126,9 @@ impl<'a> Lexer<'a> {
         // return if not digit
         match self.scanner.read() {
             Some(s) if string::is_digit(s) => (),
-            other => {
-                let cause = format!("{}{}", lexeme, other.unwrap_or(""));
+            _ => {
                 let location = Range::new(begin, self.scanner.locate().end);
-                return Err(LexError::new(LexErrorKind::IllegalNumLiteral, cause, location));
+                return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
             }
         }
 
@@ -306,7 +301,7 @@ mod tests {
             fn test_illegal() -> Res {
                 assert_lex_fail!(
                     "12^",
-                    LexError::new(LexErrorKind::IllegalChar, "^".to_string(), Range::from_nums(0, 2, 0, 3)),
+                    LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 2, 0, 3)),
                 );
             }
 
@@ -314,7 +309,7 @@ mod tests {
             fn test_beginning_with_dot() -> Res {
                 assert_lex_fail!(
                     ".25",
-                    LexError::new(LexErrorKind::IllegalChar, ".".to_string(), Range::from_nums(0, 0, 0, 1)),
+                    LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)),
                 );
             }
 
@@ -322,11 +317,7 @@ mod tests {
             fn test_ending_with_dot() -> Res {
                 assert_lex_fail!(
                     "12.",
-                    LexError::new(
-                        LexErrorKind::IllegalNumLiteral,
-                        "12.".to_string(),
-                        Range::from_nums(0, 0, 0, 3),
-                    ),
+                    LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 3),),
                 );
             }
 
@@ -334,11 +325,7 @@ mod tests {
             fn test_two_dots_decimal() -> Res {
                 assert_lex_fail!(
                     "12..",
-                    LexError::new(
-                        LexErrorKind::IllegalNumLiteral,
-                        "12..".to_string(),
-                        Range::from_nums(0, 0, 0, 4),
-                    ),
+                    LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4),),
                 );
             }
 
@@ -346,11 +333,7 @@ mod tests {
             fn test_illegal_decimal() -> Res {
                 assert_lex_fail!(
                     "12.^",
-                    LexError::new(
-                        LexErrorKind::IllegalNumLiteral,
-                        "12.^".to_string(),
-                        Range::from_nums(0, 0, 0, 4),
-                    ),
+                    LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4),),
                 );
             }
         }
@@ -430,7 +413,7 @@ mod tests {
         fn test_unrecognizable() -> Res {
             assert_lex_fail!(
                 "^",
-                LexError::new(LexErrorKind::IllegalChar, "^".to_string(), Range::from_nums(0, 0, 0, 1)),
+                LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)),
             );
         }
     }

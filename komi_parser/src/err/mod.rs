@@ -1,24 +1,20 @@
-use komi_util::Range;
-use std::error::Error;
+use komi_util::EngineError;
 use std::fmt;
 
-/// Errors that can occur during the parsing process.
+/// Errors that may occur during the parsing process.
 /// Serves as the interface between a parser and its user.
 #[derive(Debug, PartialEq)]
-pub enum ParseError {
-    Unexpected(String, Range),
+pub enum ParseErrorKind {
+    Unexpected,
 }
 
-impl<'a> fmt::Display for ParseError {
+pub type ParseError = EngineError<ParseErrorKind>;
+
+impl fmt::Display for ParseErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ParseError::Unexpected(str, location) => write!(
-                f,
-                "Reason: PARSE_UNEXPECTED, Cause: '{}', Location: {:?}",
-                str, location
-            ),
-        }
+        let s = match self {
+            ParseErrorKind::Unexpected => "Unexpected",
+        };
+        write!(f, "{}", s)
     }
 }
-
-impl<'a> Error for ParseError {}

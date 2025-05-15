@@ -182,11 +182,7 @@ mod tests {
         fn test_dot() -> Res {
             assert_exec_fail!(
                 ".",
-                ExecError::Lex(LexError::new(
-                    LexErrorKind::IllegalChar,
-                    ".".to_string(),
-                    Range::from_nums(0, 0, 0, 1),
-                ))
+                ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1),))
             );
         }
 
@@ -194,11 +190,7 @@ mod tests {
         fn test_two_dots() -> Res {
             assert_exec_fail!(
                 "..",
-                ExecError::Lex(LexError::new(
-                    LexErrorKind::IllegalChar,
-                    ".".to_string(),
-                    Range::from_nums(0, 0, 0, 1),
-                ))
+                ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1),))
             );
         }
 
@@ -207,11 +199,7 @@ mod tests {
         fn test_two_pluses() -> Res {
             assert_exec_fail!(
                 "++",
-                ExecError::Lex(LexError::new(
-                    LexErrorKind::IllegalChar,
-                    "+".to_string(),
-                    Range::from_nums(0, 1, 0, 2)
-                ))
+                ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 1, 0, 2)))
             );
         }
 
@@ -220,11 +208,7 @@ mod tests {
         fn test_two_minuses() -> Res {
             assert_exec_fail!(
                 "--",
-                ExecError::Lex(LexError::new(
-                    LexErrorKind::IllegalChar,
-                    "-".to_string(),
-                    Range::from_nums(0, 1, 0, 2)
-                ))
+                ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 1, 0, 2)))
             );
         }
 
