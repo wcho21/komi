@@ -68,6 +68,14 @@ impl<'a> Lexer<'a> {
                     let token = advance_and_lex!(self, Self::lex_percent)?;
                     tokens.push(token);
                 }
+                Some("(") => {
+                    let token = advance_and_lex!(self, Self::lex_lparen)?;
+                    tokens.push(token);
+                }
+                Some(")") => {
+                    let token = advance_and_lex!(self, Self::lex_rparen)?;
+                    tokens.push(token);
+                }
                 Some("#") => {
                     self.scanner.advance();
                     self.skip_comment();
@@ -168,6 +176,14 @@ impl<'a> Lexer<'a> {
 
     fn lex_percent(&mut self, first_location: Range) -> ResToken {
         Ok(Token::from_percent(first_location))
+    }
+
+    fn lex_lparen(&mut self, first_location: Range) -> ResToken {
+        Ok(Token::from_lparen(first_location))
+    }
+
+    fn lex_rparen(&mut self, first_location: Range) -> ResToken {
+        Ok(Token::from_rparen(first_location))
     }
 
     fn skip_comment(&mut self) -> () {
@@ -366,6 +382,16 @@ mod tests {
         #[test]
         fn test_percent() -> Res {
             assert_lex!("%", vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)]);
+        }
+
+        #[test]
+        fn test_lparen() -> Res {
+            assert_lex!("(", vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)]);
+        }
+
+        #[test]
+        fn test_rparen() -> Res {
+            assert_lex!(")", vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)]);
         }
     }
 
