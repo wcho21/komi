@@ -22,12 +22,12 @@ struct Lexer<'a> {
 }
 
 macro_rules! advance_and_lex {
-    ($self:ident, $lex_fn:expr) => {{
+    ($self:ident, $lex_fn:expr $(,)?) => {{
         let first_location = $self.scanner.locate();
         $self.scanner.advance();
         $lex_fn($self, first_location)
     }};
-    ($self:ident, $lex_fn:expr, $first_char:expr) => {{
+    ($self:ident, $lex_fn:expr, $first_char:expr $(,)?) => {{
         let first_location = $self.scanner.locate();
         $self.scanner.advance();
         $lex_fn($self, first_location, $first_char)
@@ -201,7 +201,7 @@ mod tests {
     /// Asserts a given literal to be lexed into the expected tokens.
     /// Helps write a test more declaratively.
     macro_rules! assert_lex {
-        ($source:literal, $expected:expr) => {
+        ($source:literal, $expected:expr $(,)?) => {
             assert_eq!(
                 lex($source)?,
                 $expected,
@@ -215,7 +215,7 @@ mod tests {
     /// Asserts lexing a given literal will fail.
     /// Helps write a test more declaratively.
     macro_rules! assert_lex_fail {
-        ($source:literal, $expected:expr) => {
+        ($source:literal, $expected:expr $(,)?) => {
             assert_eq!(
                 lex($source),
                 Err($expected),
@@ -270,7 +270,7 @@ mod tests {
             fn test_without_decimal() -> Res {
                 assert_lex!(
                     "123",
-                    vec![mktoken!(TokenKind::Number(123.0), loc 0, 0, 0, "123".len())]
+                    vec![mktoken!(TokenKind::Number(123.0), loc 0, 0, 0, "123".len())],
                 );
             }
 
@@ -278,7 +278,7 @@ mod tests {
             fn test_with_decimal() -> Res {
                 assert_lex!(
                     "12.25",
-                    vec![mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, "12.25".len())]
+                    vec![mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, "12.25".len())],
                 );
             }
         }
@@ -290,7 +290,7 @@ mod tests {
             fn test_illegal() -> Res {
                 assert_lex_fail!(
                     "12^",
-                    LexError::new(LexErrorKind::IllegalChar, "^".to_string(), Range::from_nums(0, 2, 0, 3),)
+                    LexError::new(LexErrorKind::IllegalChar, "^".to_string(), Range::from_nums(0, 2, 0, 3)),
                 );
             }
 
@@ -298,7 +298,7 @@ mod tests {
             fn test_beginning_with_dot() -> Res {
                 assert_lex_fail!(
                     ".25",
-                    LexError::new(LexErrorKind::IllegalChar, ".".to_string(), Range::from_nums(0, 0, 0, 1),)
+                    LexError::new(LexErrorKind::IllegalChar, ".".to_string(), Range::from_nums(0, 0, 0, 1)),
                 );
             }
 
@@ -310,7 +310,7 @@ mod tests {
                         LexErrorKind::IllegalNumLiteral,
                         "12.".to_string(),
                         Range::from_nums(0, 0, 0, 3),
-                    )
+                    ),
                 );
             }
 
@@ -322,7 +322,7 @@ mod tests {
                         LexErrorKind::IllegalNumLiteral,
                         "12..".to_string(),
                         Range::from_nums(0, 0, 0, 4),
-                    )
+                    ),
                 );
             }
 
@@ -334,7 +334,7 @@ mod tests {
                         LexErrorKind::IllegalNumLiteral,
                         "12.^".to_string(),
                         Range::from_nums(0, 0, 0, 4),
-                    )
+                    ),
                 );
             }
         }
@@ -380,7 +380,7 @@ mod tests {
                     mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len()),
                     mktoken!(TokenKind::Plus, loc 0, "12 ".len(), 0, "12 +".len()),
                     mktoken!(TokenKind::Number(34.675), loc 0, "12 + ".len(), 0, "12 + 34.675".len()),
-                ]
+                ],
             );
         }
 
@@ -392,7 +392,7 @@ mod tests {
                 vec![
                     mktoken!(TokenKind::Plus, loc 0, 0, 0, "+".len()),
                     mktoken!(TokenKind::Plus, loc 0, "+ ".len(), 0, "+ +".len()),
-                ]
+                ],
             );
         }
     }
@@ -404,7 +404,7 @@ mod tests {
         fn test_unrecognizable() -> Res {
             assert_lex_fail!(
                 "^",
-                LexError::new(LexErrorKind::IllegalChar, "^".to_string(), Range::from_nums(0, 0, 0, 1),)
+                LexError::new(LexErrorKind::IllegalChar, "^".to_string(), Range::from_nums(0, 0, 0, 1)),
             );
         }
     }
