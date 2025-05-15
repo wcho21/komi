@@ -18,7 +18,7 @@ pub enum TokenKind {
     Percent,
     /// A left parenthesis `(`
     LParen,
-    /// A right parenthesis `(`
+    /// A right parenthesis `)`
     RParen,
 }
 
