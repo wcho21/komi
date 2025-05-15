@@ -323,6 +323,36 @@ mod tests {
                     Value::from_num(-1.0, Range::from_nums(0, 0, 0, 2))
                 );
             }
+
+            /// Represents `++1`
+            #[test]
+            fn test_two_plus_prefixes() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(prefix PrefixPlus, loc 0, 0, 0, 3,
+                            operand mkast!(prefix PrefixPlus, loc 0, 1, 0, 3,
+                                operand mkast!(num 1.0, loc 0, 2, 0, 3),
+                            ),
+                        ),
+                    ]),
+                    Value::from_num(1.0, Range::from_nums(0, 0, 0, 3))
+                );
+            }
+
+            /// Represents `--1`
+            #[test]
+            fn test_two_minus_prefixes() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(prefix PrefixMinus, loc 0, 0, 0, 3,
+                            operand mkast!(prefix PrefixMinus, loc 0, 1, 0, 3,
+                                operand mkast!(num 1.0, loc 0, 2, 0, 3),
+                            ),
+                        ),
+                    ]),
+                    Value::from_num(1.0, Range::from_nums(0, 0, 0, 3))
+                );
+            }
         }
     }
 
