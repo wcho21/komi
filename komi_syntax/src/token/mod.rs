@@ -58,11 +58,8 @@ impl Token {
 /// Make a token with the kind and the location specified by four numbers.
 #[macro_export]
 macro_rules! mktoken {
-    ($kind:expr, loc $begin_row:expr, $begin_col:expr, $end_row:expr, $end_col:expr) => {
-        Token::new(
-            $kind,
-            Range::from_nums($begin_row as u64, $begin_col as u64, $end_row as u64, $end_col as u64),
-        )
+    ($kind:expr, loc $br:expr, $bc:expr, $er:expr, $ec:expr) => {
+        Token::new($kind, Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64))
     };
 }
 
