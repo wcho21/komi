@@ -119,7 +119,7 @@ pub fn parse(tokens: &Vec<Token>) -> ResAst {
 #[cfg(test)]
 mod tests {
     use super::{Ast, ParseError, Range, Token, TokenKind, parse};
-    use komi_syntax::{AstKind, mktoken};
+    use komi_syntax::{AstKind, mkast, mktoken};
 
     type Res = Result<(), ParseError>;
 
@@ -133,10 +133,7 @@ mod tests {
 
             let ast = parse(&tokens)?;
 
-            let expected = Box::new(Ast::new(
-                AstKind::Program { expressions: vec![] },
-                Range::from_nums(0, 0, 0, 0),
-            ));
+            let expected = mkast!(prog loc 0, 0, 0, 0, vec![]);
             assert_eq!(ast, expected);
             Ok(())
         }
@@ -152,12 +149,9 @@ mod tests {
 
             let ast = parse(&tokens)?;
 
-            let expected = Box::new(Ast::new(
-                AstKind::Program {
-                    expressions: vec![Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1)))],
-                },
-                Range::from_nums(0, 0, 0, 1),
-            ));
+            let expected = mkast!(prog loc 0, 0, 0, 1, vec![
+                mkast!(num 1.0, loc 0, 0, 0, 1),
+            ]);
             assert_eq!(ast, expected);
             Ok(())
         }
@@ -180,18 +174,12 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixPlus {
-                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                            },
-                            Range::from_nums(0, 0, 0, 3),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 3),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 3, vec![
+                    mkast!(infix InfixPlus, loc 0, 0, 0, 3,
+                        left mkast!(num 1.0, loc 0, 0, 0, 1),
+                        right mkast!(num 2.0, loc 0, 2, 0, 3)
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -207,18 +195,12 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixMinus {
-                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                            },
-                            Range::from_nums(0, 0, 0, 3),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 3),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 3, vec![
+                    mkast!(infix InfixMinus, loc 0, 0, 0, 3,
+                        left mkast!(num 1.0, loc 0, 0, 0, 1),
+                        right mkast!(num 2.0, loc 0, 2, 0, 3)
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -234,18 +216,12 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixAsterisk {
-                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                            },
-                            Range::from_nums(0, 0, 0, 3),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 3),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 3, vec![
+                    mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                        left mkast!(num 1.0, loc 0, 0, 0, 1),
+                        right mkast!(num 2.0, loc 0, 2, 0, 3)
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -261,18 +237,12 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixSlash {
-                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                            },
-                            Range::from_nums(0, 0, 0, 3),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 3),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 3, vec![
+                    mkast!(infix InfixSlash, loc 0, 0, 0, 3,
+                        left mkast!(num 1.0, loc 0, 0, 0, 1),
+                        right mkast!(num 2.0, loc 0, 2, 0, 3)
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -288,18 +258,12 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixPercent {
-                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                            },
-                            Range::from_nums(0, 0, 0, 3),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 3),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 3, vec![
+                    mkast!(infix InfixPercent, loc 0, 0, 0, 3,
+                        left mkast!(num 1.0, loc 0, 0, 0, 1),
+                        right mkast!(num 2.0, loc 0, 2, 0, 3)
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -321,24 +285,14 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixPlus {
-                                left: Box::new(Ast::new(
-                                    AstKind::InfixPlus {
-                                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                                    },
-                                    Range::from_nums(0, 0, 0, 3),
-                                )),
-                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
-                            },
-                            Range::from_nums(0, 0, 0, 5),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 5),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
+                    mkast!(infix InfixPlus, loc 0, 0, 0, 5,
+                        left mkast!(infix InfixPlus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3)),
+                        right mkast!(num 3.0, loc 0, 4, 0, 5)
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -356,24 +310,14 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixMinus {
-                                left: Box::new(Ast::new(
-                                    AstKind::InfixMinus {
-                                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                                    },
-                                    Range::from_nums(0, 0, 0, 3),
-                                )),
-                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
-                            },
-                            Range::from_nums(0, 0, 0, 5),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 5),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
+                    mkast!(infix InfixMinus, loc 0, 0, 0, 5,
+                        left mkast!(infix InfixMinus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3)),
+                        right mkast!(num 3.0, loc 0, 4, 0, 5)
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -391,24 +335,14 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixAsterisk {
-                                left: Box::new(Ast::new(
-                                    AstKind::InfixAsterisk {
-                                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                                    },
-                                    Range::from_nums(0, 0, 0, 3),
-                                )),
-                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
-                            },
-                            Range::from_nums(0, 0, 0, 5),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 5),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
+                    mkast!(infix InfixAsterisk, loc 0, 0, 0, 5,
+                        left mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3)),
+                        right mkast!(num 3.0, loc 0, 4, 0, 5)
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -426,24 +360,14 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixSlash {
-                                left: Box::new(Ast::new(
-                                    AstKind::InfixSlash {
-                                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                                    },
-                                    Range::from_nums(0, 0, 0, 3),
-                                )),
-                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
-                            },
-                            Range::from_nums(0, 0, 0, 5),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 5),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
+                    mkast!(infix InfixSlash, loc 0, 0, 0, 5,
+                        left mkast!(infix InfixSlash, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3)),
+                        right mkast!(num 3.0, loc 0, 4, 0, 5)
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -461,24 +385,14 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixPercent {
-                                left: Box::new(Ast::new(
-                                    AstKind::InfixPercent {
-                                        left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                        right: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                                    },
-                                    Range::from_nums(0, 0, 0, 3),
-                                )),
-                                right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
-                            },
-                            Range::from_nums(0, 0, 0, 5),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 5),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
+                    mkast!(infix InfixPercent, loc 0, 0, 0, 5,
+                        left mkast!(infix InfixPercent, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(num 2.0, loc 0, 2, 0, 3)),
+                        right mkast!(num 3.0, loc 0, 4, 0, 5)
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -500,24 +414,15 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixPlus {
-                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(
-                                    AstKind::InfixAsterisk {
-                                        left: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                                        right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
-                                    },
-                                    Range::from_nums(0, 2, 0, 5),
-                                )),
-                            },
-                            Range::from_nums(0, 0, 0, 5),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 5),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
+                    mkast!(infix InfixPlus, loc 0, 0, 0, 5,
+                        left mkast!(num 1.0, loc 0, 0, 0, 1),
+                        right mkast!(infix InfixAsterisk, loc 0, 2, 0, 5,
+                            left mkast!(num 2.0, loc 0, 2, 0, 3),
+                            right mkast!(num 3.0, loc 0, 4, 0, 5)
+                        )
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -535,24 +440,15 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixMinus {
-                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(
-                                    AstKind::InfixSlash {
-                                        left: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                                        right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
-                                    },
-                                    Range::from_nums(0, 2, 0, 5),
-                                )),
-                            },
-                            Range::from_nums(0, 0, 0, 5),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 5),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
+                    mkast!(infix InfixMinus, loc 0, 0, 0, 5,
+                        left mkast!(num 1.0, loc 0, 0, 0, 1),
+                        right mkast!(infix InfixSlash, loc 0, 2, 0, 5,
+                            left mkast!(num 2.0, loc 0, 2, 0, 3),
+                            right mkast!(num 3.0, loc 0, 4, 0, 5)
+                        )
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }
@@ -570,24 +466,15 @@ mod tests {
 
                 let ast = parse(&tokens)?;
 
-                let expected = Box::new(Ast::new(
-                    AstKind::Program {
-                        expressions: vec![Box::new(Ast::new(
-                            AstKind::InfixPlus {
-                                left: Box::new(Ast::new(AstKind::Number(1.0), Range::from_nums(0, 0, 0, 1))),
-                                right: Box::new(Ast::new(
-                                    AstKind::InfixPercent {
-                                        left: Box::new(Ast::new(AstKind::Number(2.0), Range::from_nums(0, 2, 0, 3))),
-                                        right: Box::new(Ast::new(AstKind::Number(3.0), Range::from_nums(0, 4, 0, 5))),
-                                    },
-                                    Range::from_nums(0, 2, 0, 5),
-                                )),
-                            },
-                            Range::from_nums(0, 0, 0, 5),
-                        ))],
-                    },
-                    Range::from_nums(0, 0, 0, 5),
-                ));
+                let expected = mkast!(prog loc 0, 0, 0, 5, vec![
+                    mkast!(infix InfixPlus, loc 0, 0, 0, 5,
+                        left mkast!(num 1.0, loc 0, 0, 0, 1),
+                        right mkast!(infix InfixPercent, loc 0, 2, 0, 5,
+                            left mkast!(num 2.0, loc 0, 2, 0, 3),
+                            right mkast!(num 3.0, loc 0, 4, 0, 5)
+                        )
+                    ),
+                ]);
                 assert_eq!(ast, expected);
                 Ok(())
             }

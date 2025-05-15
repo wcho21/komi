@@ -77,6 +77,26 @@ impl Ast {
     }
 }
 
+/// Make an AST with the kind, and the location specified by four numbers.
+#[macro_export]
+macro_rules! mkast {
+    (prog loc $br:expr, $bc:expr, $er:expr, $ec: expr, $exprs:expr) => {
+        Box::new(Ast::new(
+            AstKind::Program { expressions: $exprs },
+            Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
+        ))
+    };
+    (infix $kind:ident, loc $br:expr, $bc:expr, $er:expr, $ec: expr, left $left:expr, right $right:expr $(,)?) => {
+        Box::new(Ast::new(
+            AstKind::$kind { left: $left, right: $right },
+            Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
+        ))
+    };
+    (num $val:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {
+        Box::new(Ast::new(AstKind::Number($val), Range::from_nums($br, $bc, $er, $ec)))
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
