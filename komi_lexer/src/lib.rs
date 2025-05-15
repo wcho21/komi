@@ -25,12 +25,12 @@ macro_rules! advance_and_lex {
     ($self:ident, $lex_fn:expr $(,)?) => {{
         let first_location = $self.scanner.locate();
         $self.scanner.advance();
-        $lex_fn($self, first_location)
+        $lex_fn($self, &first_location)
     }};
     ($self:ident, $lex_fn:expr, $first_char:expr $(,)?) => {{
         let first_location = $self.scanner.locate();
         $self.scanner.advance();
-        $lex_fn($self, first_location, $first_char)
+        $lex_fn($self, &first_location, $first_char)
     }};
 }
 
@@ -93,7 +93,7 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    fn lex_num(&mut self, first_location: Range, first_char: &'a str) -> ResToken {
+    fn lex_num(&mut self, first_location: &Range, first_char: &'a str) -> ResToken {
         let mut lexeme = first_char.to_string();
         let begin = first_location.begin;
 
@@ -153,32 +153,32 @@ impl<'a> Lexer<'a> {
         return Ok(token);
     }
 
-    fn lex_plus(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_plus(first_location))
+    fn lex_plus(&mut self, first_location: &Range) -> ResToken {
+        Ok(Token::from_plus(*first_location))
     }
 
-    fn lex_minus(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_minus(first_location))
+    fn lex_minus(&mut self, first_location: &Range) -> ResToken {
+        Ok(Token::from_minus(*first_location))
     }
 
-    fn lex_asterisk(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_asterisk(first_location))
+    fn lex_asterisk(&mut self, first_location: &Range) -> ResToken {
+        Ok(Token::from_asterisk(*first_location))
     }
 
-    fn lex_slash(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_slash(first_location))
+    fn lex_slash(&mut self, first_location: &Range) -> ResToken {
+        Ok(Token::from_slash(*first_location))
     }
 
-    fn lex_percent(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_percent(first_location))
+    fn lex_percent(&mut self, first_location: &Range) -> ResToken {
+        Ok(Token::from_percent(*first_location))
     }
 
-    fn lex_lparen(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_lparen(first_location))
+    fn lex_lparen(&mut self, first_location: &Range) -> ResToken {
+        Ok(Token::from_lparen(*first_location))
     }
 
-    fn lex_rparen(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_rparen(first_location))
+    fn lex_rparen(&mut self, first_location: &Range) -> ResToken {
+        Ok(Token::from_rparen(*first_location))
     }
 
     fn skip_comment(&mut self) -> () {
