@@ -6,9 +6,9 @@
 mod err;
 mod token_scanner;
 
-pub use err::ParseError;
+pub use err::{ParseError, ParseErrorKind};
 use komi_syntax::{Ast, Bp, Token, TokenKind};
-use komi_util::{Range, Scanner, Spot};
+use komi_util::{Range, Scanner};
 use token_scanner::TokenScanner;
 
 type ResAst = Result<Box<Ast>, ParseError>;
@@ -70,9 +70,10 @@ impl<'a> Parser<'a> {
                 self.scanner.advance();
                 self.parse_grouped_expression(first_token)
             }
-            _ => Err(ParseError::Unexpected(
-                "Unexpected".to_string(),
-                Range::new(Spot::new(0, 0), Spot::new(0, 0)), // TODO: fix location
+            _ => Err(ParseError::new(
+                ParseErrorKind::Unexpected,
+                "".to_string(),
+                Range::from_nums(0, 0, 0, 0),
             )),
         }
     }
