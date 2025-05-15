@@ -260,7 +260,7 @@ mod tests {
         }
     }
 
-    mod num {
+    mod num_literals {
         use super::*;
 
         mod success {
@@ -369,11 +369,11 @@ mod tests {
         }
     }
 
-    mod expression {
+    mod multi_chars {
         use super::*;
 
         #[test]
-        fn test_addition() -> Res {
+        fn test_addition_expression() -> Res {
             assert_lex!(
                 "12 + 34.675",
                 vec![
