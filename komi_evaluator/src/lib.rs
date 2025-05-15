@@ -30,6 +30,8 @@ impl<'a> Evaluator<'a> {
         match ast {
             Ast { kind: AstKind::Program { expressions }, location } => Self::eval_program(expressions, location),
             Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
+            Ast { kind: AstKind::PrefixPlus { operand }, location } => Self::eval_prefix_plus(operand, location),
+            Ast { kind: AstKind::PrefixMinus { operand }, location } => Self::eval_prefix_minus(operand, location),
             Ast { kind: AstKind::InfixPlus { left, right }, location: _ } => Self::eval_infix_plus(left, right),
             Ast { kind: AstKind::InfixMinus { left, right }, location: _ } => Self::eval_infix_minus(left, right),
             Ast { kind: AstKind::InfixAsterisk { left, right }, location: _ } => Self::eval_infix_asterisk(left, right),
@@ -52,12 +54,36 @@ impl<'a> Evaluator<'a> {
         Ok(Value::new(ValueKind::Number(*num), *location))
     }
 
+    fn eval_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
+        let val = Self::eval_prefix_operand_num(operand)?;
+
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ok(Value::new(ValueKind::Number(val), location))
+    }
+
+    fn eval_prefix_minus(operand: &Ast, prefix_location: &Range) -> ResVal {
+        let operand_val = Self::eval_prefix_operand_num(operand)?;
+        let val = -operand_val;
+
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ok(Value::new(ValueKind::Number(val), location))
+    }
+
     fn eval_infix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
         let val = Self::eval_ast(operand)?;
         if let ValueKind::Number(num) = val.kind {
             Ok(num)
         } else {
             Err(EvalError::new(EvalErrorKind::InvalidAdditionOperand, val.location))
+        }
+    }
+
+    fn eval_prefix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
+        let val = Self::eval_ast(operand)?;
+        if let ValueKind::Number(num) = val.kind {
+            Ok(num)
+        } else {
+            Err(EvalError::new(EvalErrorKind::InvalidPrefixNumOperand, val.location))
         }
     }
 
@@ -242,13 +268,13 @@ mod tests {
             }
         }
 
-        /// Note that the associativity of an expression is determined in the parsing step, as represented in the AST result.
         mod compound {
             use super::*;
 
             /// Represents `9*8%7-6+5/4` (parsed into `(((9*8)%7)-6)+(5/4)`.
+            /// Note that the associativity of an expression is determined in the parsing step, as represented in the AST result.
             #[test]
-            fn test_subtraction_left_assoc() -> Res {
+            fn test_five_kinds() -> Res {
                 assert_eval!(
                     &mkast!(prog loc 0, 0, 0, 11, vec![
                         mkast!(infix InfixPlus, loc 0, 0, 0, 11,
@@ -269,6 +295,32 @@ mod tests {
                         ),
                     ]),
                     Value::from_num(-2.75, Range::from_nums(0, 0, 0, 11))
+                );
+            }
+
+            /// Represents `+1`
+            #[test]
+            fn test_plus_prefix() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixPlus, loc 0, 0, 0, 2,
+                            operand mkast!(num 1.0, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    Value::from_num(1.0, Range::from_nums(0, 0, 0, 2))
+                );
+            }
+
+            /// Represents `-1`
+            #[test]
+            fn test_minus_prefix() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixMinus, loc 0, 0, 0, 2,
+                            operand mkast!(num 1.0, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    Value::from_num(-1.0, Range::from_nums(0, 0, 0, 2))
                 );
             }
         }

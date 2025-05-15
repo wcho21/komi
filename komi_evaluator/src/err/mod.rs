@@ -6,7 +6,7 @@ use std::fmt;
 #[derive(Debug, PartialEq)]
 pub enum EvalErrorKind {
     InvalidAdditionOperand,
-    InvalidPlusPrefixOperand,
+    InvalidPrefixNumOperand,
     Unexpected,
 }
 
@@ -16,7 +16,7 @@ impl fmt::Display for EvalErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self {
             EvalErrorKind::InvalidAdditionOperand => "InvalidAdditionOperand",
-            EvalErrorKind::InvalidPlusPrefixOperand => "InvalidPrefixOperand",
+            EvalErrorKind::InvalidPrefixNumOperand => "InvalidPrefixNumOperand",
             EvalErrorKind::Unexpected => "Unexpected",
         };
         write!(f, "{}", s)
