@@ -85,40 +85,6 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    fn skip_comment(&mut self) -> () {
-        loop {
-            match self.scanner.read() {
-                Some("\n") | Some("\r") | Some("\r\n") | None => {
-                    self.scanner.advance();
-                    break;
-                }
-                _ => {
-                    self.scanner.advance();
-                }
-            }
-        }
-    }
-
-    fn lex_plus(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_plus(first_location))
-    }
-
-    fn lex_minus(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_minus(first_location))
-    }
-
-    fn lex_asterisk(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_asterisk(first_location))
-    }
-
-    fn lex_slash(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_slash(first_location))
-    }
-
-    fn lex_percent(&mut self, first_location: Range) -> ResToken {
-        Ok(Token::from_percent(first_location))
-    }
-
     fn lex_num(&mut self, first_location: Range, first_char: &'a str) -> ResToken {
         let mut lexeme = first_char.to_string();
         let begin = first_location.begin;
@@ -165,6 +131,40 @@ impl<'a> Lexer<'a> {
 
         let token = Token::from_num(num, Range::new(begin, end));
         return Ok(token);
+    }
+
+    fn lex_plus(&mut self, first_location: Range) -> ResToken {
+        Ok(Token::from_plus(first_location))
+    }
+
+    fn lex_minus(&mut self, first_location: Range) -> ResToken {
+        Ok(Token::from_minus(first_location))
+    }
+
+    fn lex_asterisk(&mut self, first_location: Range) -> ResToken {
+        Ok(Token::from_asterisk(first_location))
+    }
+
+    fn lex_slash(&mut self, first_location: Range) -> ResToken {
+        Ok(Token::from_slash(first_location))
+    }
+
+    fn lex_percent(&mut self, first_location: Range) -> ResToken {
+        Ok(Token::from_percent(first_location))
+    }
+
+    fn skip_comment(&mut self) -> () {
+        loop {
+            match self.scanner.read() {
+                Some("\n") | Some("\r") | Some("\r\n") | None => {
+                    self.scanner.advance();
+                    break;
+                }
+                _ => {
+                    self.scanner.advance();
+                }
+            }
+        }
     }
 }
 
