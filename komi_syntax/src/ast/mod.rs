@@ -33,47 +33,47 @@ impl Ast {
         Ast::new(AstKind::Program { expressions }, location)
     }
 
-    pub fn from_num(num: f64, location: Range) -> Self {
-        Ast::new(AstKind::Number(num), location)
+    pub fn from_num(num: f64, location: &Range) -> Self {
+        Ast::new(AstKind::Number(num), *location)
     }
 
-    pub fn from_prefix_plus(operand: Ast, prefix_location: Range) -> Self {
+    pub fn from_prefix_plus(operand: Box<Ast>, prefix_location: &Range) -> Self {
         let location = Range::new(prefix_location.begin, operand.location.end);
-        Ast::new(AstKind::PrefixPlus { operand: Box::new(operand) }, location)
+        Ast::new(AstKind::PrefixPlus { operand }, location)
     }
 
-    pub fn from_prefix_minus(operand: Ast, prefix_location: Range) -> Self {
+    pub fn from_prefix_minus(operand: Box<Ast>, prefix_location: &Range) -> Self {
         let location = Range::new(prefix_location.begin, operand.location.end);
-        Ast::new(AstKind::PrefixMinus { operand: Box::new(operand) }, location)
+        Ast::new(AstKind::PrefixMinus { operand }, location)
     }
 
-    pub fn from_infix_plus(left: Ast, right: Ast) -> Self {
+    pub fn from_infix_plus(left: Box<Ast>, right: Box<Ast>) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
-        let kind = AstKind::InfixPlus { left: Box::new(left), right: Box::new(right) };
+        let kind = AstKind::InfixPlus { left, right };
         Ast::new(kind, location)
     }
 
-    pub fn from_infix_minus(left: Ast, right: Ast) -> Self {
+    pub fn from_infix_minus(left: Box<Ast>, right: Box<Ast>) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
-        let kind = AstKind::InfixMinus { left: Box::new(left), right: Box::new(right) };
+        let kind = AstKind::InfixMinus { left, right };
         Ast::new(kind, location)
     }
 
-    pub fn from_infix_asterisk(left: Ast, right: Ast) -> Self {
+    pub fn from_infix_asterisk(left: Box<Ast>, right: Box<Ast>) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
-        let kind = AstKind::InfixAsterisk { left: Box::new(left), right: Box::new(right) };
+        let kind = AstKind::InfixAsterisk { left, right };
         Ast::new(kind, location)
     }
 
-    pub fn from_infix_slash(left: Ast, right: Ast) -> Self {
+    pub fn from_infix_slash(left: Box<Ast>, right: Box<Ast>) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
-        let kind = AstKind::InfixSlash { left: Box::new(left), right: Box::new(right) };
+        let kind = AstKind::InfixSlash { left, right };
         Ast::new(kind, location)
     }
 
-    pub fn from_infix_percent(left: Ast, right: Ast) -> Self {
+    pub fn from_infix_percent(left: Box<Ast>, right: Box<Ast>) -> Self {
         let location = Range::new(left.clone().location.begin, right.clone().location.end);
-        let kind = AstKind::InfixPercent { left: Box::new(left), right: Box::new(right) };
+        let kind = AstKind::InfixPercent { left, right };
         Ast::new(kind, location)
     }
 

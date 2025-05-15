@@ -12,6 +12,8 @@ use komi_util::{Range, Scanner};
 use token_scanner::TokenScanner;
 
 type ResAst = Result<Box<Ast>, ParseError>;
+type MakePrefixAst<'a> = fn(Box<Ast>, &'a Range) -> Ast;
+type MakeInfixAst = fn(Box<Ast>, Box<Ast>) -> Ast;
 
 /// Produces an AST from tokens.
 struct Parser<'a> {
@@ -64,15 +66,15 @@ impl<'a> Parser<'a> {
         match first_token.kind {
             TokenKind::Plus => {
                 self.scanner.advance();
-                self.parse_plus_prefix_expression(first_token.location)
+                self.parse_plus_prefix_expression(&first_token.location)
             }
             TokenKind::Minus => {
                 self.scanner.advance();
-                self.parse_minus_prefix_expression(first_token.location)
+                self.parse_minus_prefix_expression(&first_token.location)
             }
             TokenKind::Number(n) => {
                 self.scanner.advance();
-                self.make_num_ast(n, first_token.location)
+                self.make_num_ast(n, &first_token.location)
             }
             TokenKind::LParen => {
                 self.scanner.advance();
@@ -85,11 +87,11 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_plus_prefix_expression(&mut self, prefix_location: Range) -> ResAst {
+    fn parse_plus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
         self.read_operand_and_make_prefix_ast(prefix_location, Ast::from_prefix_plus)
     }
 
-    fn parse_minus_prefix_expression(&mut self, prefix_location: Range) -> ResAst {
+    fn parse_minus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
         self.read_operand_and_make_prefix_ast(prefix_location, Ast::from_prefix_minus)
     }
 
@@ -139,10 +141,10 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn read_operand_and_make_prefix_ast(&mut self, prefix_location: Range, make_ast: fn(Ast, Range) -> Ast) -> ResAst {
+    fn read_operand_and_make_prefix_ast(&mut self, prefix_location: &'a Range, make_ast: MakePrefixAst<'a>) -> ResAst {
         if let Some(x) = self.scanner.read() {
             let operand_ast = self.parse_expression(x, Bp::get_prefix())?;
-            let prefix_ast = Box::new(make_ast(*operand_ast, prefix_location));
+            let prefix_ast = Box::new(make_ast(operand_ast, prefix_location));
             Ok(prefix_ast)
         } else {
             let location = Range::new(prefix_location.begin, self.scanner.locate().end);
@@ -150,10 +152,10 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn read_right_and_make_infix_ast(&mut self, left: Box<Ast>, bp: &Bp, make_ast: fn(Ast, Ast) -> Ast) -> ResAst {
+    fn read_right_and_make_infix_ast(&mut self, left: Box<Ast>, bp: &Bp, make_ast: MakeInfixAst) -> ResAst {
         if let Some(x) = self.scanner.read() {
             let right = self.parse_expression(x, bp)?;
-            let infix_ast = Box::new(make_ast(*left, *right));
+            let infix_ast = Box::new(make_ast(left, right));
             Ok(infix_ast)
         } else {
             let location = Range::new(left.location.begin, self.scanner.locate().end);
@@ -161,7 +163,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn make_num_ast(&mut self, num: f64, location: Range) -> ResAst {
+    fn make_num_ast(&mut self, num: f64, location: &Range) -> ResAst {
         Ok(Box::new(Ast::from_num(num, location)))
     }
 }
