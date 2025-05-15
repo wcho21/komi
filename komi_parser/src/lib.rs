@@ -167,7 +167,7 @@ mod tests {
 
         /// Represents ``.
         #[test]
-        fn test_parse_empty() -> Res {
+        fn test_empty() -> Res {
             assert_parse!(&vec![], mkast!(prog loc 0, 0, 0, 0, vec![]));
         }
     }
@@ -177,7 +177,7 @@ mod tests {
 
         /// Represents `1`.
         #[test]
-        fn test_parse_num() -> Res {
+        fn test_num() -> Res {
             assert_parse!(
                 &vec![mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1)],
                 mkast!(prog loc 0, 0, 0, 1, vec![
@@ -195,7 +195,7 @@ mod tests {
 
             /// Represents `1+2`.
             #[test]
-            fn test_parse_plus() -> Res {
+            fn test_plus() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -213,7 +213,7 @@ mod tests {
 
             /// Represents `1-2`.
             #[test]
-            fn test_parse_minus() -> Res {
+            fn test_minus() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -231,7 +231,7 @@ mod tests {
 
             /// Represents `1*2`.
             #[test]
-            fn test_parse_asterisk() -> Res {
+            fn test_asterisk() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -249,7 +249,7 @@ mod tests {
 
             /// Represents `1/2`.
             #[test]
-            fn test_parse_slash() -> Res {
+            fn test_slash() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -267,7 +267,7 @@ mod tests {
 
             /// Represents `1%2`.
             #[test]
-            fn test_parse_percent() -> Res {
+            fn test_percent() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -289,7 +289,7 @@ mod tests {
 
             /// Represents `1+2+3`, and expects to be parsed into `(1+2)+3`.
             #[test]
-            fn test_parse_plus_left_assoc() -> Res {
+            fn test_plus_left_assoc() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -312,7 +312,7 @@ mod tests {
 
             /// Represents `1-2-3`, and expects to be parsed into `(1-2)-3`.
             #[test]
-            fn test_parse_minus_left_assoc() -> Res {
+            fn test_minus_left_assoc() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -335,7 +335,7 @@ mod tests {
 
             /// Represents `1*2*3`, and expects to be parsed into `(1*2)*3`.
             #[test]
-            fn test_parse_asterisk_left_assoc() -> Res {
+            fn test_asterisk_left_assoc() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -358,7 +358,7 @@ mod tests {
 
             /// Represents `1/2/3`, and expects to be parsed into `(1/2)/3`.
             #[test]
-            fn test_parse_slash_left_assoc() -> Res {
+            fn test_slash_left_assoc() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -381,7 +381,7 @@ mod tests {
 
             /// Represents `1%2%3`, and expects to be parsed into `(1%2)%3`.
             #[test]
-            fn test_parse_percent_left_assoc() -> Res {
+            fn test_percent_left_assoc() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -408,7 +408,7 @@ mod tests {
 
             /// Represents `1+2*3`, and expects to be parsed into `1+(2*3)`.
             #[test]
-            fn test_parse_asterisk_prioritized_over_plus() -> Res {
+            fn test_asterisk_prioritized_over_plus() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -431,7 +431,7 @@ mod tests {
 
             /// Represents `1-2/3`, and expects to be parsed into `1-(2/3)`.
             #[test]
-            fn test_parse_slash_prioritized_over_minus() -> Res {
+            fn test_slash_prioritized_over_minus() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -454,7 +454,7 @@ mod tests {
 
             /// Represents `1+2%3`, and expects to be parsed into `1+(2%3)`.
             #[test]
-            fn test_parse_percent_prioritized_over_plus() -> Res {
+            fn test_percent_prioritized_over_plus() -> Res {
                 assert_parse!(
                     &vec![
                         mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
