@@ -2,30 +2,62 @@ use komi_util::Range;
 use std::error::Error;
 use std::fmt;
 
-/// Errors that can occur during the lexing process.
+/// An Error that occurs during the lexing process.
 /// Serves as the interface between a lexer and its user.
 #[derive(Debug, PartialEq)]
-pub enum LexError {
+pub struct LexError {
+    pub kind: LexErrorKind,
+    pub reason: LexErrorReason,
+}
+
+/// Kinds of errors due to the lexing.
+#[derive(Debug, PartialEq)]
+pub enum LexErrorKind {
     /// An illegal char, not in the syntax.
-    IllegalChar { char: String, location: Range },
+    IllegalChar,
+    /// An illegal number literal, such as `12.`.
+    IllegalNumLiteral,
     /// An internal error impossible to occur if lexed as expected.
-    Unexpected { expected: String, received: String, location: Range },
+    Unexpected,
+}
+
+/// Reason of the error, with the string `cause` and its location `location` in the source.
+#[derive(Debug, PartialEq)]
+pub struct LexErrorReason {
+    pub cause: String,
+    pub location: Range,
+}
+
+impl LexError {
+    pub fn new(kind: LexErrorKind, cause: String, location: Range) -> Self {
+        Self { kind, reason: LexErrorReason::new(cause, location) }
+    }
+}
+
+impl LexErrorReason {
+    pub fn new(cause: String, location: Range) -> Self {
+        Self { cause, location }
+    }
 }
 
 impl fmt::Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            LexError::IllegalChar { char, location } => write!(
-                f,
-                "Reason: LEX_ILLEGAL_CHAR, Cause: '{}', Location: {:?}",
-                char, location
-            ),
-            LexError::Unexpected { expected, received, location } => write!(
-                f,
-                "Reason: LEX_UNEXPECTED, Cause: '{}', Expected: '{}', Location: {:?}",
-                received, expected, location
-            ),
-        }
+        write!(
+            f,
+            "Reason: '{}', Cause: {}, Location: {:?}",
+            self.kind, self.reason.cause, self.reason.location
+        )
+    }
+}
+
+impl fmt::Display for LexErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let s = match self {
+            LexErrorKind::IllegalChar => "IllegalChar",
+            LexErrorKind::IllegalNumLiteral => "IllegalNumLiteral",
+            LexErrorKind::Unexpected => "Unexpected",
+        };
+        write!(f, "{}", s)
     }
 }
 

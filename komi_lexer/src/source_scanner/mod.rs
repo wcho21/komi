@@ -18,6 +18,8 @@ impl<'a> SourceScanner<'a> {
 impl<'a> Scanner for SourceScanner<'a> {
     type Item = Option<&'a str>;
 
+    /// Reads next character unit.
+    /// Note that if CRLF (`"\r\n"`) encountered, returned as a unit.
     fn read(&self) -> Option<&'a str> {
         match self.tape.get_current() {
             Some("\r") => match self.tape.peek_next() {
@@ -28,6 +30,7 @@ impl<'a> Scanner for SourceScanner<'a> {
         }
     }
 
+    /// Moves the internal pointer to the next unit.
     fn advance(&mut self) -> () {
         match self.read() {
             Some("\r") | Some("\n") => {
@@ -49,8 +52,13 @@ impl<'a> Scanner for SourceScanner<'a> {
         }
     }
 
+    /// Returns the current location, which is specific by `begin` and `end` as a half-open interval `[begin, end)`.
+    /// Note that an empty interval returned if the end of the source.
     fn locate(&self) -> Range {
-        Range::from_nums(self.row, self.col, self.row, self.col + 1)
+        match self.read() {
+            None => Range::from_nums(self.row, self.col, self.row, self.col),
+            _ => Range::from_nums(self.row, self.col, self.row, self.col + 1),
+        }
     }
 }
 
@@ -146,10 +154,10 @@ mod tests {
         assert_eq!(scanner.locate(), Range::from_nums(0, 1, 0, 2),);
         scanner.advance();
         assert_eq!(scanner.read(), None);
-        assert_eq!(scanner.locate(), Range::from_nums(0, 2, 0, 3),);
+        assert_eq!(scanner.locate(), Range::from_nums(0, 2, 0, 2),);
         scanner.advance();
         assert_eq!(scanner.read(), None);
-        assert_eq!(scanner.locate(), Range::from_nums(0, 2, 0, 3),);
+        assert_eq!(scanner.locate(), Range::from_nums(0, 2, 0, 2),);
     }
 
     #[test]
@@ -167,10 +175,10 @@ mod tests {
         assert_eq!(scanner.locate(), Range::from_nums(2, 0, 2, 1),);
         scanner.advance();
         assert_eq!(scanner.read(), None);
-        assert_eq!(scanner.locate(), Range::from_nums(3, 0, 3, 1),);
+        assert_eq!(scanner.locate(), Range::from_nums(3, 0, 3, 0),);
         scanner.advance();
         assert_eq!(scanner.read(), None);
-        assert_eq!(scanner.locate(), Range::from_nums(3, 0, 3, 1),);
+        assert_eq!(scanner.locate(), Range::from_nums(3, 0, 3, 0),);
     }
 
     #[test]

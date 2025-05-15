@@ -5,6 +5,8 @@ pub struct Spot {
     col: u64,
 }
 
+// TODO: json-compatible or more concise format on write!()?
+
 impl Spot {
     pub const fn new(row: u64, col: u64) -> Self {
         Spot { row, col }
