@@ -30,16 +30,16 @@ impl<'a> Parser<'a> {
     fn parse_program(&mut self) -> ResAst {
         let mut expressions: Vec<Box<Ast>> = vec![];
 
-        while self.scanner.read() != None {
-            let e = self.parse_expression(Bp::get_lowest())?;
+        while let Some(x) = self.scanner.read() {
+            let e = self.parse_expression(x, Bp::get_lowest())?;
             expressions.push(e);
         }
 
         return Ok(Box::new(Ast::from_program(expressions)));
     }
 
-    fn parse_expression(&mut self, threshold_bp: &Bp) -> ResAst {
-        let mut top = self.parse_expression_start()?;
+    fn parse_expression(&mut self, first_token: &'a Token, threshold_bp: &Bp) -> ResAst {
+        let mut top = self.parse_expression_start(first_token)?;
 
         loop {
             let token = if let Some(x) = self.scanner.read() {
@@ -60,44 +60,49 @@ impl<'a> Parser<'a> {
         Ok(top)
     }
 
-    fn parse_expression_start(&mut self) -> ResAst {
-        self.parse_num()
+    fn parse_expression_start(&mut self, first_token: &'a Token) -> ResAst {
+        self.parse_num(first_token)
     }
 
-    fn parse_infix_expression(&mut self, left: &Ast, infix: &Token) -> ResAst {
+    fn parse_infix_expression(&mut self, left: &Ast, infix: &'a Token) -> ResAst {
         match infix.kind {
             TokenKind::Plus => {
-                let right = self.parse_expression(Bp::get_additive())?;
-                let expression = Box::new(Ast::from_infix_plus(left.clone(), *right));
-                Ok(expression)
+                let bp = Bp::get_additive();
+                self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_plus)
             }
             TokenKind::Minus => {
-                let right = self.parse_expression(Bp::get_additive())?;
-                let expression = Box::new(Ast::from_infix_minus(left.clone(), *right));
-                Ok(expression)
+                let bp = Bp::get_additive();
+                self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_minus)
             }
             TokenKind::Asterisk => {
-                let right = self.parse_expression(Bp::get_multiplicative())?;
-                let expression = Box::new(Ast::from_infix_asterisk(left.clone(), *right));
-                Ok(expression)
+                let bp = Bp::get_multiplicative();
+                self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_asterisk)
             }
             TokenKind::Slash => {
-                let right = self.parse_expression(Bp::get_multiplicative())?;
-                let expression = Box::new(Ast::from_infix_slash(left.clone(), *right));
-                Ok(expression)
+                let bp = Bp::get_multiplicative();
+                self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_slash)
             }
             TokenKind::Percent => {
-                let right = self.parse_expression(Bp::get_multiplicative())?;
-                let expression = Box::new(Ast::from_infix_percent(left.clone(), *right));
-                Ok(expression)
+                let bp = Bp::get_multiplicative();
+                self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_percent)
             }
             _ => panic!("todo"),
         }
     }
 
-    fn parse_num(&mut self) -> ResAst {
-        match self.scanner.read() {
-            Some(Token { kind: TokenKind::Number(n), location }) => {
+    fn read_right_and_make_infix_ast(&mut self, left: &Ast, bp: &Bp, make_ast: fn(Ast, Ast) -> Ast) -> ResAst {
+        if let Some(x) = self.scanner.read() {
+            let right = self.parse_expression(x, bp)?;
+            let infix_ast = Box::new(make_ast(left.clone(), *right));
+            Ok(infix_ast)
+        } else {
+            panic!("no right");
+        }
+    }
+
+    fn parse_num(&mut self, token: &'a Token) -> ResAst {
+        match token {
+            Token { kind: TokenKind::Number(n), location } => {
                 self.scanner.advance();
                 Ok(Box::new(Ast::from_num(*n, *location)))
             }
@@ -443,6 +448,69 @@ mod tests {
                             right mkast!(infix InfixPercent, loc 0, 2, 0, 5,
                                 left mkast!(num 2.0, loc 0, 2, 0, 3),
                                 right mkast!(num 3.0, loc 0, 4, 0, 5),
+                            ),
+                        ),
+                    ])
+                );
+            }
+        }
+
+        mod grouping {
+            use super::*;
+
+            /// Represents `(1-2)*3`
+            #[test]
+            #[ignore] // TODO
+            fn test_grouping() -> Res {
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::LParen, loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::Minus, loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::RParen, loc 0, 4, 0, 5),
+                        mktoken!(TokenKind::Asterisk, loc 0, 5, 0, 6),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 6, 0, 7),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 7, vec![
+                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 5,
+                            left mkast!(infix InfixMinus, loc 0, 0, 0, 5,
+                                left mkast!(num 1.0, loc 0, 1, 0, 2),
+                                right mkast!(num 2.0, loc 0, 3, 0, 4),
+                            ),
+                            right mkast!(num 1.0, loc 0, 6, 0, 7),
+                        ),
+                    ])
+                );
+            }
+
+            /// Represents `1-(2*(3-4))`
+            #[test]
+            #[ignore] // TODO
+            fn test_nested_grouping() -> Res {
+                assert_parse!(
+                    &vec![
+                        mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
+                        mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
+                        mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
+                        mktoken!(TokenKind::Number(2.0), loc 0, 3, 0, 4),
+                        mktoken!(TokenKind::Asterisk, loc 0, 4, 0, 5),
+                        mktoken!(TokenKind::LParen, loc 0, 5, 0, 6),
+                        mktoken!(TokenKind::Number(3.0), loc 0, 6, 0, 7),
+                        mktoken!(TokenKind::Minus, loc 0, 7, 0, 8),
+                        mktoken!(TokenKind::Number(4.0), loc 0, 8, 0, 9),
+                        mktoken!(TokenKind::RParen, loc 0, 9, 0, 10),
+                        mktoken!(TokenKind::RParen, loc 0, 10, 0, 11),
+                    ],
+                    mkast!(prog loc 0, 0, 0, 5, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 11,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(infix InfixPercent, loc 0, 2, 0, 11,
+                                left mkast!(num 2.0, loc 0, 3, 0, 4),
+                                right mkast!(infix InfixMinus, loc 0, 5, 0, 10,
+                                    left mkast!(num 3.0, loc 0, 6, 0, 7),
+                                    right mkast!(num 4.0, loc 0, 8, 0, 9),
+                                ),
                             ),
                         ),
                     ])
