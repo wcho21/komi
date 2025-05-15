@@ -7,7 +7,7 @@ mod err;
 mod source_scanner;
 mod utf8_tape;
 
-pub use err::LexError;
+pub use err::{LexError, LexErrorKind, LexErrorReason};
 use komi_syntax::Token;
 use komi_util::string;
 use komi_util::{Range, Scanner};
@@ -74,7 +74,11 @@ impl<'a> Lexer<'a> {
                 }
                 Some(s) if string::is_whitespace(s) => self.scanner.advance(),
                 Some(x) => {
-                    return Err(LexError::IllegalChar { cause: x.to_string(), location: self.scanner.locate() });
+                    return Err(LexError::new(
+                        LexErrorKind::IllegalChar,
+                        x.to_string(),
+                        self.scanner.locate(),
+                    ));
                 }
                 None => {
                     break;
@@ -121,7 +125,7 @@ impl<'a> Lexer<'a> {
             other => {
                 let cause = format!("{}{}", lexeme, other.unwrap_or(""));
                 let location = Range::new(begin, self.scanner.locate().begin);
-                return Err(LexError::IllegalNumLiteral { cause, location });
+                return Err(LexError::new(LexErrorKind::IllegalNumLiteral, cause, location));
             }
         }
 
@@ -188,6 +192,7 @@ pub fn lex(source: &str) -> ResTokens {
 
 #[cfg(test)]
 mod tests {
+    use super::err::LexErrorKind;
     use super::{LexError, Range, Token, lex};
     use komi_syntax::{TokenKind, mktoken};
 
@@ -327,10 +332,7 @@ mod tests {
         fn test_illegal_char() -> Res {
             assert_lex_fail!(
                 "^",
-                LexError::IllegalChar {
-                    cause: "^".to_string(),
-                    location: Range::from_nums(0, 0, 0, 1),
-                }
+                LexError::new(LexErrorKind::IllegalChar, "^".to_string(), Range::from_nums(0, 0, 0, 1),)
             );
         }
 
@@ -338,10 +340,7 @@ mod tests {
         fn test_num_beginning_with_dot() -> Res {
             assert_lex_fail!(
                 ".25",
-                LexError::IllegalChar {
-                    cause: ".".to_string(),
-                    location: Range::from_nums(0, 0, 0, 1)
-                }
+                LexError::new(LexErrorKind::IllegalChar, ".".to_string(), Range::from_nums(0, 0, 0, 1),)
             );
         }
 
@@ -349,10 +348,11 @@ mod tests {
         fn test_num_ending_with_dot() -> Res {
             assert_lex_fail!(
                 "12.",
-                LexError::IllegalNumLiteral {
-                    cause: "12.".to_string(),
-                    location: Range::from_nums(0, 0, 0, "12.".len() as u64)
-                }
+                LexError::new(
+                    LexErrorKind::IllegalNumLiteral,
+                    "12.".to_string(),
+                    Range::from_nums(0, 0, 0, 3),
+                )
             );
         }
     }
