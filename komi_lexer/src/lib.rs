@@ -315,6 +315,18 @@ mod tests {
             }
 
             #[test]
+            fn test_two_dots_decimal() -> Res {
+                assert_lex_fail!(
+                    "12..",
+                    LexError::new(
+                        LexErrorKind::IllegalNumLiteral,
+                        "12..".to_string(),
+                        Range::from_nums(0, 0, 0, 4),
+                    )
+                );
+            }
+
+            #[test]
             fn test_illegal_decimal() -> Res {
                 assert_lex_fail!(
                     "12.^",
