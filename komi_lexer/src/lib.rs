@@ -102,16 +102,28 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        if self.scanner.read() != Some(".") {
+        // return if not dot
+        let Some(".") = self.scanner.read() else {
             let num = lexeme.parse::<f64>().unwrap();
             let end = self.scanner.locate().begin;
 
             let token = Token::from_num(num, Range::new(begin, end));
             return Ok(token);
-        }
+        };
 
-        lexeme.push_str(".");
+        // read dot
         self.scanner.advance();
+        lexeme.push_str(".");
+
+        // return if not digit
+        match self.scanner.read() {
+            Some(s) if string::is_digit(s) => (),
+            other => {
+                let bad_literal = format!("{}{}", lexeme, other.unwrap_or(""));
+                let location = Range::new(begin, self.scanner.locate().begin);
+                return Err(LexError::IllegalNumLiteral { bad_literal, location });
+            }
+        }
 
         // read decimal part
         loop {
@@ -126,6 +138,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
+        // parse into number and return token
         let num = lexeme.parse::<f64>().unwrap();
         let end = self.scanner.locate().begin;
 
@@ -317,6 +330,28 @@ mod tests {
                 LexError::IllegalChar {
                     char: "^".to_string(),
                     location: Range::from_nums(0, 0, 0, 1),
+                }
+            );
+        }
+
+        #[test]
+        fn test_num_beginning_with_dot() -> Res {
+            assert_lex_fail!(
+                ".25",
+                LexError::IllegalChar {
+                    char: ".".to_string(),
+                    location: Range::from_nums(0, 0, 0, 1)
+                }
+            );
+        }
+
+        #[test]
+        fn test_num_ending_with_dot() -> Res {
+            assert_lex_fail!(
+                "12.",
+                LexError::IllegalNumLiteral {
+                    bad_literal: "12.".to_string(),
+                    location: Range::from_nums(0, 0, 0, "12.".len() as u64)
                 }
             );
         }

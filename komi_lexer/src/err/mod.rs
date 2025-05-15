@@ -8,6 +8,8 @@ use std::fmt;
 pub enum LexError {
     /// An illegal char, not in the syntax.
     IllegalChar { char: String, location: Range },
+    /// An illegal number literal, such as `12.`.
+    IllegalNumLiteral { bad_literal: String, location: Range },
     /// An internal error impossible to occur if lexed as expected.
     Unexpected { expected: String, received: String, location: Range },
 }
@@ -19,6 +21,11 @@ impl fmt::Display for LexError {
                 f,
                 "Reason: LEX_ILLEGAL_CHAR, Cause: '{}', Location: {:?}",
                 char, location
+            ),
+            LexError::IllegalNumLiteral { bad_literal, location } => write!(
+                f,
+                "Reason: LEX_ILLEGAL_CHAR, Cause: '{}', Location: {:?}",
+                bad_literal, location
             ),
             LexError::Unexpected { expected, received, location } => write!(
                 f,
