@@ -5,6 +5,10 @@
   "files": [
     "./dist/*"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wcho21/komi.git"
+  },
   "devDependencies": {
     "komi": "file:./dist/",
     "vite": "6.3.5",
