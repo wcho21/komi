@@ -20,6 +20,9 @@ build() {
   if [[ "${BUILD_MODE}" == "--dev" ]]; then
     exit 0
   fi
+
+  # clean up
+  rm ${OUT_DIR}/.gitignore
 }
 
 clean() {
