@@ -21,9 +21,9 @@ jobs:
             ~/.cargo/git
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
         with:
-          bun-version: 1.2.12
+          node-version: 22.15.1
 
       - name: run ci script
         run: ./bin/ci
