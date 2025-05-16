@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# configuration
-OUT_DIR=${PWD}/dist
-
 # internal variables
 BUILD_MODE="--release"
 COMMAND="build"
@@ -10,7 +7,7 @@ COMMAND="build"
 # script body
 build() {
   cd komi_wasm
-  wasm-pack build --no-typescript --target bundler ${BUILD_MODE} --out-dir ${OUT_DIR} --out-name komi
+  wasm-pack build --target bundler ${BUILD_MODE} --out-name komi
 
   if [ $? -ne 0 ]; then
     echo "Build failed"
