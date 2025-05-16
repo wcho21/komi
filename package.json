@@ -9,6 +9,9 @@
     "type": "git",
     "url": "https://github.com/wcho21/komi.git"
   },
+  "publishConfig": {
+    "@wcho21:registry": "https://npm.pkg.github.com"
+  },
   "devDependencies": {
     "komi": "file:./dist/",
     "vite": "6.3.5",
