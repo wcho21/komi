@@ -1,7 +1,10 @@
 {
-  "name": "komi",
+  "name": "@wcho21/komi",
+  "version": "0.1.1",
   "type": "module",
-  "private": true,
+  "files": [
+    "./dist/*"
+  ],
   "devDependencies": {
     "komi": "file:./dist/",
     "vite": "6.3.5",
