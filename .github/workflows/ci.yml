@@ -25,9 +25,6 @@ jobs:
         with:
           node-version: 22.15.1
       - run: npm install
-      - run: ls -al ./dist;
-      - run: ls -al ./node_modules/komi
-      - run: npm doctor
 
       - name: run ci script
         run: ./bin/ci
