@@ -1,9 +1,5 @@
-import init, { execute } from "../dist/komi.js";
-import { describe, it, beforeAll, expect } from "bun:test";
-
-beforeAll(async () => {
-  await init();
-});
+import { describe, it, expect } from "vitest";
+import { execute } from "komi";
 
 describe("ok", () => {
   it("single number literal", async () => {

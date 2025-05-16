@@ -1,0 +1,15 @@
+{
+  "name": "komi_wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "komi_bg.wasm",
+    "komi.js",
+    "komi_bg.js"
+  ],
+  "main": "komi.js",
+  "sideEffects": [
+    "./komi.js",
+    "./snippets/*"
+  ]
+}

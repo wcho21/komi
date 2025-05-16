@@ -10,7 +10,7 @@ COMMAND="build"
 # script body
 build() {
   cd komi_wasm
-  wasm-pack build --no-typescript --target web ${BUILD_MODE} --out-dir ${OUT_DIR} --out-name komi
+  wasm-pack build --no-typescript --target bundler ${BUILD_MODE} --out-dir ${OUT_DIR} --out-name komi
 
   if [ $? -ne 0 ]; then
     echo "Build failed"
@@ -22,7 +22,7 @@ build() {
   fi
 
   # clean up
-  rm ${OUT_DIR}/.gitignore ${OUT_DIR}/package.json
+  rm ${OUT_DIR}/.gitignore
 }
 
 clean() {

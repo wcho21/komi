@@ -2,4 +2,4 @@
 
 # integration test
 
-cd test && bun test
+npx vitest run
