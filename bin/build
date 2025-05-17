@@ -7,6 +7,13 @@ COMMAND="build"
 WASM_OUT_NAME="komi"
 WASM_OUT_SCOPE="wcho21"
 
+echo "build: started."
+
+fail() {
+  echo "build: failed."
+  exit 1
+}
+
 # script body
 build() {
   cd komi_wasm
@@ -17,8 +24,7 @@ build() {
   wasm-pack build --target web ${BUILD_MODE} --out-name ${WASM_OUT_NAME} --scope ${WASM_OUT_SCOPE}
 
   if [ $? -ne 0 ]; then
-    echo "Build failed"
-    exit 1
+    fail
   fi
 
   if [[ "${BUILD_MODE}" == "--dev" ]]; then
@@ -31,7 +37,7 @@ clean() {
 }
 
 help() {
-  echo "Usage: $0 [clean|help] [--dev|--release]"
+  echo "build: Usage: $0 [clean|help] [--dev|--release]"
 }
 
 for ARG in "$@"; do
@@ -49,9 +55,9 @@ for ARG in "$@"; do
       BUILD_MODE="--release"
       ;;
     *)
-      echo "Unknown option: ${ARG}"
+      echo "build: unknown option '${ARG}'"
       help
-      exit 1
+      fail
     ;;
   esac
 done
@@ -67,6 +73,6 @@ case $COMMAND in
     clean
     ;;
   *)
-    echo "Unexpected command: '${COMMAND}'"
-    exit 1
+    echo "build: unexpected command '${COMMAND}'"
+    fail
 esac
