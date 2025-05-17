@@ -91,7 +91,7 @@ version = "0.0.0-local"
 
 [[package]]
 name = "komi_wasm"
-version = "0.1.3"
+version = "0.1.3-rc1"
 dependencies = [
  "const_format",
  "komi",

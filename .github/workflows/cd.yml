@@ -15,9 +15,26 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          node-version: 22.15.1
+          toolchain: 1.86.0
+          override: true
+          rustflags: ""
+      - run: rustc --version
+
+      - name: cache cargo bin
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-bin-${{ runner.os }}-wasm
+
+      - name: install wasm-pack
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: cargo install wasm-pack@0.13.1
 
       - name: run cd script
         run: ./bin/cd
