@@ -19,6 +19,7 @@ jobs:
         with:
           toolchain: 1.86.0
           override: true
+          rustflags: ""
       - run: rustc --version
       - run: cargo install wasm-pack@0.13.1
 
