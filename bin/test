@@ -2,4 +2,5 @@
 
 # integration test
 
-npx vitest run
+# deprecated: use wasm-pack test for integration test
+# npx vitest run
