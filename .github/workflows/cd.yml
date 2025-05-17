@@ -21,7 +21,20 @@ jobs:
           override: true
           rustflags: ""
       - run: rustc --version
-      - run: cargo install wasm-pack@0.13.1
+
+      - name: cache cargo bin
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-bin-${{ runner.os }}-wasm
+
+      - name: install wasm-pack
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: cargo install wasm-pack@0.13.1
 
       - name: run cd script
         run: ./bin/cd
