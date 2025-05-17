@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
+# pre-commit: pre commit hook for git
 
+# block commit if codes not formatted
 cargo fmt --check
 if [ $? -ne 0 ]; then
   echo ""

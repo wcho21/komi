@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# cd: script for github actions cd, which specific all cd steps
+
+# env:
+# - PACKAGES_TOKEN: github token with write:packages permission
+
+# internal variables
+SCOPE="wcho21"
+
+echo "cd: started."
+
+fail() {
+  echo "cd: failed."
+  exit 1
+}
+
+# script body
+if [[ "${PACKAGES_TOKEN}" == "" ]]; then
+  echo "cd: PACKAGES_TOKEN is empty.";
+  fail
+fi
+
+if [[ "${PACKAGES_TOKEN}" != "ghp_"* ]]; then
+  echo "cd: PACKAGES_TOKEN should start with 'ghp_'.";
+  fail
+fi
+
+./bin/build && \
+  cd komi_wasm/pkg && \
+  echo "//npm.pkg.github.com/:_authToken=${PACKAGES_TOKEN}" > .npmrc && \
+  echo "@${SCOPE}:registry=https://npm.pkg.github.com" >> .npmrc && \
+  npm publish && \
+  echo "cd: package successfully published"

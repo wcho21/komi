@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
+# install-git-hooks: for dev container to run in "postCreateCommand" field
 
-echo "Info: installing pre-commit hook..."
+echo "install-git-hooks: setting pre-commit hook..."
 cp .hooks/pre-commit .git/hooks/pre-commit
-echo "Info: hook installed."
+echo "install-git-hooks: hook installed."

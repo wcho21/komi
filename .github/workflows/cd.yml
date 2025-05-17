@@ -1,5 +1,7 @@
 name: cd
 
+# usage: set secrets.PACKAGES_TOKEN as github token with write:packages permission to publish package
+
 on:
   workflow_dispatch:
   release:
@@ -16,9 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.15.1
-          registry-url: https://npm.pkg.github.com
-          scope: "@wcho21"
-      - run: npm ci
-      - run: npm publish
+
+      - name: run cd script
+        run: ./bin/cd
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }} # sometimes secrets.GITHUB_TOKEN doesn't work so use manually created token

@@ -1,28 +1,35 @@
 #!/usr/bin/env bash
-
-# configuration
-OUT_DIR=${PWD}/dist
+# build: wrapper script to build or clean wasm artifact
 
 # internal variables
 BUILD_MODE="--release"
 COMMAND="build"
+WASM_OUT_NAME="komi"
+WASM_OUT_SCOPE="wcho21"
+
+echo "build: started."
+
+fail() {
+  echo "build: failed."
+  exit 1
+}
 
 # script body
 build() {
   cd komi_wasm
-  wasm-pack build --no-typescript --target bundler ${BUILD_MODE} --out-dir ${OUT_DIR} --out-name komi
+
+  # avoid using '--target bundler' due to limited support in modern bundlers
+  # for example, 'bun' doesn't support it at all, and 'vite' can include it via 'vite-plugin-wasm' plugin, it doesn't work with 'vitest'
+  # see https://rustwasm.github.io/docs/wasm-bindgen/reference/deployment.html#bundlers
+  wasm-pack build --target web ${BUILD_MODE} --out-name ${WASM_OUT_NAME} --scope ${WASM_OUT_SCOPE}
 
   if [ $? -ne 0 ]; then
-    echo "Build failed"
-    exit 1
+    fail
   fi
 
   if [[ "${BUILD_MODE}" == "--dev" ]]; then
     exit 0
   fi
-
-  # clean up
-  rm ${OUT_DIR}/.gitignore
 }
 
 clean() {
@@ -30,7 +37,7 @@ clean() {
 }
 
 help() {
-  echo "Usage: $0 [clean|help] [--dev|--release]"
+  echo "build: Usage: $0 [clean|help] [--dev|--release]"
 }
 
 for ARG in "$@"; do
@@ -48,9 +55,9 @@ for ARG in "$@"; do
       BUILD_MODE="--release"
       ;;
     *)
-      echo "Unknown option: ${ARG}"
+      echo "build: unknown option '${ARG}'"
       help
-      exit 1
+      fail
     ;;
   esac
 done
@@ -66,6 +73,6 @@ case $COMMAND in
     clean
     ;;
   *)
-    echo "Unexpected command: '${COMMAND}'"
-    exit 1
+    echo "build: unexpected command '${COMMAND}'"
+    fail
 esac

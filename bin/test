@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
+# test: wrapper script for integration test
 
 # integration test
 
-npx vitest run
+# deprecated: use wasm-pack test for integration test
+# npx vitest run
