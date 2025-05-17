@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# test: wrapper script for integration test
 
 # integration test
 

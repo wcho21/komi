@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# build: wrapper script to build or clean wasm artifact
 
 # internal variables
 BUILD_MODE="--release"

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# ci: script for github actions ci, which specifies all ci steps
 
 echo "Info: check formatting" && cargo fmt --check && \
   echo "Info: check rust errors" && cargo check --locked && \
