@@ -13,10 +13,12 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          node-version: 22.15.1
-      - run: npm ci
+          toolchain: 1.86.0
+          override: true
+          rustflags: ""
+      - run: rustc --version
 
       - name: run ci script
         run: ./bin/ci
