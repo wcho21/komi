@@ -95,19 +95,19 @@ macro_rules! mkast {
     (prog loc $br:expr, $bc:expr, $er:expr, $ec: expr, $exprs:expr) => {
         Box::new(Ast::new(
             AstKind::Program { expressions: $exprs },
-            Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
+            Range::from_nums($br as u32, $bc as u32, $er as u32, $ec as u32),
         ))
     };
     (prefix $kind:ident, loc $br:expr, $bc:expr, $er:expr, $ec: expr, operand $oprnd:expr $(,)?) => {
         Box::new(Ast::new(
             AstKind::$kind { operand: $oprnd },
-            Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
+            Range::from_nums($br as u32, $bc as u32, $er as u32, $ec as u32),
         ))
     };
     (infix $kind:ident, loc $br:expr, $bc:expr, $er:expr, $ec: expr, left $left:expr, right $right:expr $(,)?) => {
         Box::new(Ast::new(
             AstKind::$kind { left: $left, right: $right },
-            Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64),
+            Range::from_nums($br as u32, $bc as u32, $er as u32, $ec as u32),
         ))
     };
     (num $val:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {

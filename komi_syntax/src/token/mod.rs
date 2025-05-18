@@ -71,7 +71,7 @@ impl Token {
 #[macro_export]
 macro_rules! mktoken {
     ($kind:expr, loc $br:expr, $bc:expr, $er:expr, $ec:expr) => {
-        Token::new($kind, Range::from_nums($br as u64, $bc as u64, $er as u64, $ec as u64))
+        Token::new($kind, Range::from_nums($br as u32, $bc as u32, $er as u32, $ec as u32))
     };
 }
 

@@ -5,8 +5,8 @@ use komi_util::{Range, Scanner, Tape};
 /// It reads characters one by one, but treats CRLF ("\r\n") as a single character.
 pub struct SourceScanner<'a> {
     tape: Utf8Tape<'a>,
-    col: u64,
-    row: u64,
+    col: u32,
+    row: u32,
 }
 
 impl<'a> SourceScanner<'a> {
