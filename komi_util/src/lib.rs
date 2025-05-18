@@ -3,6 +3,7 @@ pub mod location;
 pub mod scanner;
 pub mod string;
 pub mod tape;
+pub mod unpacker;
 
 pub use error::EngineError;
 pub use location::range;
