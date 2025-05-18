@@ -18,10 +18,8 @@ fail() {
 build() {
   cd komi_wasm
 
-  # avoid using '--target bundler' due to limited support in modern bundlers
-  # for example, 'bun' doesn't support it at all, and 'vite' can include it via 'vite-plugin-wasm' plugin, it doesn't work with 'vitest'
-  # see https://rustwasm.github.io/docs/wasm-bindgen/reference/deployment.html#bundlers
-  wasm-pack build --target web ${BUILD_MODE} --out-name ${WASM_OUT_NAME} --scope ${WASM_OUT_SCOPE}
+  # build as bundled library
+  wasm-pack build --target bundler ${BUILD_MODE} --out-name ${WASM_OUT_NAME} --scope ${WASM_OUT_SCOPE}
 
   if [ $? -ne 0 ]; then
     fail
