@@ -15,7 +15,7 @@ impl Range {
         Range { begin, end }
     }
 
-    pub const fn from_nums(begin_row: u64, begin_col: u64, end_row: u64, end_col: u64) -> Self {
+    pub const fn from_nums(begin_row: u32, begin_col: u32, end_row: u32, end_col: u32) -> Self {
         let begin = Spot::new(begin_row, begin_col);
         let end = Spot::new(end_row, end_col);
 

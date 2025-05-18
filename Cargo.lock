@@ -113,7 +113,9 @@ name = "komi_wasm"
 version = "0.1.0-beta1"
 dependencies = [
  "const_format",
+ "js-sys",
  "komi",
+ "komi_util",
  "wasm-bindgen",
  "wasm-bindgen-test",
 ]
