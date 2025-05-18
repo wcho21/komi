@@ -1,8 +1,5 @@
 # rust build artifacts
 target/
 
-# node.js dependencies
-node_modules/
-
 # mac os config
 .DS_Store
