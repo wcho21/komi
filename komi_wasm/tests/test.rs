@@ -69,16 +69,39 @@ mod tests {
     mod ok {
         use super::*;
 
-        #[wasm_bindgen_test]
-        fn test_single_number_literal() -> Result<(), JsValue> {
-            assert_exec!("12.25", "12.25");
-            Ok(())
-        }
+        mod num {
+            use super::*;
 
-        #[wasm_bindgen_test]
-        fn test_arithmetic_expression() -> Result<(), JsValue> {
-            assert_exec!("(1.5 - 2.5) * 3 / 4 + 5 % 6", "4.25");
-            Ok(())
+            #[wasm_bindgen_test]
+            fn test_single_literal() -> Result<(), JsValue> {
+                assert_exec!("12.25", "12.25");
+                Ok(())
+            }
+
+            #[wasm_bindgen_test]
+            fn test_plus_prefix() -> Result<(), JsValue> {
+                assert_exec!("+12.25", "12.25");
+                Ok(())
+            }
+
+            #[wasm_bindgen_test]
+            fn test_minus_prefix() -> Result<(), JsValue> {
+                assert_exec!("-12.25", "-12.25");
+                Ok(())
+            }
+
+            #[wasm_bindgen_test]
+            fn test_arithmetic_expression() -> Result<(), JsValue> {
+                assert_exec!("(1.5 - 2.5) * 3 / 4 + 5 % 6", "4.25");
+                Ok(())
+            }
+
+            #[wasm_bindgen_test]
+            fn test_nested_grouping() -> Result<(), JsValue> {
+                // Note that the expression will be parsed into `(((8 - 4) - 2) - 1)` if without grouping.
+                assert_exec!("8 - (4 - (2 - 1))", "5");
+                Ok(())
+            }
         }
     }
 
