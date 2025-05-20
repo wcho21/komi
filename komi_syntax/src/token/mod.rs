@@ -6,6 +6,8 @@ use komi_util::Range;
 pub enum TokenKind {
     /// A number with or without decimal, such as `12` or `12.25`.
     Number(f64),
+    /// A boolean `참` or `거짓`.
+    Bool(bool),
     /// A plus `+`
     Plus,
     /// A minus `-`
@@ -20,10 +22,6 @@ pub enum TokenKind {
     LParen,
     /// A right parenthesis `)`
     RParen,
-    /// A true `참`
-    True,
-    /// A false `거짓`
-    False,
 }
 
 /// A token produced during lexing.
@@ -70,12 +68,8 @@ impl Token {
         Token::new(TokenKind::RParen, location)
     }
 
-    pub const fn from_true(location: Range) -> Self {
-        Token::new(TokenKind::True, location)
-    }
-
-    pub const fn from_false(location: Range) -> Self {
-        Token::new(TokenKind::False, location)
+    pub const fn from_boolean(boolean: bool, location: Range) -> Self {
+        Token::new(TokenKind::Bool(boolean), location)
     }
 }
 
@@ -158,16 +152,9 @@ mod tests {
     }
 
     #[test]
-    fn test_from_true() {
-        let token = Token::from_true(RANGE_MOCK);
+    fn test_from_boolean() {
+        let token = Token::from_boolean(true, RANGE_MOCK);
 
-        assert_eq!(token, Token { kind: TokenKind::True, location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_false() {
-        let token = Token::from_false(RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::False, location: RANGE_MOCK })
+        assert_eq!(token, Token { kind: TokenKind::Bool(true), location: RANGE_MOCK })
     }
 }

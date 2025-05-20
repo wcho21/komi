@@ -190,7 +190,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_true(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_true(*first_location))
+        Ok(Token::from_boolean(true, *first_location))
     }
 
     fn lex_false(&mut self, first_location: &Range) -> ResToken {
@@ -198,7 +198,7 @@ impl<'a> Lexer<'a> {
             Some("짓") => {
                 let location = Range::new(first_location.begin, self.scanner.locate().end);
                 self.scanner.advance();
-                Ok(Token::from_false(location))
+                Ok(Token::from_boolean(false, location))
             }
             _ => {
                 // TODO: return an identifier token, when the identifier token is implemented.
@@ -405,12 +405,12 @@ mod tests {
 
         #[test]
         fn test_true() -> Res {
-            assert_lex!("참", vec![mktoken!(TokenKind::True, loc 0, 0, 0, 1)]);
+            assert_lex!("참", vec![mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)]);
         }
 
         #[test]
         fn test_false() -> Res {
-            assert_lex!("거짓", vec![mktoken!(TokenKind::False, loc 0, 0, 0, 2)]);
+            assert_lex!("거짓", vec![mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2)]);
         }
     }
 
