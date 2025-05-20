@@ -167,7 +167,7 @@ pub fn eval(ast: &Ast) -> ResVal {
 
 #[cfg(test)]
 mod tests {
-    use super::{Ast, AstKind, EvalError, Range, Value, ValueKind, eval};
+    use super::{Ast, AstKind, EvalError, EvalErrorKind, Range, Value, ValueKind, eval};
     use komi_syntax::mkast;
 
     type Res = Result<(), EvalError>;
@@ -175,11 +175,24 @@ mod tests {
     /// Asserts a given AST to be evaluated into the expected value.
     /// Helps write a test more declaratively.
     macro_rules! assert_eval {
-        ($ast:expr, $expected:expr) => {
+        ($ast:expr, $expected:expr $(,)?) => {
             assert_eq!(
                 eval($ast)?,
                 $expected,
                 "received a value (left) evaluated from the ast, but expected the different value (right)",
+            );
+            return Ok(())
+        };
+    }
+
+    /// Asserts evaluating a given AST will fail.
+    /// Helps write a test more declaratively.
+    macro_rules! assert_eval_fail {
+        ($ast:expr, $expected:expr $(,)?) => {
+            assert_eq!(
+                eval($ast),
+                Err($expected),
+                "received a result (left), but expected an error (right)",
             );
             return Ok(())
         };
@@ -283,6 +296,81 @@ mod tests {
                         ),
                     ]),
                     Value::from_num(1.0, Range::from_nums(0, 0, 0, 3))
+                );
+            }
+        }
+
+        mod boolean {
+            use super::*;
+
+            /// Represents `!참`
+            #[test]
+            fn test_bang_bool() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixBang, loc 0, 0, 0, 2,
+                            operand mkast!(boolean true, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    Value::from_bool(false, Range::from_nums(0, 0, 0, 2))
+                );
+            }
+
+            /// Represents `!!참`
+            #[test]
+            fn test_two_bangs_bool() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(prefix PrefixBang, loc 0, 0, 0, 3,
+                            operand mkast!(prefix PrefixBang, loc 0, 1, 0, 3,
+                                operand mkast!(boolean true, loc 0, 2, 0, 3),
+                            ),
+                        ),
+                    ]),
+                    Value::from_bool(true, Range::from_nums(0, 0, 0, 3))
+                );
+            }
+        }
+
+        mod mixed {
+            use super::*;
+
+            /// Represents `+참`
+            #[test]
+            fn test_plus_bool() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixPlus, loc 0, 0, 0, 2,
+                            operand mkast!(boolean true, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidPrefixNumOperand, Range::from_nums(0, 1, 0, 2)),
+                );
+            }
+
+            /// Represents `-참`
+            #[test]
+            fn test_minus_bool() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixMinus, loc 0, 0, 0, 2,
+                            operand mkast!(boolean true, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidPrefixNumOperand, Range::from_nums(0, 1, 0, 2)),
+                );
+            }
+
+            /// Represents `!1`
+            #[test]
+            fn test_bang_num() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixBang, loc 0, 0, 0, 2,
+                            operand mkast!(num 1.0, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidPrefixBoolOperand, Range::from_nums(0, 1, 0, 2)),
                 );
             }
         }
@@ -395,7 +483,149 @@ mod tests {
                 );
             }
         }
-    }
 
-    // TODO: test addition fail due to wrong data type operand
+        mod mixed {
+            use super::*;
+
+            /// Represents `참+1`.
+            #[test]
+            fn test_left_bool_addition() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 3,
+                            left mkast!(boolean true, loc 0, 0, 0, 1),
+                            right mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 0, 0, 1)),
+                );
+            }
+
+            /// Represents `1+참`.
+            #[test]
+            fn test_right_bool_addition() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(boolean true, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
+                );
+            }
+
+            /// Represents `참-1`.
+            #[test]
+            fn test_left_bool_subtraction() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixMinus, loc 0, 0, 0, 3,
+                            left mkast!(boolean true, loc 0, 0, 0, 1),
+                            right mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 0, 0, 1)),
+                );
+            }
+
+            /// Represents `1-참`.
+            #[test]
+            fn test_right_bool_subtraction() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixMinus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(boolean true, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
+                );
+            }
+
+            /// Represents `참*1`.
+            #[test]
+            fn test_left_bool_multiplication() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                            left mkast!(boolean true, loc 0, 0, 0, 1),
+                            right mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 0, 0, 1)),
+                );
+            }
+
+            /// Represents `1*참`.
+            #[test]
+            fn test_right_bool_multiplication() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(boolean true, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
+                );
+            }
+
+            /// Represents `참/1`.
+            #[test]
+            fn test_left_bool_division() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixSlash, loc 0, 0, 0, 3,
+                            left mkast!(boolean true, loc 0, 0, 0, 1),
+                            right mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 0, 0, 1)),
+                );
+            }
+
+            /// Represents `1/참`.
+            #[test]
+            fn test_right_bool_division() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixSlash, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(boolean true, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
+                );
+            }
+
+            /// Represents `참%1`.
+            #[test]
+            fn test_left_bool_modular() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPercent, loc 0, 0, 0, 3,
+                            left mkast!(boolean true, loc 0, 0, 0, 1),
+                            right mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 0, 0, 1)),
+                );
+            }
+
+            /// Represents `1%참`.
+            #[test]
+            fn test_right_bool_modular() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPercent, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(boolean true, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
+                );
+            }
+        }
+    }
 }
