@@ -48,6 +48,14 @@ impl<'a> Lexer<'a> {
                     let token = advance_and_lex!(self, Self::lex_num, s)?;
                     tokens.push(token);
                 }
+                Some("참") => {
+                    let token = advance_and_lex!(self, Self::lex_true)?;
+                    tokens.push(token);
+                }
+                Some("거") => {
+                    let token = advance_and_lex!(self, Self::lex_false)?;
+                    tokens.push(token);
+                }
                 Some("+") => {
                     let token = advance_and_lex!(self, Self::lex_plus)?;
                     tokens.push(token);
@@ -76,12 +84,8 @@ impl<'a> Lexer<'a> {
                     let token = advance_and_lex!(self, Self::lex_rparen)?;
                     tokens.push(token);
                 }
-                Some("참") => {
-                    let token = advance_and_lex!(self, Self::lex_true)?;
-                    tokens.push(token);
-                }
-                Some("거") => {
-                    let token = advance_and_lex!(self, Self::lex_false)?;
+                Some("!") => {
+                    let token = advance_and_lex!(self, Self::lex_bang)?;
                     tokens.push(token);
                 }
                 Some("#") => {
@@ -161,6 +165,24 @@ impl<'a> Lexer<'a> {
         return Ok(token);
     }
 
+    fn lex_true(&mut self, first_location: &Range) -> ResToken {
+        Ok(Token::from_boolean(true, *first_location))
+    }
+
+    fn lex_false(&mut self, first_location: &Range) -> ResToken {
+        match self.scanner.read() {
+            Some("짓") => {
+                let location = Range::new(first_location.begin, self.scanner.locate().end);
+                self.scanner.advance();
+                Ok(Token::from_boolean(false, location))
+            }
+            _ => {
+                // TODO: return an identifier token, when the identifier token is implemented.
+                return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
+            }
+        }
+    }
+
     fn lex_plus(&mut self, first_location: &Range) -> ResToken {
         Ok(Token::from_plus(*first_location))
     }
@@ -189,22 +211,8 @@ impl<'a> Lexer<'a> {
         Ok(Token::from_rparen(*first_location))
     }
 
-    fn lex_true(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_boolean(true, *first_location))
-    }
-
-    fn lex_false(&mut self, first_location: &Range) -> ResToken {
-        match self.scanner.read() {
-            Some("짓") => {
-                let location = Range::new(first_location.begin, self.scanner.locate().end);
-                self.scanner.advance();
-                Ok(Token::from_boolean(false, location))
-            }
-            _ => {
-                // TODO: return an identifier token, when the identifier token is implemented.
-                return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
-            }
-        }
+    fn lex_bang(&mut self, first_location: &Range) -> ResToken {
+        Ok(Token::from_bang(*first_location))
     }
 
     fn skip_comment(&mut self) -> () {
@@ -256,7 +264,7 @@ mod tests {
             assert_eq!(
                 lex($source),
                 Err($expected),
-                "received a result (left), but expected lexing the source '{}' to fail (right)",
+                "received a result (left), but expected an error from the source '{}' (right)",
                 $source,
             );
             return Ok(())
@@ -369,6 +377,16 @@ mod tests {
         use super::*;
 
         #[test]
+        fn test_true() -> Res {
+            assert_lex!("참", vec![mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)]);
+        }
+
+        #[test]
+        fn test_false() -> Res {
+            assert_lex!("거짓", vec![mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2)]);
+        }
+
+        #[test]
         fn test_plus() -> Res {
             assert_lex!("+", vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)]);
         }
@@ -404,13 +422,8 @@ mod tests {
         }
 
         #[test]
-        fn test_true() -> Res {
-            assert_lex!("참", vec![mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)]);
-        }
-
-        #[test]
-        fn test_false() -> Res {
-            assert_lex!("거짓", vec![mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2)]);
+        fn test_bang() -> Res {
+            assert_lex!("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)]);
         }
     }
 

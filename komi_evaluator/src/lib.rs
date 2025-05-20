@@ -29,15 +29,16 @@ impl<'a> Evaluator<'a> {
     fn eval_ast(ast: &Ast) -> ResVal {
         match ast {
             Ast { kind: AstKind::Program { expressions }, location } => Self::eval_program(expressions, location),
+            Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
+            Ast { kind: AstKind::Bool(b), location } => Self::eval_bool(b, location),
+            Ast { kind: AstKind::PrefixPlus { operand }, location } => Self::eval_prefix_plus(operand, location),
+            Ast { kind: AstKind::PrefixMinus { operand }, location } => Self::eval_prefix_minus(operand, location),
+            Ast { kind: AstKind::PrefixBang { operand }, location } => Self::eval_prefix_bang(operand, location),
             Ast { kind: AstKind::InfixPlus { left, right }, location: _ } => Self::eval_infix_plus(left, right),
             Ast { kind: AstKind::InfixMinus { left, right }, location: _ } => Self::eval_infix_minus(left, right),
             Ast { kind: AstKind::InfixAsterisk { left, right }, location: _ } => Self::eval_infix_asterisk(left, right),
             Ast { kind: AstKind::InfixSlash { left, right }, location: _ } => Self::eval_infix_slash(left, right),
             Ast { kind: AstKind::InfixPercent { left, right }, location: _ } => Self::eval_infix_percent(left, right),
-            Ast { kind: AstKind::PrefixPlus { operand }, location } => Self::eval_prefix_plus(operand, location),
-            Ast { kind: AstKind::PrefixMinus { operand }, location } => Self::eval_prefix_minus(operand, location),
-            Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
-            Ast { kind: AstKind::Bool(b), location } => Self::eval_bool(b, location),
         }
     }
 
@@ -48,6 +49,37 @@ impl<'a> Evaluator<'a> {
             last_value = Self::eval_ast(expression)?;
         }
         Ok(last_value)
+    }
+
+    fn eval_number(num: &f64, location: &Range) -> ResVal {
+        Ok(Value::new(ValueKind::Number(*num), *location))
+    }
+
+    fn eval_bool(boolean: &bool, location: &Range) -> ResVal {
+        Ok(Value::new(ValueKind::Bool(*boolean), *location))
+    }
+
+    fn eval_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
+        let val = Self::eval_prefix_operand_num(operand)?;
+
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ok(Value::new(ValueKind::Number(val), location))
+    }
+
+    fn eval_prefix_minus(operand: &Ast, prefix_location: &Range) -> ResVal {
+        let operand_val = Self::eval_prefix_operand_num(operand)?;
+        let evaluated = -operand_val;
+
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ok(Value::new(ValueKind::Number(evaluated), location))
+    }
+
+    fn eval_prefix_bang(operand: &Ast, prefix_location: &Range) -> ResVal {
+        let operand_val = Self::eval_prefix_operand_bool(operand)?;
+        let evaluated = !operand_val;
+
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ok(Value::new(ValueKind::Bool(evaluated), location))
     }
 
     fn eval_infix_plus(left: &Ast, right: &Ast) -> ResVal {
@@ -100,27 +132,22 @@ impl<'a> Evaluator<'a> {
         Ok(Value::new(ValueKind::Number(evaluated), location))
     }
 
-    fn eval_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
-        let val = Self::eval_prefix_operand_num(operand)?;
-
-        let location = Range::new(prefix_location.begin, operand.location.end);
-        Ok(Value::new(ValueKind::Number(val), location))
+    fn eval_prefix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
+        let val = Self::eval_ast(operand)?;
+        if let ValueKind::Number(num) = val.kind {
+            Ok(num)
+        } else {
+            Err(EvalError::new(EvalErrorKind::InvalidPrefixNumOperand, val.location))
+        }
     }
 
-    fn eval_prefix_minus(operand: &Ast, prefix_location: &Range) -> ResVal {
-        let operand_val = Self::eval_prefix_operand_num(operand)?;
-        let val = -operand_val;
-
-        let location = Range::new(prefix_location.begin, operand.location.end);
-        Ok(Value::new(ValueKind::Number(val), location))
-    }
-
-    fn eval_number(num: &f64, location: &Range) -> ResVal {
-        Ok(Value::new(ValueKind::Number(*num), *location))
-    }
-
-    fn eval_bool(boolean: &bool, location: &Range) -> ResVal {
-        Ok(Value::new(ValueKind::Bool(*boolean), *location))
+    fn eval_prefix_operand_bool(operand: &Ast) -> Result<bool, EvalError> {
+        let val = Self::eval_ast(operand)?;
+        if let ValueKind::Bool(boolean) = val.kind {
+            Ok(boolean)
+        } else {
+            Err(EvalError::new(EvalErrorKind::InvalidPrefixBoolOperand, val.location))
+        }
     }
 
     fn eval_infix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
@@ -129,15 +156,6 @@ impl<'a> Evaluator<'a> {
             Ok(num)
         } else {
             Err(EvalError::new(EvalErrorKind::InvalidAdditionOperand, val.location)) // TODO: rename error (not only for addition)
-        }
-    }
-
-    fn eval_prefix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
-        let val = Self::eval_ast(operand)?;
-        if let ValueKind::Number(num) = val.kind {
-            Ok(num)
-        } else {
-            Err(EvalError::new(EvalErrorKind::InvalidPrefixNumOperand, val.location))
         }
     }
 }
@@ -149,7 +167,7 @@ pub fn eval(ast: &Ast) -> ResVal {
 
 #[cfg(test)]
 mod tests {
-    use super::{Ast, AstKind, EvalError, Range, Value, ValueKind, eval};
+    use super::{Ast, AstKind, EvalError, EvalErrorKind, Range, Value, ValueKind, eval};
     use komi_syntax::mkast;
 
     type Res = Result<(), EvalError>;
@@ -157,11 +175,24 @@ mod tests {
     /// Asserts a given AST to be evaluated into the expected value.
     /// Helps write a test more declaratively.
     macro_rules! assert_eval {
-        ($ast:expr, $expected:expr) => {
+        ($ast:expr, $expected:expr $(,)?) => {
             assert_eq!(
                 eval($ast)?,
                 $expected,
                 "received a value (left) evaluated from the ast, but expected the different value (right)",
+            );
+            return Ok(())
+        };
+    }
+
+    /// Asserts evaluating a given AST will fail.
+    /// Helps write a test more declaratively.
+    macro_rules! assert_eval_fail {
+        ($ast:expr, $expected:expr $(,)?) => {
+            assert_eq!(
+                eval($ast),
+                Err($expected),
+                "received a result (left), but expected an error (right)",
             );
             return Ok(())
         };
@@ -203,6 +234,145 @@ mod tests {
                 ]),
                 Value::from_bool(true, Range::from_nums(0, 0, 0, 1))
             );
+        }
+    }
+
+    mod prefixes {
+        use super::*;
+
+        mod arithmetic {
+            use super::*;
+
+            /// Represents `+1`
+            #[test]
+            fn test_plus_prefix() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixPlus, loc 0, 0, 0, 2,
+                            operand mkast!(num 1.0, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    Value::from_num(1.0, Range::from_nums(0, 0, 0, 2))
+                );
+            }
+
+            /// Represents `-1`
+            #[test]
+            fn test_minus_prefix() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixMinus, loc 0, 0, 0, 2,
+                            operand mkast!(num 1.0, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    Value::from_num(-1.0, Range::from_nums(0, 0, 0, 2))
+                );
+            }
+
+            /// Represents `++1`
+            #[test]
+            fn test_two_plus_prefixes() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(prefix PrefixPlus, loc 0, 0, 0, 3,
+                            operand mkast!(prefix PrefixPlus, loc 0, 1, 0, 3,
+                                operand mkast!(num 1.0, loc 0, 2, 0, 3),
+                            ),
+                        ),
+                    ]),
+                    Value::from_num(1.0, Range::from_nums(0, 0, 0, 3))
+                );
+            }
+
+            /// Represents `--1`
+            #[test]
+            fn test_two_minus_prefixes() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(prefix PrefixMinus, loc 0, 0, 0, 3,
+                            operand mkast!(prefix PrefixMinus, loc 0, 1, 0, 3,
+                                operand mkast!(num 1.0, loc 0, 2, 0, 3),
+                            ),
+                        ),
+                    ]),
+                    Value::from_num(1.0, Range::from_nums(0, 0, 0, 3))
+                );
+            }
+        }
+
+        mod boolean {
+            use super::*;
+
+            /// Represents `!참`
+            #[test]
+            fn test_bang_bool() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixBang, loc 0, 0, 0, 2,
+                            operand mkast!(boolean true, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    Value::from_bool(false, Range::from_nums(0, 0, 0, 2))
+                );
+            }
+
+            /// Represents `!!참`
+            #[test]
+            fn test_two_bangs_bool() -> Res {
+                assert_eval!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(prefix PrefixBang, loc 0, 0, 0, 3,
+                            operand mkast!(prefix PrefixBang, loc 0, 1, 0, 3,
+                                operand mkast!(boolean true, loc 0, 2, 0, 3),
+                            ),
+                        ),
+                    ]),
+                    Value::from_bool(true, Range::from_nums(0, 0, 0, 3))
+                );
+            }
+        }
+
+        mod mixed {
+            use super::*;
+
+            /// Represents `+참`
+            #[test]
+            fn test_plus_bool() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixPlus, loc 0, 0, 0, 2,
+                            operand mkast!(boolean true, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidPrefixNumOperand, Range::from_nums(0, 1, 0, 2)),
+                );
+            }
+
+            /// Represents `-참`
+            #[test]
+            fn test_minus_bool() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixMinus, loc 0, 0, 0, 2,
+                            operand mkast!(boolean true, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidPrefixNumOperand, Range::from_nums(0, 1, 0, 2)),
+                );
+            }
+
+            /// Represents `!1`
+            #[test]
+            fn test_bang_num() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 2, vec![
+                        mkast!(prefix PrefixBang, loc 0, 0, 0, 2,
+                            operand mkast!(num 1.0, loc 0, 1, 0, 2),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidPrefixBoolOperand, Range::from_nums(0, 1, 0, 2)),
+                );
+            }
         }
     }
 
@@ -312,64 +482,150 @@ mod tests {
                     Value::from_num(-2.75, Range::from_nums(0, 0, 0, 11))
                 );
             }
+        }
 
-            /// Represents `+1`
-            #[test]
-            fn test_plus_prefix() -> Res {
-                assert_eval!(
-                    &mkast!(prog loc 0, 0, 0, 2, vec![
-                        mkast!(prefix PrefixPlus, loc 0, 0, 0, 2,
-                            operand mkast!(num 1.0, loc 0, 1, 0, 2),
-                        ),
-                    ]),
-                    Value::from_num(1.0, Range::from_nums(0, 0, 0, 2))
-                );
-            }
+        mod mixed {
+            use super::*;
 
-            /// Represents `-1`
+            /// Represents `참+1`.
             #[test]
-            fn test_minus_prefix() -> Res {
-                assert_eval!(
-                    &mkast!(prog loc 0, 0, 0, 2, vec![
-                        mkast!(prefix PrefixMinus, loc 0, 0, 0, 2,
-                            operand mkast!(num 1.0, loc 0, 1, 0, 2),
-                        ),
-                    ]),
-                    Value::from_num(-1.0, Range::from_nums(0, 0, 0, 2))
-                );
-            }
-
-            /// Represents `++1`
-            #[test]
-            fn test_two_plus_prefixes() -> Res {
-                assert_eval!(
+            fn test_left_bool_addition() -> Res {
+                assert_eval_fail!(
                     &mkast!(prog loc 0, 0, 0, 3, vec![
-                        mkast!(prefix PrefixPlus, loc 0, 0, 0, 3,
-                            operand mkast!(prefix PrefixPlus, loc 0, 1, 0, 3,
-                                operand mkast!(num 1.0, loc 0, 2, 0, 3),
-                            ),
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 3,
+                            left mkast!(boolean true, loc 0, 0, 0, 1),
+                            right mkast!(num 1.0, loc 0, 2, 0, 3),
                         ),
                     ]),
-                    Value::from_num(1.0, Range::from_nums(0, 0, 0, 3))
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 0, 0, 1)),
                 );
             }
 
-            /// Represents `--1`
+            /// Represents `1+참`.
             #[test]
-            fn test_two_minus_prefixes() -> Res {
-                assert_eval!(
+            fn test_right_bool_addition() -> Res {
+                assert_eval_fail!(
                     &mkast!(prog loc 0, 0, 0, 3, vec![
-                        mkast!(prefix PrefixMinus, loc 0, 0, 0, 3,
-                            operand mkast!(prefix PrefixMinus, loc 0, 1, 0, 3,
-                                operand mkast!(num 1.0, loc 0, 2, 0, 3),
-                            ),
+                        mkast!(infix InfixPlus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(boolean true, loc 0, 2, 0, 3),
                         ),
                     ]),
-                    Value::from_num(1.0, Range::from_nums(0, 0, 0, 3))
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
+                );
+            }
+
+            /// Represents `참-1`.
+            #[test]
+            fn test_left_bool_subtraction() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixMinus, loc 0, 0, 0, 3,
+                            left mkast!(boolean true, loc 0, 0, 0, 1),
+                            right mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 0, 0, 1)),
+                );
+            }
+
+            /// Represents `1-참`.
+            #[test]
+            fn test_right_bool_subtraction() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixMinus, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(boolean true, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
+                );
+            }
+
+            /// Represents `참*1`.
+            #[test]
+            fn test_left_bool_multiplication() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                            left mkast!(boolean true, loc 0, 0, 0, 1),
+                            right mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 0, 0, 1)),
+                );
+            }
+
+            /// Represents `1*참`.
+            #[test]
+            fn test_right_bool_multiplication() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(boolean true, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
+                );
+            }
+
+            /// Represents `참/1`.
+            #[test]
+            fn test_left_bool_division() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixSlash, loc 0, 0, 0, 3,
+                            left mkast!(boolean true, loc 0, 0, 0, 1),
+                            right mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 0, 0, 1)),
+                );
+            }
+
+            /// Represents `1/참`.
+            #[test]
+            fn test_right_bool_division() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixSlash, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(boolean true, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
+                );
+            }
+
+            /// Represents `참%1`.
+            #[test]
+            fn test_left_bool_modular() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPercent, loc 0, 0, 0, 3,
+                            left mkast!(boolean true, loc 0, 0, 0, 1),
+                            right mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 0, 0, 1)),
+                );
+            }
+
+            /// Represents `1%참`.
+            #[test]
+            fn test_right_bool_modular() -> Res {
+                assert_eval_fail!(
+                    &mkast!(prog loc 0, 0, 0, 3, vec![
+                        mkast!(infix InfixPercent, loc 0, 0, 0, 3,
+                            left mkast!(num 1.0, loc 0, 0, 0, 1),
+                            right mkast!(boolean true, loc 0, 2, 0, 3),
+                        ),
+                    ]),
+                    EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
                 );
             }
         }
     }
-
-    // TODO: test addition fail due to wrong data type operand
 }

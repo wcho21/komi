@@ -58,6 +58,14 @@ impl<'a> Parser<'a> {
 
     fn parse_expression_start(&mut self, first_token: &'a Token) -> ResAst {
         match first_token.kind {
+            TokenKind::Number(n) => {
+                self.scanner.advance();
+                self.make_num_ast(n, &first_token.location)
+            }
+            TokenKind::Bool(b) => {
+                self.scanner.advance();
+                self.make_bool_ast(b, &first_token.location)
+            }
             TokenKind::Plus => {
                 self.scanner.advance();
                 self.parse_plus_prefix_expression(&first_token.location)
@@ -66,13 +74,9 @@ impl<'a> Parser<'a> {
                 self.scanner.advance();
                 self.parse_minus_prefix_expression(&first_token.location)
             }
-            TokenKind::Number(n) => {
+            TokenKind::Bang => {
                 self.scanner.advance();
-                self.make_num_ast(n, &first_token.location)
-            }
-            TokenKind::Bool(b) => {
-                self.scanner.advance();
-                self.make_bool_ast(b, &first_token.location)
+                self.parse_bang_prefix_expression(&first_token.location)
             }
             TokenKind::LParen => {
                 self.scanner.advance();
@@ -91,6 +95,10 @@ impl<'a> Parser<'a> {
 
     fn parse_minus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
         self.read_operand_and_make_prefix_ast(prefix_location, Ast::from_prefix_minus)
+    }
+
+    fn parse_bang_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
+        self.read_operand_and_make_prefix_ast(prefix_location, Ast::from_prefix_bang)
     }
 
     fn parse_infix_expression(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
@@ -204,7 +212,7 @@ mod tests {
             assert_eq!(
                 parse($tokens),
                 Err($expected),
-                "received a result (left), but expected parsing the tokens to fail (right)",
+                "received a result (left), but expected an error (right)",
             );
             return Ok(())
         };
@@ -314,6 +322,41 @@ mod tests {
                     mkast!(prefix PrefixMinus, loc 0, 0, 0, 3,
                         operand mkast!(prefix PrefixMinus, loc 0, 1, 0, 3,
                             operand mkast!(num 1.0, loc 0, 2, 0, 3),
+                        ),
+                    ),
+                ])
+            );
+        }
+
+        /// Represents `!참`.
+        #[test]
+        fn test_bang_bool() -> Res {
+            assert_parse!(
+                &vec![
+                    mktoken!(TokenKind::Bang, loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Bool(true), loc 0, 1, 0, 2),
+                ],
+                mkast!(prog loc 0, 0, 0, 2, vec![
+                    mkast!(prefix PrefixBang, loc 0, 0, 0, 2,
+                        operand mkast!(boolean true, loc 0, 1, 0, 2),
+                    ),
+                ])
+            );
+        }
+
+        /// Represents `!!참`.
+        #[test]
+        fn test_two_bangs_bool() -> Res {
+            assert_parse!(
+                &vec![
+                    mktoken!(TokenKind::Bang, loc 0, 0, 0, 1),
+                    mktoken!(TokenKind::Bang, loc 0, 1, 0, 2),
+                    mktoken!(TokenKind::Bool(true), loc 0, 2, 0, 3),
+                ],
+                mkast!(prog loc 0, 0, 0, 3, vec![
+                    mkast!(prefix PrefixBang, loc 0, 0, 0, 3,
+                        operand mkast!(prefix PrefixBang, loc 0, 1, 0, 3,
+                            operand mkast!(boolean true, loc 0, 2, 0, 3),
                         ),
                     ),
                 ])

@@ -8,20 +8,22 @@ pub enum TokenKind {
     Number(f64),
     /// A boolean `참` or `거짓`.
     Bool(bool),
-    /// A plus `+`
+    /// A plus `+`.
     Plus,
-    /// A minus `-`
+    /// A minus `-`.
     Minus,
-    /// An asterisk `*`
+    /// An asterisk `*`.
     Asterisk,
-    /// A slash `/`
+    /// A slash `/`.
     Slash,
-    /// A percent `%`
+    /// A percent `%`.
     Percent,
-    /// A left parenthesis `(`
+    /// A left parenthesis `(`.
     LParen,
-    /// A right parenthesis `)`
+    /// A right parenthesis `)`.
     RParen,
+    /// A bang `!`.
+    Bang,
 }
 
 /// A token produced during lexing.
@@ -38,6 +40,10 @@ impl Token {
 
     pub const fn from_num(num: f64, location: Range) -> Self {
         Token::new(TokenKind::Number(num), location)
+    }
+
+    pub const fn from_boolean(boolean: bool, location: Range) -> Self {
+        Token::new(TokenKind::Bool(boolean), location)
     }
 
     pub const fn from_plus(location: Range) -> Self {
@@ -68,8 +74,8 @@ impl Token {
         Token::new(TokenKind::RParen, location)
     }
 
-    pub const fn from_boolean(boolean: bool, location: Range) -> Self {
-        Token::new(TokenKind::Bool(boolean), location)
+    pub const fn from_bang(location: Range) -> Self {
+        Token::new(TokenKind::Bang, location)
     }
 }
 
@@ -100,6 +106,13 @@ mod tests {
         let token = Token::from_num(1.0, RANGE_MOCK);
 
         assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
+    }
+
+    #[test]
+    fn test_from_boolean() {
+        let token = Token::from_boolean(true, RANGE_MOCK);
+
+        assert_eq!(token, Token { kind: TokenKind::Bool(true), location: RANGE_MOCK })
     }
 
     #[test]
@@ -152,9 +165,9 @@ mod tests {
     }
 
     #[test]
-    fn test_from_boolean() {
-        let token = Token::from_boolean(true, RANGE_MOCK);
+    fn test_from_bang() {
+        let token = Token::from_bang(RANGE_MOCK);
 
-        assert_eq!(token, Token { kind: TokenKind::Bool(true), location: RANGE_MOCK })
+        assert_eq!(token, Token { kind: TokenKind::Bang, location: RANGE_MOCK })
     }
 }

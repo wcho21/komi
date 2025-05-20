@@ -349,6 +349,20 @@ mod tests {
         }
     }
 
+    mod boolean_expressions {
+        use super::*;
+
+        #[test]
+        fn test_bang_bool() -> Res {
+            assert_exec!("!참", "거짓");
+        }
+
+        #[test]
+        fn test_two_bangs_bool() -> Res {
+            assert_exec!("!!참", "참");
+        }
+    }
+
     mod fail {
         use super::*;
 

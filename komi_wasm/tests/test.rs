@@ -179,14 +179,12 @@ mod tests {
                 use super::*;
 
                 #[wasm_bindgen_test]
-                #[ignore]
                 fn test_negation_prefix() -> Result<(), JsValue> {
                     assert_exec!("!거짓", "참");
                     Ok(())
                 }
 
                 #[wasm_bindgen_test]
-                #[ignore]
                 fn test_consecutive_prefix() -> Result<(), JsValue> {
                     assert_exec!("!!!거짓", "참");
                     Ok(())
