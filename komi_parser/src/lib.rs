@@ -115,7 +115,7 @@ impl<'a> Parser<'a> {
                 let bp = Bp::get_multiplicative();
                 self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_percent)
             }
-            _ => panic!("todo"),
+            _ => panic!("todo"), // TODO: can this happen? return unexpected error if not
         }
     }
 
