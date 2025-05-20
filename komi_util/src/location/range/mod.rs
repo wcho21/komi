@@ -8,8 +8,6 @@ pub struct Range {
     pub end: Spot,
 }
 
-// TODO: json-compatible or more concise format on write!()?
-
 impl Range {
     pub const fn new(begin: Spot, end: Spot) -> Self {
         Range { begin, end }

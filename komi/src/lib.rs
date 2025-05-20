@@ -134,27 +134,6 @@ mod tests {
             assert_exec!("거짓", "거짓");
         }
 
-        // TODO: move prefix tests down to arithmetic section below
-        #[test]
-        fn test_number_with_plus() -> Res {
-            assert_exec!("+12", "12");
-        }
-
-        #[test]
-        fn test_number_with_minus() -> Res {
-            assert_exec!("-12", "-12");
-        }
-
-        #[test]
-        fn test_number_with_two_pluses() -> Res {
-            assert_exec!("++12", "12");
-        }
-
-        #[test]
-        fn test_number_with_two_minuses() -> Res {
-            assert_exec!("--12", "12");
-        }
-
         #[test]
         fn test_plus() -> Res {
             assert_exec_fail!(
@@ -213,6 +192,26 @@ mod tests {
 
     mod arithmetic_expressions {
         use super::*;
+
+        #[test]
+        fn test_number_with_plus() -> Res {
+            assert_exec!("+12", "12");
+        }
+
+        #[test]
+        fn test_number_with_minus() -> Res {
+            assert_exec!("-12", "-12");
+        }
+
+        #[test]
+        fn test_number_with_two_pluses() -> Res {
+            assert_exec!("++12", "12");
+        }
+
+        #[test]
+        fn test_number_with_two_minuses() -> Res {
+            assert_exec!("--12", "12");
+        }
 
         #[test]
         fn test_addition() -> Res {
