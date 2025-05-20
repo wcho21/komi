@@ -127,19 +127,143 @@ macro_rules! mkast {
 mod tests {
     use super::*;
 
-    const RANGE_MOCK: Range = Range::from_nums(1, 2, 3, 4);
+    const RANGE_MOCKS: &[Range] = &[Range::from_nums(1, 2, 3, 4), Range::from_nums(2, 3, 4, 5)];
+    const AST_MOCKS: &[Ast] = &[
+        Ast { kind: AstKind::Number(1.0), location: RANGE_MOCKS[0] },
+        Ast { kind: AstKind::Number(2.0), location: RANGE_MOCKS[1] },
+    ];
+    const AST_KIND_MOCK: AstKind = AstKind::Number(1.0);
 
     #[test]
     fn test_new() {
-        let ast = Ast::new(AstKind::Number(1.0), RANGE_MOCK);
+        let ast = Ast::new(AST_KIND_MOCK, RANGE_MOCKS[0]);
 
-        assert_eq!(ast, Ast { kind: AstKind::Number(1.0), location: RANGE_MOCK })
+        let expected = Ast { kind: AST_KIND_MOCK, location: RANGE_MOCKS[0] };
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn test_from_program() {
+        let expressions = vec![Box::new(AST_MOCKS[0].clone())];
+
+        let ast = Ast::from_program(expressions.clone());
+
+        let expected = Ast {
+            kind: AstKind::Program { expressions },
+            location: RANGE_MOCKS[0],
+        };
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn test_from_num() {
+        let ast = Ast::from_num(1.0, &RANGE_MOCKS[0]);
+
+        let expected = Ast { kind: AstKind::Number(1.0), location: RANGE_MOCKS[0] };
+        assert_eq!(ast, expected);
     }
 
     #[test]
     fn test_from_bool() {
-        let ast = Ast::from_bool(true, &RANGE_MOCK);
+        let ast = Ast::from_bool(true, &RANGE_MOCKS[0]);
 
-        assert_eq!(ast, Ast { kind: AstKind::Bool(true), location: RANGE_MOCK });
+        let expected = Ast { kind: AstKind::Bool(true), location: RANGE_MOCKS[0] };
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn test_from_prefix_plus() {
+        let operand = Box::new(AST_MOCKS[0].clone());
+
+        let ast = Ast::from_prefix_plus(operand.clone(), &RANGE_MOCKS[0]);
+
+        let expected = Ast {
+            kind: AstKind::PrefixPlus { operand },
+            location: RANGE_MOCKS[0],
+        };
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn test_from_prefix_minus() {
+        let operand = Box::new(AST_MOCKS[0].clone());
+
+        let ast = Ast::from_prefix_minus(operand.clone(), &RANGE_MOCKS[0]);
+
+        let expected = Ast {
+            kind: AstKind::PrefixMinus { operand },
+            location: RANGE_MOCKS[0],
+        };
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn test_from_infix_plus() {
+        let left = Box::new(AST_MOCKS[0].clone());
+        let right = Box::new(AST_MOCKS[1].clone());
+
+        let ast = Ast::from_infix_plus(left.clone(), right.clone());
+
+        let expected = Ast {
+            kind: AstKind::InfixPlus { left: left.clone(), right: right.clone() },
+            location: Range { begin: left.location.begin, end: right.location.end },
+        };
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn test_from_infix_minus() {
+        let left = Box::new(AST_MOCKS[0].clone());
+        let right = Box::new(AST_MOCKS[1].clone());
+
+        let ast = Ast::from_infix_minus(left.clone(), right.clone());
+
+        let expected = Ast {
+            kind: AstKind::InfixMinus { left: left.clone(), right: right.clone() },
+            location: Range { begin: left.location.begin, end: right.location.end },
+        };
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn test_from_infix_asterisk() {
+        let left = Box::new(AST_MOCKS[0].clone());
+        let right = Box::new(AST_MOCKS[1].clone());
+
+        let ast = Ast::from_infix_asterisk(left.clone(), right.clone());
+
+        let expected = Ast {
+            kind: AstKind::InfixAsterisk { left: left.clone(), right: right.clone() },
+            location: Range { begin: left.location.begin, end: right.location.end },
+        };
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn test_from_infix_slash() {
+        let left = Box::new(AST_MOCKS[0].clone());
+        let right = Box::new(AST_MOCKS[1].clone());
+
+        let ast = Ast::from_infix_slash(left.clone(), right.clone());
+
+        let expected = Ast {
+            kind: AstKind::InfixSlash { left: left.clone(), right: right.clone() },
+            location: Range { begin: left.location.begin, end: right.location.end },
+        };
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn test_from_infix_percent() {
+        let left = Box::new(AST_MOCKS[0].clone());
+        let right = Box::new(AST_MOCKS[1].clone());
+
+        let ast = Ast::from_infix_percent(left.clone(), right.clone());
+
+        let expected = Ast {
+            kind: AstKind::InfixPercent { left: left.clone(), right: right.clone() },
+            location: Range { begin: left.location.begin, end: right.location.end },
+        };
+        assert_eq!(ast, expected);
     }
 }
