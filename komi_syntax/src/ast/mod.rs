@@ -9,6 +9,7 @@ pub enum AstKind {
     Bool(bool),
     PrefixPlus { operand: Box<Ast> },
     PrefixMinus { operand: Box<Ast> },
+    PrefixBang { operand: Box<Ast> },
     InfixPlus { left: Box<Ast>, right: Box<Ast> },
     InfixMinus { left: Box<Ast>, right: Box<Ast> },
     InfixAsterisk { left: Box<Ast>, right: Box<Ast> },
@@ -50,6 +51,11 @@ impl Ast {
     pub fn from_prefix_minus(operand: Box<Ast>, prefix_location: &Range) -> Self {
         let location = Range::new(prefix_location.begin, operand.location.end);
         Ast::new(AstKind::PrefixMinus { operand }, location)
+    }
+
+    pub fn from_prefix_bang(operand: Box<Ast>, prefix_location: &Range) -> Self {
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ast::new(AstKind::PrefixBang { operand }, location)
     }
 
     pub fn from_infix_plus(left: Box<Ast>, right: Box<Ast>) -> Self {
@@ -192,6 +198,19 @@ mod tests {
 
         let expected = Ast {
             kind: AstKind::PrefixMinus { operand },
+            location: RANGE_MOCKS[0],
+        };
+        assert_eq!(ast, expected);
+    }
+
+    #[test]
+    fn test_from_prefix_bang() {
+        let operand = Box::new(AST_MOCKS[0].clone());
+
+        let ast = Ast::from_prefix_bang(operand.clone(), &RANGE_MOCKS[0]);
+
+        let expected = Ast {
+            kind: AstKind::PrefixBang { operand },
             location: RANGE_MOCKS[0],
         };
         assert_eq!(ast, expected);
