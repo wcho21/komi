@@ -505,7 +505,12 @@ mod tests {
         vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)],
         ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
     )]
-    fn arithmetic_operator(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
+    #[case::bang(
+        // Represents `!`.
+        vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)],
+        ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
+    )]
+    fn single_token(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
     }
 
