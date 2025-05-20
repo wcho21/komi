@@ -29,16 +29,16 @@ impl<'a> Evaluator<'a> {
     fn eval_ast(ast: &Ast) -> ResVal {
         match ast {
             Ast { kind: AstKind::Program { expressions }, location } => Self::eval_program(expressions, location),
+            Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
+            Ast { kind: AstKind::Bool(b), location } => Self::eval_bool(b, location),
+            Ast { kind: AstKind::PrefixPlus { operand }, location } => Self::eval_prefix_plus(operand, location),
+            Ast { kind: AstKind::PrefixMinus { operand }, location } => Self::eval_prefix_minus(operand, location),
+            Ast { kind: AstKind::PrefixBang { operand }, location } => Self::eval_prefix_bang(operand, location),
             Ast { kind: AstKind::InfixPlus { left, right }, location: _ } => Self::eval_infix_plus(left, right),
             Ast { kind: AstKind::InfixMinus { left, right }, location: _ } => Self::eval_infix_minus(left, right),
             Ast { kind: AstKind::InfixAsterisk { left, right }, location: _ } => Self::eval_infix_asterisk(left, right),
             Ast { kind: AstKind::InfixSlash { left, right }, location: _ } => Self::eval_infix_slash(left, right),
             Ast { kind: AstKind::InfixPercent { left, right }, location: _ } => Self::eval_infix_percent(left, right),
-            Ast { kind: AstKind::PrefixPlus { operand }, location } => Self::eval_prefix_plus(operand, location),
-            Ast { kind: AstKind::PrefixMinus { operand }, location } => Self::eval_prefix_minus(operand, location),
-            Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
-            Ast { kind: AstKind::Bool(b), location } => Self::eval_bool(b, location),
-            _ => todo!(),
         }
     }
 
@@ -49,6 +49,37 @@ impl<'a> Evaluator<'a> {
             last_value = Self::eval_ast(expression)?;
         }
         Ok(last_value)
+    }
+
+    fn eval_number(num: &f64, location: &Range) -> ResVal {
+        Ok(Value::new(ValueKind::Number(*num), *location))
+    }
+
+    fn eval_bool(boolean: &bool, location: &Range) -> ResVal {
+        Ok(Value::new(ValueKind::Bool(*boolean), *location))
+    }
+
+    fn eval_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
+        let val = Self::eval_prefix_operand_num(operand)?;
+
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ok(Value::new(ValueKind::Number(val), location))
+    }
+
+    fn eval_prefix_minus(operand: &Ast, prefix_location: &Range) -> ResVal {
+        let operand_val = Self::eval_prefix_operand_num(operand)?;
+        let evaluated = -operand_val;
+
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ok(Value::new(ValueKind::Number(evaluated), location))
+    }
+
+    fn eval_prefix_bang(operand: &Ast, prefix_location: &Range) -> ResVal {
+        let operand_val = Self::eval_prefix_operand_bool(operand)?;
+        let evaluated = !operand_val;
+
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ok(Value::new(ValueKind::Bool(evaluated), location))
     }
 
     fn eval_infix_plus(left: &Ast, right: &Ast) -> ResVal {
@@ -101,27 +132,22 @@ impl<'a> Evaluator<'a> {
         Ok(Value::new(ValueKind::Number(evaluated), location))
     }
 
-    fn eval_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
-        let val = Self::eval_prefix_operand_num(operand)?;
-
-        let location = Range::new(prefix_location.begin, operand.location.end);
-        Ok(Value::new(ValueKind::Number(val), location))
+    fn eval_prefix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
+        let val = Self::eval_ast(operand)?;
+        if let ValueKind::Number(num) = val.kind {
+            Ok(num)
+        } else {
+            Err(EvalError::new(EvalErrorKind::InvalidPrefixNumOperand, val.location))
+        }
     }
 
-    fn eval_prefix_minus(operand: &Ast, prefix_location: &Range) -> ResVal {
-        let operand_val = Self::eval_prefix_operand_num(operand)?;
-        let val = -operand_val;
-
-        let location = Range::new(prefix_location.begin, operand.location.end);
-        Ok(Value::new(ValueKind::Number(val), location))
-    }
-
-    fn eval_number(num: &f64, location: &Range) -> ResVal {
-        Ok(Value::new(ValueKind::Number(*num), *location))
-    }
-
-    fn eval_bool(boolean: &bool, location: &Range) -> ResVal {
-        Ok(Value::new(ValueKind::Bool(*boolean), *location))
+    fn eval_prefix_operand_bool(operand: &Ast) -> Result<bool, EvalError> {
+        let val = Self::eval_ast(operand)?;
+        if let ValueKind::Bool(boolean) = val.kind {
+            Ok(boolean)
+        } else {
+            Err(EvalError::new(EvalErrorKind::InvalidPrefixBoolOperand, val.location))
+        }
     }
 
     fn eval_infix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
@@ -130,15 +156,6 @@ impl<'a> Evaluator<'a> {
             Ok(num)
         } else {
             Err(EvalError::new(EvalErrorKind::InvalidAdditionOperand, val.location)) // TODO: rename error (not only for addition)
-        }
-    }
-
-    fn eval_prefix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
-        let val = Self::eval_ast(operand)?;
-        if let ValueKind::Number(num) = val.kind {
-            Ok(num)
-        } else {
-            Err(EvalError::new(EvalErrorKind::InvalidPrefixNumOperand, val.location))
         }
     }
 }

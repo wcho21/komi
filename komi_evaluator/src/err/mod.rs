@@ -7,6 +7,7 @@ use std::fmt;
 pub enum EvalErrorKind {
     InvalidAdditionOperand,
     InvalidPrefixNumOperand,
+    InvalidPrefixBoolOperand,
     Unexpected,
 }
 
@@ -17,6 +18,7 @@ impl fmt::Display for EvalErrorKind {
         let s = match self {
             EvalErrorKind::InvalidAdditionOperand => "InvalidAdditionOperand",
             EvalErrorKind::InvalidPrefixNumOperand => "InvalidPrefixNumOperand",
+            EvalErrorKind::InvalidPrefixBoolOperand => "InvalidPrefixBoolOperand",
             EvalErrorKind::Unexpected => "Unexpected",
         };
         write!(f, "{}", s)
