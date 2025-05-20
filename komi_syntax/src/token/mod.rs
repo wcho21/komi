@@ -20,6 +20,10 @@ pub enum TokenKind {
     LParen,
     /// A right parenthesis `)`
     RParen,
+    /// A true `참`
+    True,
+    /// A false `거짓`
+    False,
 }
 
 /// A token produced during lexing.
@@ -64,6 +68,14 @@ impl Token {
 
     pub const fn from_rparen(location: Range) -> Self {
         Token::new(TokenKind::RParen, location)
+    }
+
+    pub const fn from_true(location: Range) -> Self {
+        Token::new(TokenKind::True, location)
+    }
+
+    pub const fn from_false(location: Range) -> Self {
+        Token::new(TokenKind::False, location)
     }
 }
 
@@ -143,5 +155,19 @@ mod tests {
         let token = Token::from_rparen(RANGE_MOCK);
 
         assert_eq!(token, Token { kind: TokenKind::RParen, location: RANGE_MOCK })
+    }
+
+    #[test]
+    fn test_from_true() {
+        let token = Token::from_true(RANGE_MOCK);
+
+        assert_eq!(token, Token { kind: TokenKind::True, location: RANGE_MOCK })
+    }
+
+    #[test]
+    fn test_from_false() {
+        let token = Token::from_false(RANGE_MOCK);
+
+        assert_eq!(token, Token { kind: TokenKind::False, location: RANGE_MOCK })
     }
 }
