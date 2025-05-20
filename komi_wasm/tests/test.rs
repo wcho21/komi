@@ -110,7 +110,7 @@ mod tests {
 
         #[wasm_bindgen_test]
         fn test_illegal_char() -> Result<(), JsValue> {
-            // "^" is illegal char
+            // "^" represents an illegal char.
             assert_error!("^", "LexError", "IllegalChar", 0, 0, 0, "^".len());
             Ok(())
         }
