@@ -775,7 +775,6 @@ mod tests {
 
             /// Represents `+`.
             #[test]
-            #[ignore]
             fn test_plus() -> Res {
                 assert_parse_fail!(
                     &vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)],
