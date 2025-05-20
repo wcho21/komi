@@ -157,6 +157,7 @@ version = "0.0.0-local"
 dependencies = [
  "komi_syntax",
  "komi_util",
+ "rstest",
 ]
 
 [[package]]
