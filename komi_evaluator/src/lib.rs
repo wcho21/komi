@@ -37,6 +37,7 @@ impl<'a> Evaluator<'a> {
             Ast { kind: AstKind::PrefixPlus { operand }, location } => Self::eval_prefix_plus(operand, location),
             Ast { kind: AstKind::PrefixMinus { operand }, location } => Self::eval_prefix_minus(operand, location),
             Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
+            _ => todo!(),
         }
     }
 
