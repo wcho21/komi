@@ -264,7 +264,7 @@ mod tests {
             assert_eq!(
                 lex($source),
                 Err($expected),
-                "received a result (left), but expected lexing the source '{}' to fail (right)",
+                "received a result (left), but expected an error from the source '{}' (right)",
                 $source,
             );
             return Ok(())

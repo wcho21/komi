@@ -212,7 +212,7 @@ mod tests {
             assert_eq!(
                 parse($tokens),
                 Err($expected),
-                "received a result (left), but expected parsing the tokens to fail (right)",
+                "received a result (left), but expected an error (right)",
             );
             return Ok(())
         };
