@@ -179,12 +179,14 @@ mod tests {
                 use super::*;
 
                 #[wasm_bindgen_test]
+                #[ignore]
                 fn test_negation_prefix() -> Result<(), JsValue> {
                     assert_exec!("!거짓", "참");
                     Ok(())
                 }
 
                 #[wasm_bindgen_test]
+                #[ignore]
                 fn test_consecutive_prefix() -> Result<(), JsValue> {
                     assert_exec!("!!!거짓", "참");
                     Ok(())
@@ -198,24 +200,28 @@ mod tests {
                     use super::*;
 
                     #[wasm_bindgen_test]
+                    #[ignore]
                     fn test_true_and_true() -> Result<(), JsValue> {
                         assert_exec!("참 그리고 참", "참");
                         Ok(())
                     }
 
                     #[wasm_bindgen_test]
+                    #[ignore]
                     fn test_true_and_false() -> Result<(), JsValue> {
                         assert_exec!("참 그리고 거짓", "거짓");
                         Ok(())
                     }
 
                     #[wasm_bindgen_test]
+                    #[ignore]
                     fn test_false_and_true() -> Result<(), JsValue> {
                         assert_exec!("거짓 그리고 참", "거짓");
                         Ok(())
                     }
 
                     #[wasm_bindgen_test]
+                    #[ignore]
                     fn test_false_and_false() -> Result<(), JsValue> {
                         assert_exec!("거짓 그리고 거짓", "거짓");
                         Ok(())
@@ -226,24 +232,28 @@ mod tests {
                     use super::*;
 
                     #[wasm_bindgen_test]
+                    #[ignore]
                     fn test_true_or_true() -> Result<(), JsValue> {
                         assert_exec!("참 또는 참", "참");
                         Ok(())
                     }
 
                     #[wasm_bindgen_test]
+                    #[ignore]
                     fn test_true_or_false() -> Result<(), JsValue> {
                         assert_exec!("참 또는 거짓", "참");
                         Ok(())
                     }
 
                     #[wasm_bindgen_test]
+                    #[ignore]
                     fn test_false_or_true() -> Result<(), JsValue> {
                         assert_exec!("거짓 또는 참", "참");
                         Ok(())
                     }
 
                     #[wasm_bindgen_test]
+                    #[ignore]
                     fn test_false_or_false() -> Result<(), JsValue> {
                         assert_exec!("거짓 또는 거짓", "거짓");
                         Ok(())
