@@ -129,6 +129,8 @@ macro_rules! mkast {
     };
 }
 
+/// Test code as a specification.
+/// Each test case shows which AST the function returns for a given location.
 #[cfg(test)]
 mod tests {
     use super::*;
