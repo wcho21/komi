@@ -76,6 +76,14 @@ impl<'a> Lexer<'a> {
                     let token = advance_and_lex!(self, Self::lex_rparen)?;
                     tokens.push(token);
                 }
+                Some("참") => {
+                    let token = advance_and_lex!(self, Self::lex_true)?;
+                    tokens.push(token);
+                }
+                Some("거") => {
+                    let token = advance_and_lex!(self, Self::lex_false)?;
+                    tokens.push(token);
+                }
                 Some("#") => {
                     self.scanner.advance();
                     self.skip_comment();
@@ -179,6 +187,24 @@ impl<'a> Lexer<'a> {
 
     fn lex_rparen(&mut self, first_location: &Range) -> ResToken {
         Ok(Token::from_rparen(*first_location))
+    }
+
+    fn lex_true(&mut self, first_location: &Range) -> ResToken {
+        Ok(Token::from_boolean(true, *first_location))
+    }
+
+    fn lex_false(&mut self, first_location: &Range) -> ResToken {
+        match self.scanner.read() {
+            Some("짓") => {
+                let location = Range::new(first_location.begin, self.scanner.locate().end);
+                self.scanner.advance();
+                Ok(Token::from_boolean(false, location))
+            }
+            _ => {
+                // TODO: return an identifier token, when the identifier token is implemented.
+                return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
+            }
+        }
     }
 
     fn skip_comment(&mut self) -> () {
@@ -375,6 +401,16 @@ mod tests {
         #[test]
         fn test_rparen() -> Res {
             assert_lex!(")", vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)]);
+        }
+
+        #[test]
+        fn test_true() -> Res {
+            assert_lex!("참", vec![mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)]);
+        }
+
+        #[test]
+        fn test_false() -> Res {
+            assert_lex!("거짓", vec![mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2)]);
         }
     }
 

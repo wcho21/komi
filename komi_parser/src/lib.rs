@@ -43,6 +43,7 @@ impl<'a> Parser<'a> {
     fn parse_expression(&mut self, first_token: &'a Token, threshold_bp: &Bp) -> ResAst {
         let mut top = self.parse_expression_start(first_token)?;
 
+        // TODO: use while let to reduce code
         loop {
             let token = if let Some(x) = self.scanner.read() {
                 x
@@ -75,6 +76,10 @@ impl<'a> Parser<'a> {
             TokenKind::Number(n) => {
                 self.scanner.advance();
                 self.make_num_ast(n, &first_token.location)
+            }
+            TokenKind::Bool(b) => {
+                self.scanner.advance();
+                self.make_bool_ast(b, &first_token.location)
             }
             TokenKind::LParen => {
                 self.scanner.advance();
@@ -166,6 +171,10 @@ impl<'a> Parser<'a> {
     fn make_num_ast(&mut self, num: f64, location: &Range) -> ResAst {
         Ok(Box::new(Ast::from_num(num, location)))
     }
+
+    fn make_bool_ast(&mut self, boolean: bool, location: &Range) -> ResAst {
+        Ok(Box::new(Ast::from_bool(boolean, location)))
+    }
 }
 
 /// Produces an AST from tokens.
@@ -228,6 +237,17 @@ mod tests {
                 &vec![mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1)],
                 mkast!(prog loc 0, 0, 0, 1, vec![
                     mkast!(num 1.0, loc 0, 0, 0, 1),
+                ])
+            );
+        }
+
+        /// Represents `참`.
+        #[test]
+        fn test_bool() -> Res {
+            assert_parse!(
+                &vec![mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)],
+                mkast!(prog loc 0, 0, 0, 1, vec![
+                    mkast!(boolean true, loc 0, 0, 0, 1),
                 ])
             );
         }
@@ -775,7 +795,6 @@ mod tests {
 
             /// Represents `+`.
             #[test]
-            #[ignore]
             fn test_plus() -> Res {
                 assert_parse_fail!(
                     &vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)],

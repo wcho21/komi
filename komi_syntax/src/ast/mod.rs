@@ -6,6 +6,7 @@ use komi_util::{Range, range};
 pub enum AstKind {
     Program { expressions: Vec<Box<Ast>> },
     Number(f64),
+    Bool(bool),
     PrefixPlus { operand: Box<Ast> },
     PrefixMinus { operand: Box<Ast> },
     InfixPlus { left: Box<Ast>, right: Box<Ast> },
@@ -35,6 +36,10 @@ impl Ast {
 
     pub fn from_num(num: f64, location: &Range) -> Self {
         Ast::new(AstKind::Number(num), *location)
+    }
+
+    pub fn from_bool(boolean: bool, location: &Range) -> Self {
+        Ast::new(AstKind::Bool(boolean), *location)
     }
 
     pub fn from_prefix_plus(operand: Box<Ast>, prefix_location: &Range) -> Self {
@@ -113,17 +118,28 @@ macro_rules! mkast {
     (num $val:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {
         Box::new(Ast::new(AstKind::Number($val), Range::from_nums($br, $bc, $er, $ec)))
     };
+    (boolean $val:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {
+        Box::new(Ast::new(AstKind::Bool($val), Range::from_nums($br, $bc, $er, $ec)))
+    };
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    const RANGE_MOCK: Range = Range::from_nums(1, 2, 3, 4);
+
     #[test]
     fn test_new() {
-        let range = Range::from_nums(1, 2, 3, 4);
-        let ast = Ast::new(AstKind::Number(1.0), range.clone());
+        let ast = Ast::new(AstKind::Number(1.0), RANGE_MOCK);
 
-        assert_eq!(ast, Ast { kind: AstKind::Number(1.0), location: range })
+        assert_eq!(ast, Ast { kind: AstKind::Number(1.0), location: RANGE_MOCK })
+    }
+
+    #[test]
+    fn test_from_bool() {
+        let ast = Ast::from_bool(true, &RANGE_MOCK);
+
+        assert_eq!(ast, Ast { kind: AstKind::Bool(true), location: RANGE_MOCK });
     }
 }

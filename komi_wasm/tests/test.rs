@@ -69,16 +69,197 @@ mod tests {
     mod ok {
         use super::*;
 
-        #[wasm_bindgen_test]
-        fn test_single_number_literal() -> Result<(), JsValue> {
-            assert_exec!("12.25", "12.25");
-            Ok(())
+        mod num {
+            use super::*;
+
+            mod literals {
+                use super::*;
+
+                #[wasm_bindgen_test]
+                fn test_single_literal() -> Result<(), JsValue> {
+                    assert_exec!("12.25", "12.25");
+                    Ok(())
+                }
+            }
+
+            mod prefixes {
+                use super::*;
+
+                #[wasm_bindgen_test]
+                fn test_plus_prefix() -> Result<(), JsValue> {
+                    assert_exec!("+12.25", "12.25");
+                    Ok(())
+                }
+
+                #[wasm_bindgen_test]
+                fn test_minus_prefix() -> Result<(), JsValue> {
+                    assert_exec!("-12.25", "-12.25");
+                    Ok(())
+                }
+
+                #[wasm_bindgen_test]
+                fn test_consecutive_prefixes() -> Result<(), JsValue> {
+                    assert_exec!("++--12.25", "12.25");
+                    Ok(())
+                }
+            }
+
+            mod infixes {
+                use super::*;
+
+                #[wasm_bindgen_test]
+                fn test_addition() -> Result<(), JsValue> {
+                    assert_exec!("6+4", "10");
+                    Ok(())
+                }
+
+                #[wasm_bindgen_test]
+                fn test_subtraction() -> Result<(), JsValue> {
+                    assert_exec!("6-4", "2");
+                    Ok(())
+                }
+
+                #[wasm_bindgen_test]
+                fn test_multiplication() -> Result<(), JsValue> {
+                    assert_exec!("6*4", "24");
+                    Ok(())
+                }
+
+                #[wasm_bindgen_test]
+                fn test_division() -> Result<(), JsValue> {
+                    assert_exec!("6/4", "1.5");
+                    Ok(())
+                }
+
+                #[wasm_bindgen_test]
+                fn test_modular() -> Result<(), JsValue> {
+                    assert_exec!("6%4", "2");
+                    Ok(())
+                }
+            }
+
+            mod compound {
+                use super::*;
+
+                #[wasm_bindgen_test]
+                fn test_expression() -> Result<(), JsValue> {
+                    assert_exec!("(1.5 - 2.5) * 3 / 4 + 5 % 6", "4.25");
+                    Ok(())
+                }
+
+                #[wasm_bindgen_test]
+                fn test_nested_grouping() -> Result<(), JsValue> {
+                    // Note that the expression will be parsed into `(((8 - 4) - 2) - 1)` if without grouping.
+                    assert_exec!("8 - (4 - (2 - 1))", "5");
+                    Ok(())
+                }
+            }
         }
 
-        #[wasm_bindgen_test]
-        fn test_arithmetic_expression() -> Result<(), JsValue> {
-            assert_exec!("(1.5 - 2.5) * 3 / 4 + 5 % 6", "4.25");
-            Ok(())
+        mod bool {
+            use super::*;
+
+            mod literals {
+                use super::*;
+
+                #[wasm_bindgen_test]
+                fn test_true_literal() -> Result<(), JsValue> {
+                    assert_exec!("참", "참");
+                    Ok(())
+                }
+
+                #[wasm_bindgen_test]
+                fn test_false_literal() -> Result<(), JsValue> {
+                    assert_exec!("거짓", "거짓");
+                    Ok(())
+                }
+            }
+
+            mod prefixes {
+                use super::*;
+
+                #[wasm_bindgen_test]
+                #[ignore]
+                fn test_negation_prefix() -> Result<(), JsValue> {
+                    assert_exec!("!거짓", "참");
+                    Ok(())
+                }
+
+                #[wasm_bindgen_test]
+                #[ignore]
+                fn test_consecutive_prefix() -> Result<(), JsValue> {
+                    assert_exec!("!!!거짓", "참");
+                    Ok(())
+                }
+            }
+
+            mod infixes {
+                use super::*;
+
+                mod conjunction {
+                    use super::*;
+
+                    #[wasm_bindgen_test]
+                    #[ignore]
+                    fn test_true_and_true() -> Result<(), JsValue> {
+                        assert_exec!("참 그리고 참", "참");
+                        Ok(())
+                    }
+
+                    #[wasm_bindgen_test]
+                    #[ignore]
+                    fn test_true_and_false() -> Result<(), JsValue> {
+                        assert_exec!("참 그리고 거짓", "거짓");
+                        Ok(())
+                    }
+
+                    #[wasm_bindgen_test]
+                    #[ignore]
+                    fn test_false_and_true() -> Result<(), JsValue> {
+                        assert_exec!("거짓 그리고 참", "거짓");
+                        Ok(())
+                    }
+
+                    #[wasm_bindgen_test]
+                    #[ignore]
+                    fn test_false_and_false() -> Result<(), JsValue> {
+                        assert_exec!("거짓 그리고 거짓", "거짓");
+                        Ok(())
+                    }
+                }
+
+                mod disjunction {
+                    use super::*;
+
+                    #[wasm_bindgen_test]
+                    #[ignore]
+                    fn test_true_or_true() -> Result<(), JsValue> {
+                        assert_exec!("참 또는 참", "참");
+                        Ok(())
+                    }
+
+                    #[wasm_bindgen_test]
+                    #[ignore]
+                    fn test_true_or_false() -> Result<(), JsValue> {
+                        assert_exec!("참 또는 거짓", "참");
+                        Ok(())
+                    }
+
+                    #[wasm_bindgen_test]
+                    #[ignore]
+                    fn test_false_or_true() -> Result<(), JsValue> {
+                        assert_exec!("거짓 또는 참", "참");
+                        Ok(())
+                    }
+
+                    #[wasm_bindgen_test]
+                    #[ignore]
+                    fn test_false_or_false() -> Result<(), JsValue> {
+                        assert_exec!("거짓 또는 거짓", "거짓");
+                        Ok(())
+                    }
+                }
+            }
         }
     }
 
@@ -87,7 +268,7 @@ mod tests {
 
         #[wasm_bindgen_test]
         fn test_illegal_char() -> Result<(), JsValue> {
-            // "^" is illegal char
+            // "^" represents an illegal char.
             assert_error!("^", "LexError", "IllegalChar", 0, 0, 0, "^".len());
             Ok(())
         }

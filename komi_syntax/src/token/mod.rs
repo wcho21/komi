@@ -6,6 +6,8 @@ use komi_util::Range;
 pub enum TokenKind {
     /// A number with or without decimal, such as `12` or `12.25`.
     Number(f64),
+    /// A boolean `참` or `거짓`.
+    Bool(bool),
     /// A plus `+`
     Plus,
     /// A minus `-`
@@ -64,6 +66,10 @@ impl Token {
 
     pub const fn from_rparen(location: Range) -> Self {
         Token::new(TokenKind::RParen, location)
+    }
+
+    pub const fn from_boolean(boolean: bool, location: Range) -> Self {
+        Token::new(TokenKind::Bool(boolean), location)
     }
 }
 
@@ -143,5 +149,12 @@ mod tests {
         let token = Token::from_rparen(RANGE_MOCK);
 
         assert_eq!(token, Token { kind: TokenKind::RParen, location: RANGE_MOCK })
+    }
+
+    #[test]
+    fn test_from_boolean() {
+        let token = Token::from_boolean(true, RANGE_MOCK);
+
+        assert_eq!(token, Token { kind: TokenKind::Bool(true), location: RANGE_MOCK })
     }
 }

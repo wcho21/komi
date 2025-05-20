@@ -4,14 +4,24 @@
 
 use komi_syntax::{Value, ValueKind};
 
-/// The representation of the empty value.
+/// Predefined representations
 pub const EMPTY_REPR: &str = "(EMPTY)";
+pub const TRUE_REPR: &str = "참";
+pub const FALSE_REPR: &str = "거짓";
 
 /// Produces the string representation for a given value.
 pub fn represent(val: &Value) -> String {
     match val.kind {
         ValueKind::Number(n) => n.to_string(),
+        ValueKind::Bool(b) => represent_bool(b),
         ValueKind::Empty => EMPTY_REPR.to_string(),
+    }
+}
+
+fn represent_bool(boolean: bool) -> String {
+    match boolean {
+        true => TRUE_REPR.to_string(),
+        false => FALSE_REPR.to_string(),
     }
 }
 
@@ -48,6 +58,18 @@ mod tests {
         #[test]
         fn test_negative_num() {
             assert_repr!(&Value::new(ValueKind::Number(-12.25), RANGE_MOCKS[0]), "-12.25");
+        }
+
+        /// Represents `참`.
+        #[test]
+        fn test_true_bool() {
+            assert_repr!(&Value::new(ValueKind::Bool(true), RANGE_MOCKS[0]), "참");
+        }
+
+        /// Represents `거짓`.
+        #[test]
+        fn test_false_bool() {
+            assert_repr!(&Value::new(ValueKind::Bool(false), RANGE_MOCKS[0]), "거짓");
         }
     }
 

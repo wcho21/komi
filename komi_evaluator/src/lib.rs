@@ -37,6 +37,7 @@ impl<'a> Evaluator<'a> {
             Ast { kind: AstKind::PrefixPlus { operand }, location } => Self::eval_prefix_plus(operand, location),
             Ast { kind: AstKind::PrefixMinus { operand }, location } => Self::eval_prefix_minus(operand, location),
             Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
+            Ast { kind: AstKind::Bool(b), location } => Self::eval_bool(b, location),
         }
     }
 
@@ -118,6 +119,10 @@ impl<'a> Evaluator<'a> {
         Ok(Value::new(ValueKind::Number(*num), *location))
     }
 
+    fn eval_bool(boolean: &bool, location: &Range) -> ResVal {
+        Ok(Value::new(ValueKind::Bool(*boolean), *location))
+    }
+
     fn eval_infix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
         let val = Self::eval_ast(operand)?;
         if let ValueKind::Number(num) = val.kind {
@@ -180,12 +185,23 @@ mod tests {
 
         /// Represents `1`.
         #[test]
-        fn test_single_num() -> Res {
+        fn test_num() -> Res {
             assert_eval!(
                 &mkast!(prog loc 0, 0, 0, 1, vec![
                     mkast!(num 1.0, loc 0, 0, 0, 1),
                 ]),
                 Value::from_num(1.0, Range::from_nums(0, 0, 0, 1))
+            );
+        }
+
+        /// Represents `참`.
+        #[test]
+        fn test_bool() -> Res {
+            assert_eval!(
+                &mkast!(prog loc 0, 0, 0, 1, vec![
+                    mkast!(boolean true, loc 0, 0, 0, 1),
+                ]),
+                Value::from_bool(true, Range::from_nums(0, 0, 0, 1))
             );
         }
     }
