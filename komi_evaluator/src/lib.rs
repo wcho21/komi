@@ -173,7 +173,7 @@ mod tests {
     type Res = Result<(), EvalError>;
 
     /// Asserts a given AST to be evaluated into the expected value.
-    /// Helps write a test more declaratively.
+    /// Helps write a test declaratively.
     macro_rules! assert_eval {
         ($ast:expr, $expected:expr $(,)?) => {
             assert_eq!(
@@ -186,7 +186,7 @@ mod tests {
     }
 
     /// Asserts evaluating a given AST will fail.
-    /// Helps write a test more declaratively.
+    /// Helps write a test declaratively.
     macro_rules! assert_eval_fail {
         ($ast:expr, $expected:expr $(,)?) => {
             assert_eq!(
