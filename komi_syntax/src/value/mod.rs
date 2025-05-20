@@ -5,6 +5,7 @@ use komi_util::Range;
 #[derive(Debug, PartialEq)]
 pub enum ValueKind {
     Number(f64),
+    Bool(bool),
     Empty,
 }
 
@@ -24,6 +25,11 @@ impl Value {
         Value::new(ValueKind::Number(num), location)
     }
 
+    pub fn from_bool(boolean: bool, location: Range) -> Self {
+        Value::new(ValueKind::Bool(boolean), location)
+    }
+
+    // TODO: remove empty value, replace it with lex error instead
     pub fn from_empty(location: Range) -> Self {
         Value::new(ValueKind::Empty, location)
     }
