@@ -125,6 +125,17 @@ mod tests {
         }
 
         #[test]
+        fn test_bool_true() -> Res {
+            assert_exec!("참", "참");
+        }
+
+        #[test]
+        fn test_bool_false() -> Res {
+            assert_exec!("거짓", "거짓");
+        }
+
+        // TODO: move prefix tests down to arithmetic section below
+        #[test]
         fn test_number_with_plus() -> Res {
             assert_exec!("+12", "12");
         }
