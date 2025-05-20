@@ -100,7 +100,8 @@ impl Ast {
     }
 }
 
-/// Makes an AST with the kind, and the location specified by four numbers.
+/// Makes an AST with the kind and the location specified by four numbers.
+/// Helps write an AST declaratively.
 #[macro_export]
 macro_rules! mkast {
     (prog loc $br:expr, $bc:expr, $er:expr, $ec: expr, $exprs:expr) => {

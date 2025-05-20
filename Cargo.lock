@@ -149,6 +149,7 @@ dependencies = [
  "komi_representer",
  "komi_syntax",
  "komi_util",
+ "rstest",
 ]
 
 [[package]]
@@ -157,6 +158,7 @@ version = "0.0.0-local"
 dependencies = [
  "komi_syntax",
  "komi_util",
+ "rstest",
 ]
 
 [[package]]
@@ -174,6 +176,7 @@ version = "0.0.0-local"
 dependencies = [
  "komi_syntax",
  "komi_util",
+ "rstest",
 ]
 
 [[package]]

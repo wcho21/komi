@@ -63,6 +63,7 @@ macro_rules! assert_error {
     };
 }
 
+#[allow(dead_code)] // Suppress warnings from #[wasm_bindgen_test] test codes.
 mod tests {
     use super::*;
 

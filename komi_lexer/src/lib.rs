@@ -243,7 +243,7 @@ mod tests {
     use rstest::rstest;
 
     /// Asserts a given literal to be lexed into the expected tokens.
-    /// Helps write a test more declaratively.
+    /// Helps write a test declaratively.
     macro_rules! assert_lex {
         ($source:expr, $expected:expr $(,)?) => {
             assert_eq!(
@@ -256,7 +256,7 @@ mod tests {
     }
 
     /// Asserts lexing a given literal will fail.
-    /// Helps write a test more declaratively.
+    /// Helps write a test declaratively.
     macro_rules! assert_lex_fail {
         ($source:expr, $expected:expr $(,)?) => {
             assert_eq!(
