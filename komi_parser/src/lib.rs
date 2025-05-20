@@ -43,14 +43,7 @@ impl<'a> Parser<'a> {
     fn parse_expression(&mut self, first_token: &'a Token, threshold_bp: &Bp) -> ResAst {
         let mut top = self.parse_expression_start(first_token)?;
 
-        // TODO: use while let to reduce code
-        loop {
-            let token = if let Some(x) = self.scanner.read() {
-                x
-            } else {
-                break;
-            };
-
+        while let Some(token) = self.scanner.read() {
             let bp = Bp::get_from_token(token);
             if threshold_bp.right >= bp.left {
                 break;
