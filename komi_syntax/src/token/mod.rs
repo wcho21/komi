@@ -87,6 +87,8 @@ macro_rules! mktoken {
     };
 }
 
+/// Test code as a specification.
+/// Each test case shows which token the function returns for a given location.
 #[cfg(test)]
 mod tests {
     use super::*;

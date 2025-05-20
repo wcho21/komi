@@ -240,230 +240,102 @@ mod tests {
     use super::err::LexErrorKind;
     use super::{LexError, Range, Token, lex};
     use komi_syntax::{TokenKind, mktoken};
-
-    type Res = Result<(), LexError>;
+    use rstest::rstest;
 
     /// Asserts a given literal to be lexed into the expected tokens.
     /// Helps write a test more declaratively.
     macro_rules! assert_lex {
-        ($source:literal, $expected:expr $(,)?) => {
+        ($source:expr, $expected:expr $(,)?) => {
             assert_eq!(
-                lex($source)?,
-                $expected,
+                lex($source),
+                Ok($expected),
                 "received tokens (left) from the source '{}', but expected the different tokens (right)",
                 $source,
             );
-            return Ok(())
         };
     }
 
     /// Asserts lexing a given literal will fail.
     /// Helps write a test more declaratively.
     macro_rules! assert_lex_fail {
-        ($source:literal, $expected:expr $(,)?) => {
+        ($source:expr, $expected:expr $(,)?) => {
             assert_eq!(
                 lex($source),
                 Err($expected),
                 "received a result (left), but expected an error from the source '{}' (right)",
                 $source,
             );
-            return Ok(())
         };
     }
 
-    mod empty {
-        use super::*;
-
-        #[test]
-        fn test_empty() -> Res {
-            assert_lex!("", vec![]);
-        }
-
-        #[test]
-        fn test_whitespaces() -> Res {
-            assert_lex!("   ", vec![]);
-        }
-
-        #[test]
-        fn test_tabs() -> Res {
-            assert_lex!("\t\t", vec![]);
-        }
-
-        #[test]
-        fn test_new_lines() -> Res {
-            assert_lex!("\n\n\r\r\r\n\r\n", vec![]);
-        }
-
-        #[test]
-        fn test_comment() -> Res {
-            assert_lex!("# comment", vec![]);
-        }
-
-        #[test]
-        fn test_multi_line_comment() -> Res {
-            assert_lex!("# comment line 1\r\n# comment line 2", vec![]);
-        }
+    #[rstest]
+    #[case::empty("")]
+    #[case::whitespaces("  ")]
+    #[case::tabs("\t\t")]
+    #[case::new_lines("\n\n\r\r\r\n\r\n")]
+    #[case::comment("# foo")]
+    #[case::multi_line_comment("# foo\r\n# bar")]
+    fn empty(#[case] source: &str) {
+        assert_lex!(source, vec![]);
     }
 
-    mod num_literals {
-        use super::*;
-
-        mod success {
-            use super::*;
-
-            #[test]
-            fn test_without_decimal() -> Res {
-                assert_lex!(
-                    "123",
-                    vec![mktoken!(TokenKind::Number(123.0), loc 0, 0, 0, "123".len())],
-                );
-            }
-
-            #[test]
-            fn test_with_decimal() -> Res {
-                assert_lex!(
-                    "12.25",
-                    vec![mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, "12.25".len())],
-                );
-            }
-        }
-
-        mod fail {
-            use super::*;
-
-            #[test]
-            fn test_illegal() -> Res {
-                assert_lex_fail!(
-                    "12^",
-                    LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 2, 0, 3)),
-                );
-            }
-
-            #[test]
-            fn test_beginning_with_dot() -> Res {
-                assert_lex_fail!(
-                    ".25",
-                    LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)),
-                );
-            }
-
-            #[test]
-            fn test_ending_with_dot() -> Res {
-                assert_lex_fail!(
-                    "12.",
-                    LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 3),),
-                );
-            }
-
-            #[test]
-            fn test_two_dots_decimal() -> Res {
-                assert_lex_fail!(
-                    "12..",
-                    LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4),),
-                );
-            }
-
-            #[test]
-            fn test_illegal_decimal() -> Res {
-                assert_lex_fail!(
-                    "12.^",
-                    LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4),),
-                );
-            }
-        }
+    #[rstest]
+    #[case::without_decimal("12", vec![mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len())])]
+    #[case::with_decimal("12.25", vec![mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, "12.25".len())])]
+    fn num_literal(#[case] source: &str, #[case] expected: Vec<Token>) {
+        assert_lex!(source, expected);
     }
 
-    mod single_chars {
-        use super::*;
-
-        #[test]
-        fn test_true() -> Res {
-            assert_lex!("참", vec![mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)]);
-        }
-
-        #[test]
-        fn test_false() -> Res {
-            assert_lex!("거짓", vec![mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2)]);
-        }
-
-        #[test]
-        fn test_plus() -> Res {
-            assert_lex!("+", vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)]);
-        }
-
-        #[test]
-        fn test_minus() -> Res {
-            assert_lex!("-", vec![mktoken!(TokenKind::Minus, loc 0, 0, 0, 1)]);
-        }
-
-        #[test]
-        fn test_asterisk() -> Res {
-            assert_lex!("*", vec![mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1)]);
-        }
-
-        #[test]
-        fn test_slash() -> Res {
-            assert_lex!("/", vec![mktoken!(TokenKind::Slash, loc 0, 0, 0, 1)]);
-        }
-
-        #[test]
-        fn test_percent() -> Res {
-            assert_lex!("%", vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)]);
-        }
-
-        #[test]
-        fn test_lparen() -> Res {
-            assert_lex!("(", vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)]);
-        }
-
-        #[test]
-        fn test_rparen() -> Res {
-            assert_lex!(")", vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)]);
-        }
-
-        #[test]
-        fn test_bang() -> Res {
-            assert_lex!("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)]);
-        }
+    #[rstest]
+    #[case::illegal_char("12^", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 2, 0, 3)))]
+    #[case::beginning_with_dot(".25", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
+    #[case::ending_with_dot("12.", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 3)))]
+    #[case::ending_with_two_dots("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
+    #[case::ending_with_two_dots("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
+    #[case::illegal_decimal("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
+    fn illegal_num(#[case] source: &str, #[case] expected: LexError) {
+        assert_lex_fail!(source, expected);
     }
 
-    mod multi_chars {
-        use super::*;
-
-        #[test]
-        fn test_addition_expression() -> Res {
-            assert_lex!(
-                "12 + 34.675",
-                vec![
-                    mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len()),
-                    mktoken!(TokenKind::Plus, loc 0, "12 ".len(), 0, "12 +".len()),
-                    mktoken!(TokenKind::Number(34.675), loc 0, "12 + ".len(), 0, "12 + 34.675".len()),
-                ],
-            );
-        }
-
-        /// Should not fail, since the lexer does not know the syntax.
-        #[test]
-        fn test_two_pluses() -> Res {
-            assert_lex!(
-                "+ +",
-                vec![
-                    mktoken!(TokenKind::Plus, loc 0, 0, 0, "+".len()),
-                    mktoken!(TokenKind::Plus, loc 0, "+ ".len(), 0, "+ +".len()),
-                ],
-            );
-        }
+    #[rstest]
+    #[case::the_true("참", vec![mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)])]
+    #[case::the_false("거짓", vec![mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2)])]
+    fn boolean(#[case] source: &str, #[case] expected: Vec<Token>) {
+        assert_lex!(source, expected);
     }
 
-    mod illegal {
-        use super::*;
+    #[rstest]
+    #[case::plus("+", vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)])]
+    #[case::minus("-", vec![mktoken!(TokenKind::Minus, loc 0, 0, 0, 1)])]
+    #[case::asterisk("*", vec![mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1)])]
+    #[case::slash("/", vec![mktoken!(TokenKind::Slash, loc 0, 0, 0, 1)])]
+    #[case::percent("%", vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)])]
+    #[case::lparen("(", vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)])]
+    #[case::rparen(")", vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)])]
+    #[case::bang("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)])]
+    fn single_chars(#[case] source: &str, #[case] expected: Vec<Token>) {
+        assert_lex!(source, expected);
+    }
 
-        #[test]
-        fn test_unrecognizable() -> Res {
-            assert_lex_fail!(
-                "^",
-                LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)),
-            );
-        }
+    #[rstest]
+    /// Should not fail, since the lexer does not know the syntax.
+    #[case::two_pluses("+ +", vec![
+        mktoken!(TokenKind::Plus, loc 0, 0, 0, "+".len()),
+        mktoken!(TokenKind::Plus, loc 0, "+ ".len(), 0, "+ +".len()),
+    ])]
+    #[case::addition_expression("12 + 34.675", vec![
+        mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len()),
+        mktoken!(TokenKind::Plus, loc 0, "12 ".len(), 0, "12 +".len()),
+        mktoken!(TokenKind::Number(34.675), loc 0, "12 + ".len(), 0, "12 + 34.675".len()),
+    ])]
+    fn multiple_chars(#[case] source: &str, #[case] expected: Vec<Token>) {
+        assert_lex!(source, expected);
+    }
+
+    #[rstest]
+    #[case::caret("^", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
+    #[case::dollar("$", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
+    fn illegal_char(#[case] source: &str, #[case] expected: LexError) {
+        assert_lex_fail!(source, expected);
     }
 }
