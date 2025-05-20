@@ -24,25 +24,23 @@ mod tests {
     use komi_lexer::{LexError, LexErrorKind};
     use komi_parser::{ParseError, ParseErrorKind};
     use komi_util::Range;
-
-    type Res = Result<(), ExecError>;
+    use rstest::rstest;
 
     /// Asserts a given source to be interpreted into the expected result.
-    /// Helps write a test more declaratively.
+    /// Helps write a test declaratively.
     macro_rules! assert_exec {
         ($source:expr, $expected:expr) => {
             assert_eq!(
-                execute($source)?,
-                $expected,
+                execute($source),
+                Ok($expected),
                 "received a value (left) interpreted from the source '{}', but expected the different result (right)",
                 $source,
             );
-            return Ok(())
         };
     }
 
     /// Asserts executing a given source will fail.
-    /// Helps write a test more declaratively.
+    /// Helps write a test declaratively.
     macro_rules! assert_exec_fail {
         ($source:expr, $expected:expr) => {
             assert_eq!(
@@ -51,335 +49,185 @@ mod tests {
                 "received a result (left), but expected executing the source '{}' to fail (right)",
                 $source,
             );
-            return Ok(())
         };
     }
 
-    /// Asserts, with matching, executing a given source will fail.
-    /// Helps write a test more declaratively.
-    macro_rules! assert_exec_fail_match {
-        ($source:expr, $expected:pat) => {
-            assert!(
-                matches!(execute($source), Err($expected)),
-                "received a result (left), but expected executing the source '{}' to fail (right)",
-                $source,
-            );
-            return Ok(())
-        };
+    #[rstest]
+    #[case::empty("", format!("{EMPTY_REPR}"))]
+    #[case::whitespaces("  \t\t\r\r\n\n\r\n\r\n", format!("{EMPTY_REPR}"))]
+    #[case::comments("# some comment", format!("{EMPTY_REPR}"))]
+    fn empty(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
     }
 
-    mod empty {
-        use super::*;
-
-        #[test]
-        fn test_empty() -> Res {
-            assert_exec!("", format!("{EMPTY_REPR}"));
-        }
-
-        #[test]
-        fn test_whitespaces() -> Res {
-            assert_exec!("  \t\t\r\r\n\n\r\n\r\n", format!("{EMPTY_REPR}"));
-        }
-
-        #[test]
-        fn test_comment() -> Res {
-            assert_exec!("# some comment", format!("{EMPTY_REPR}"));
-        }
-
-        #[test]
-        fn test_multi_line_comment() -> Res {
-            assert_exec!("# line ,\r\n# line 2", format!("{EMPTY_REPR}"));
-        }
+    #[rstest]
+    #[case::number_without_decimal("12", "12")]
+    #[case::number_with_decimal("12.25", "12.25")]
+    #[case::bool_true("참", "참")]
+    #[case::bool_false("거짓", "거짓")]
+    fn single_literal(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
     }
 
-    mod single_literals {
-        use super::*;
-
-        #[test]
-        fn test_number_without_decimal() -> Res {
-            assert_exec!("12", "12");
-        }
-
-        #[test]
-        fn test_number_with_decimal() -> Res {
-            assert_exec!("12.25", "12.25");
-        }
-
-        #[test]
-        fn test_number_ending_with_dot() -> Res {
-            assert_exec_fail!(
-                "12.",
-                ExecError::Lex(LexError::new(
-                    LexErrorKind::IllegalNumLiteral,
-                    Range::from_nums(0, 0, 0, 3)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_number_beginning_with_dot() -> Res {
-            assert_exec_fail!(
-                ".25",
-                ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))
-            );
-        }
-
-        #[test]
-        fn test_bool_true() -> Res {
-            assert_exec!("참", "참");
-        }
-
-        #[test]
-        fn test_bool_false() -> Res {
-            assert_exec!("거짓", "거짓");
-        }
-
-        #[test]
-        fn test_plus() -> Res {
-            assert_exec_fail!(
-                "+",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::NoPrefixOperand,
-                    Range::from_nums(0, 0, 0, 1)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_minus() -> Res {
-            assert_exec_fail!(
-                "-",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::NoPrefixOperand,
-                    Range::from_nums(0, 0, 0, 1)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_asterisk() -> Res {
-            assert_exec_fail!(
-                "*",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::InvalidExprStart,
-                    Range::from_nums(0, 0, 0, 1)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_slash() -> Res {
-            assert_exec_fail!(
-                "/",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::InvalidExprStart,
-                    Range::from_nums(0, 0, 0, 1)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_percent() -> Res {
-            assert_exec_fail!(
-                "%",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::InvalidExprStart,
-                    Range::from_nums(0, 0, 0, 1)
-                ))
-            );
-        }
+    #[rstest]
+    #[case::number_beginning_with_dot(
+        ".12",
+        ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))
+    )]
+    #[case::number_ending_with_dot(
+        "12.",
+        ExecError::Lex(LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 3)))
+    )]
+    fn bad_literal(#[case] source: &str, #[case] error: ExecError) {
+        assert_exec_fail!(source, error);
     }
 
-    mod arithmetic_expressions {
-        use super::*;
-
-        #[test]
-        fn test_number_with_plus() -> Res {
-            assert_exec!("+12", "12");
-        }
-
-        #[test]
-        fn test_number_with_minus() -> Res {
-            assert_exec!("-12", "-12");
-        }
-
-        #[test]
-        fn test_number_with_two_pluses() -> Res {
-            assert_exec!("++12", "12");
-        }
-
-        #[test]
-        fn test_number_with_two_minuses() -> Res {
-            assert_exec!("--12", "12");
-        }
-
-        #[test]
-        fn test_addition() -> Res {
-            assert_exec!("1 + 2", "3");
-        }
-
-        #[test]
-        fn test_subtraction() -> Res {
-            assert_exec!("1 - 2", "-1");
-        }
-
-        #[test]
-        fn test_multiplcation() -> Res {
-            assert_exec!("3 * 4", "12");
-        }
-
-        #[test]
-        fn test_division() -> Res {
-            assert_exec!("3 / 4", "0.75");
-        }
-
-        #[test]
-        fn test_mod() -> Res {
-            assert_exec!("7 % 4", "3");
-        }
-
-        #[test]
-        fn test_complex_arithmetic_expression() -> Res {
-            assert_exec!("9 * 8 % 7 - 6 + 5 / 4", "-2.75");
-        }
-
-        #[test]
-        fn test_grouping() -> Res {
-            assert_exec!("8 - (4 - 2)", "6");
-        }
-
-        #[test]
-        fn test_nested_grouping() -> Res {
-            assert_exec!("16 - (8 - (4 - 2))", "10");
-        }
-
-        #[test]
-        fn test_two_pluses() -> Res {
-            assert_exec_fail!(
-                "++",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::NoPrefixOperand,
-                    Range::from_nums(0, 1, 0, 2)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_two_minuses() -> Res {
-            assert_exec_fail!(
-                "--",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::NoPrefixOperand,
-                    Range::from_nums(0, 1, 0, 2)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_two_pluses_infix() -> Res {
-            // Evaluated as `12+(+34)`.
-            assert_exec!("12++34", "46");
-        }
-
-        #[test]
-        fn test_two_minuses_infix() -> Res {
-            // Evaluated as `12-(-34)`.
-            assert_exec!("12--34", "46");
-        }
-
-        #[test]
-        fn test_plus_minus_infix() -> Res {
-            // Evaluated as `12+(-34)`.
-            assert_exec!("12+-34", "-22");
-        }
-
-        #[test]
-        fn test_two_asterisks_infix() -> Res {
-            assert_exec_fail!(
-                "12**34",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::InvalidExprStart,
-                    Range::from_nums(0, 3, 0, 4)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_two_slashes_infix() -> Res {
-            assert_exec_fail!(
-                "12//34",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::InvalidExprStart,
-                    Range::from_nums(0, 3, 0, 4)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_two_percents_infix() -> Res {
-            assert_exec_fail!(
-                "12%%34",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::InvalidExprStart,
-                    Range::from_nums(0, 3, 0, 4)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_asterisk_slash_infix() -> Res {
-            assert_exec_fail!(
-                "12*/34",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::InvalidExprStart,
-                    Range::from_nums(0, 3, 0, 4)
-                ))
-            );
-        }
-
-        #[test]
-        fn test_percent_plus_infix() -> Res {
-            assert_exec_fail!(
-                "12+%34",
-                ExecError::Parse(ParseError::new(
-                    ParseErrorKind::InvalidExprStart,
-                    Range::from_nums(0, 3, 0, 4)
-                ))
-            );
-        }
+    #[rstest]
+    #[case::positive_num("+12", "12")]
+    #[case::doubly_positive_num("++12", "12")]
+    #[case::negative_num("-12", "-12")]
+    #[case::doubly_negative_num("--12", "12")]
+    fn arithmetic_prefix(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
     }
 
-    mod boolean_expressions {
-        use super::*;
-
-        #[test]
-        fn test_bang_bool() -> Res {
-            assert_exec!("!참", "거짓");
-        }
-
-        #[test]
-        fn test_two_bangs_bool() -> Res {
-            assert_exec!("!!참", "참");
-        }
+    #[rstest]
+    #[case::negation("!참", "거짓")]
+    #[case::doubly_negation("!!참", "참")]
+    fn boolean_prefix(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
     }
 
-    mod fail {
-        use super::*;
+    #[rstest]
+    #[case::plus(
+        "+",
+        ExecError::Parse(ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1)))
+    )]
+    #[case::minus(
+        "-",
+        ExecError::Parse(ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1)))
+    )]
+    #[case::asterisk(
+        "*",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1)))
+    )]
+    #[case::slash(
+        "/",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1)))
+    )]
+    #[case::percent(
+        "%",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1)))
+    )]
+    #[case::bang(
+        "!",
+        ExecError::Parse(ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1)))
+    )]
+    #[case::dot(
+        ".",
+        ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))
+    )]
+    fn single(#[case] source: &str, #[case] error: ExecError) {
+        assert_exec_fail!(source, error);
+    }
 
-        #[test]
-        fn test_dot() -> Res {
-            assert_exec_fail!(
-                ".",
-                ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1),))
-            );
-        }
+    #[rstest]
+    #[case::two_pluses(
+        "++",
+        ExecError::Parse(ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 1, 0, 2)))
+    )]
+    #[case::two_minuses(
+        "--",
+        ExecError::Parse(ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 1, 0, 2)))
+    )]
+    #[case::two_bangs(
+        "!!",
+        ExecError::Parse(ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 1, 0, 2)))
+    )]
+    #[case::two_dots(
+        "..",
+        ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))
+    )]
+    fn double(#[case] source: &str, #[case] error: ExecError) {
+        assert_exec_fail!(source, error);
+    }
 
-        #[test]
-        fn test_two_dots() -> Res {
-            assert_exec_fail!(
-                "..",
-                ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1),))
-            );
-        }
+    #[rstest]
+    #[case::addition("6 + 4", "10")]
+    #[case::subtraction("6 - 4", "2")]
+    #[case::multiplication("6 * 4", "24")]
+    #[case::division("6 / 4", "1.5")]
+    #[case::modular("6 % 4", "2")]
+    fn arithmetic_infix(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
+    }
+
+    #[rstest]
+    #[case::five_kinds("9 * 8 % 7 - 6 + 5 / 4", "-2.75")]
+    #[case::grouping("16 - (8 - (4 - 2))", "10")]
+    fn arithmetic_compound(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
+    }
+
+    #[rstest]
+    #[case::two_pluses("6 + + 4", "10")] // Evaluated as `6 + (+4)`.
+    #[case::two_minuses("6 - - 4", "10")] // Evaluated as `6 - (-4)`.
+    #[case::plus_minus("6 + - 4", "2")] // Evaluated as `6 + (-4)`.
+    #[case::minus_plus("6 - + 4", "2")] // Evaluated as `6 - (+4)`.
+    #[case::asterisk_plus("6 * + 4", "24")] // Evaluated as `6 * (+4)`.
+    #[case::asterisk_minus("6 * - 4", "-24")] // Evaluated as `6 * (-4)`.
+    #[case::slash_plus("6 / + 4", "1.5")] // Evaluated as `6 / (+4)`.
+    #[case::slash_minus("6 / - 4", "-1.5")] // Evaluated as `6 / (-4)`.
+    #[case::percent_plus("6 % + 4", "2")] // Evaluated as `6 % (+4)`.
+    #[case::percent_minus("6 % - 4", "2")] // Evaluated as `6 % (-4)`.
+    fn legal_two_arithmetic_infixes(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
+    }
+
+    #[rstest]
+    #[case::two_asterisks(
+        "6 * * 4",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::two_slashes(
+        "6 / / 4",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::two_percents(
+        "6 % % 4",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::plus_asterisk(
+        "6 + * 4",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::minus_asterisk(
+        "6 - * 4",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::plus_slash(
+        "6 + / 4",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::minus_slash(
+        "6 - / 4",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::plus_percent(
+        "6 + % 4",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::minus_percent(
+        "6 - % 4",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 4, 0, 5)))
+    )]
+    fn illegal_two_arithmetic_infixes(#[case] source: &str, #[case] error: ExecError) {
+        assert_exec_fail!(source, error);
+    }
+
+    #[rstest]
+    #[case::two_numbers("1 2", "2")] // Evaluated as the value of the last expression.
+    fn multiple_expressions(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
     }
 }

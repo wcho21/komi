@@ -149,6 +149,7 @@ dependencies = [
  "komi_representer",
  "komi_syntax",
  "komi_util",
+ "rstest",
 ]
 
 [[package]]
