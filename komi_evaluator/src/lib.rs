@@ -28,7 +28,7 @@ impl<'a> Evaluator<'a> {
 
     fn eval_ast(ast: &Ast) -> ResVal {
         match ast {
-            Ast { kind: AstKind::Program { expressions }, location } => Self::eval_program(expressions, location),
+            Ast { kind: AstKind::Program { expressions: e }, location: loc } => Self::evaluate_expressions(e, loc),
             Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
             Ast { kind: AstKind::Bool(b), location } => Self::eval_bool(b, location),
             Ast { kind: AstKind::PrefixPlus { operand }, location } => Self::eval_prefix_plus(operand, location),
@@ -44,12 +44,16 @@ impl<'a> Evaluator<'a> {
         }
     }
 
-    fn eval_program(expressions: &Vec<Box<Ast>>, location: &Range) -> ResVal {
-        let mut last_value = Value::from_empty(*location);
+    /// Returns the evaluated result of the last AST in the ASTs `expressions`.
+    ///
+    /// Sets its location to be `expressions_location`, since it represents the entire expressions, not a single one.
+    fn evaluate_expressions(expressions: &Vec<Box<Ast>>, expressions_location: &Range) -> ResVal {
+        let mut last_value = Value::from_empty(*expressions_location);
 
         for expression in expressions {
             last_value = Self::eval_ast(expression)?;
         }
+        last_value.location = *expressions_location;
         Ok(last_value)
     }
 
