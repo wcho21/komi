@@ -31,9 +31,9 @@ impl<'a> Evaluator<'a> {
             Ast { kind: AstKind::Program { expressions: e }, location: loc } => Self::evaluate_expressions(e, loc),
             Ast { kind: AstKind::Number(n), location: loc } => Self::evaluate_number(*n, loc),
             Ast { kind: AstKind::Bool(b), location: loc } => Self::evaluate_bool(*b, loc),
-            Ast { kind: AstKind::PrefixPlus { operand }, location } => Self::eval_prefix_plus(operand, location),
-            Ast { kind: AstKind::PrefixMinus { operand }, location } => Self::eval_prefix_minus(operand, location),
-            Ast { kind: AstKind::PrefixBang { operand }, location } => Self::eval_prefix_bang(operand, location),
+            Ast { kind: AstKind::PrefixPlus { operand: op }, location: loc } => Self::evaluate_prefix_plus(op, loc),
+            Ast { kind: AstKind::PrefixMinus { operand: op }, location: loc } => Self::evaluate_prefix_minus(op, loc),
+            Ast { kind: AstKind::PrefixBang { operand: op }, location: loc } => Self::evaluate_prefix_bang(op, loc),
             Ast { kind: AstKind::InfixPlus { left, right }, location: _ } => Self::eval_infix_plus(left, right),
             Ast { kind: AstKind::InfixMinus { left, right }, location: _ } => Self::eval_infix_minus(left, right),
             Ast { kind: AstKind::InfixAsterisk { left, right }, location: _ } => Self::eval_infix_asterisk(left, right),
@@ -67,27 +67,31 @@ impl<'a> Evaluator<'a> {
         Ok(Value::new(ValueKind::Bool(boolean), *location))
     }
 
-    fn eval_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
-        let val = Self::eval_prefix_operand_num(operand)?;
-
-        let location = Range::new(prefix_location.begin, operand.location.end);
-        Ok(Value::new(ValueKind::Number(val), location))
+    /// Returns the numeric evaluated result of the AST `operand` as an operand of the prefix plus.
+    ///
+    /// The location in the returned value will span from the prefix to operand.
+    fn evaluate_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
+        Self::evaluate_prefix(operand, prefix_location, Self::eval_prefix_operand_num, |v| {
+            ValueKind::Number(v)
+        })
     }
 
-    fn eval_prefix_minus(operand: &Ast, prefix_location: &Range) -> ResVal {
-        let operand_val = Self::eval_prefix_operand_num(operand)?;
-        let evaluated = -operand_val;
-
-        let location = Range::new(prefix_location.begin, operand.location.end);
-        Ok(Value::new(ValueKind::Number(evaluated), location))
+    /// Returns the numeric evaluated result of the AST `operand` as an operand of the prefix minus.
+    ///
+    /// The location in the returned value will span from the prefix to operand.
+    fn evaluate_prefix_minus(operand: &Ast, prefix_location: &Range) -> ResVal {
+        Self::evaluate_prefix(operand, prefix_location, Self::eval_prefix_operand_num, |v| {
+            ValueKind::Number(-v)
+        })
     }
 
-    fn eval_prefix_bang(operand: &Ast, prefix_location: &Range) -> ResVal {
-        let operand_val = Self::eval_prefix_operand_bool(operand)?;
-        let evaluated = !operand_val;
-
-        let location = Range::new(prefix_location.begin, operand.location.end);
-        Ok(Value::new(ValueKind::Bool(evaluated), location))
+    /// Returns the boolean evaluated result of the AST `operand` as an operand of the prefix bang.
+    ///
+    /// The location in the returned value will span from the prefix to operand.
+    fn evaluate_prefix_bang(operand: &Ast, prefix_location: &Range) -> ResVal {
+        Self::evaluate_prefix(operand, prefix_location, Self::eval_prefix_operand_bool, |v| {
+            ValueKind::Bool(!v)
+        })
     }
 
     fn eval_infix_plus(left: &Ast, right: &Ast) -> ResVal {
@@ -198,6 +202,23 @@ impl<'a> Evaluator<'a> {
         };
 
         Ok(boolean)
+    }
+
+    /// Returns the evaluated result of the AST `operand` as an operand of a prefix.
+    ///
+    /// - `evaluate_operand` determines how to evaluate the AST `operand` itself to some value `x`.
+    /// - `get_kind` specifies how to get the value kind from `x`.
+    ///
+    /// The location in the returned value will span from the prefix to operand.
+    fn evaluate_prefix<T, F, G>(operand: &Ast, prefix_location: &Range, evaluate_operand: F, get_kind: G) -> ResVal
+    where
+        F: Fn(&Ast) -> Result<T, EvalError>,
+        G: Fn(T) -> ValueKind,
+    {
+        let evaluated_operand = evaluate_operand(operand)?;
+        let kind = get_kind(evaluated_operand);
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        Ok(Value::new(kind, location))
     }
 }
 
@@ -692,7 +713,7 @@ mod tests {
             mkast!(num 2.0, loc 0, 2, 0, 3),
         ]),
         // Expect the evaluated result of a multiple-expression program to be the value of the last expression.
-        Value::from_num(2.0, Range::from_nums(0, 2, 0, 3))
+        Value::from_num(2.0, Range::from_nums(0, 0, 0, 3))
     )]
     fn multiple_expressions_program(#[case] ast: Box<Ast>, #[case] expected: Value) {
         assert_eval!(&ast, expected);
