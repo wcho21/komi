@@ -8,7 +8,7 @@ mod source_scanner;
 mod utf8_tape;
 
 pub use err::{LexError, LexErrorKind};
-use komi_syntax::Token;
+use komi_syntax::{Token, TokenKind};
 use komi_util::string;
 use komi_util::{Range, Scanner};
 use source_scanner::SourceScanner;
@@ -86,6 +86,14 @@ impl<'a> Lexer<'a> {
                 }
                 Some("!") => {
                     let token = advance_and_lex!(self, Self::lex_bang)?;
+                    tokens.push(token);
+                }
+                Some("그") => {
+                    let token = advance_and_lex!(self, Self::lex_conjunct)?;
+                    tokens.push(token);
+                }
+                Some("또") => {
+                    let token = advance_and_lex!(self, Self::lex_disjunct)?;
                     tokens.push(token);
                 }
                 Some("#") => {
@@ -215,6 +223,45 @@ impl<'a> Lexer<'a> {
         Ok(Token::from_bang(*first_location))
     }
 
+    /// Returns a conjunction token `그리고` if successfully lexed, or error otherwise.
+    ///
+    /// Call after advancing the scanner `self.scanner` past the initial character `그`, with its location passed as `first_location`.
+    // TODO: document other functions like this.
+    fn lex_conjunct(&mut self, first_location: &Range) -> ResToken {
+        // TODO: more readable than using match as in `lex_false()` and `lex_num()`? then refactor them
+        let second_char = self.scanner.read();
+        let Some("리") = second_char else {
+            // TODO: return an identifier token, when the identifier token is implemented.
+            return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
+        };
+
+        self.scanner.advance();
+        let third_char = self.scanner.read();
+        let Some("고") = third_char else {
+            // TODO: return an identifier token, when the identifier token is implemented.
+            return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
+        };
+
+        let location = Range::new(first_location.begin, self.scanner.locate().end);
+        self.scanner.advance();
+        // TODO: enough to make a token, is helper function `from_*()` in syntax token library really necessary, or just increasing bundled output size?
+        Ok(Token::new(TokenKind::Conjunct, location))
+    }
+
+    /// Returns a conjunction token `또는` if successfully lexed, or error otherwise.
+    ///
+    /// Call after advancing the scanner `self.scanner` past the initial character `또`, with its location passed as `first_location`.
+    fn lex_disjunct(&mut self, first_location: &Range) -> ResToken {
+        let second_char = self.scanner.read();
+        let Some("는") = second_char else {
+            return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
+        };
+
+        let location = Range::new(first_location.begin, self.scanner.locate().end);
+        self.scanner.advance();
+        Ok(Token::new(TokenKind::Disjunct, location))
+    }
+
     fn skip_comment(&mut self) -> () {
         loop {
             match self.scanner.read() {
@@ -313,7 +360,9 @@ mod tests {
     #[case::lparen("(", vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)])]
     #[case::rparen(")", vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)])]
     #[case::bang("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)])]
-    fn single_chars(#[case] source: &str, #[case] expected: Vec<Token>) {
+    #[case::bang("그리고", vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)])]
+    #[case::bang("또는", vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)])]
+    fn single_token(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
@@ -328,7 +377,7 @@ mod tests {
         mktoken!(TokenKind::Plus, loc 0, "12 ".len(), 0, "12 +".len()),
         mktoken!(TokenKind::Number(34.675), loc 0, "12 + ".len(), 0, "12 + 34.675".len()),
     ])]
-    fn multiple_chars(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn multiple_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 

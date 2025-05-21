@@ -7,7 +7,8 @@ mod err;
 mod token_scanner;
 
 pub use err::{ParseError, ParseErrorKind};
-use komi_syntax::{Ast, Bp, Token, TokenKind};
+use komi_syntax::bp;
+use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
 use komi_util::{Range, Scanner};
 use token_scanner::TokenScanner;
 
@@ -123,6 +124,17 @@ impl<'a> Parser<'a> {
                 let bp = Bp::get_multiplicative();
                 self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_percent)
             }
+            // TODO: choose which has better readability between this one below and the other one using `from_*` functions like above
+            TokenKind::Conjunct => self.read_right_and_make_infix_ast(left, &bp::CONNECTIVE_BP, |left, right| {
+                let location = Range::new(left.location.begin, right.location.end);
+                let kind = AstKind::InfixConjunct { left, right };
+                Ast::new(kind, location)
+            }),
+            TokenKind::Disjunct => self.read_right_and_make_infix_ast(left, &bp::CONNECTIVE_BP, |left, right| {
+                let location = Range::new(left.location.begin, right.location.end);
+                let kind = AstKind::InfixDisjunct { left, right };
+                Ast::new(kind, location)
+            }),
             _ => panic!("todo"), // TODO: can this happen? return unexpected error if not
         }
     }
@@ -159,6 +171,7 @@ impl<'a> Parser<'a> {
     }
 
     fn read_right_and_make_infix_ast(&mut self, left: Box<Ast>, bp: &Bp, make_ast: MakeInfixAst) -> ResAst {
+        // TODO: write exceptional case (else case here) first
         if let Some(x) = self.scanner.read() {
             let right = self.parse_expression(x, bp)?;
             let infix_ast = Box::new(make_ast(left, right));
@@ -401,6 +414,34 @@ mod tests {
             ),
         ])
     )]
+    #[case::conjunct(
+        // Represents `참 그리고 거짓`.
+        vec![
+            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
+            mktoken!(TokenKind::Bool(false), loc 0, 6, 0, 8),
+        ],
+        mkast!(prog loc 0, 0, 0, 8, vec![
+            mkast!(infix InfixConjunct, loc 0, 0, 0, 8,
+                left mkast!(boolean true, loc 0, 0, 0, 1),
+                right mkast!(boolean false, loc 0, 6, 0, 8),
+            ),
+        ])
+    )]
+    #[case::disjunct(
+        // Represents `참 또는 거짓`.
+        vec![
+            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
+            mktoken!(TokenKind::Bool(false), loc 0, 5, 0, 7),
+        ],
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixDisjunct, loc 0, 0, 0, 7,
+                left mkast!(boolean true, loc 0, 0, 0, 1),
+                right mkast!(boolean false, loc 0, 5, 0, 7),
+            ),
+        ])
+    )]
     fn infix(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
         assert_parse!(&tokens, expected);
     }
@@ -429,6 +470,22 @@ mod tests {
             mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
         ],
         ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+    )]
+    #[case::conjunct_without_left(
+        // Represents `그리고 참`.
+        vec![
+            mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3),
+            mktoken!(TokenKind::Bool(true), loc 0, 4, 0, 5),
+        ],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 3))
+    )]
+    #[case::disjunct_without_left(
+        // Represents `또는 참`.
+        vec![
+            mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::Bool(true), loc 0, 3, 0, 4),
+        ],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     fn infix_no_left_operand(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -475,6 +532,22 @@ mod tests {
         ],
         ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
     )]
+    #[case::conjunct_without_right(
+        // Represents `참 그리고`.
+        vec![
+            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
+        ],
+        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 5))
+    )]
+    #[case::disjunct_without_right(
+        // Represents `참 또는`.
+        vec![
+            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
+        ],
+        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 4))
+    )]
     fn infix_no_right_operand(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
     }
@@ -509,6 +582,16 @@ mod tests {
         // Represents `!`.
         vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)],
         ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
+    )]
+    #[case::conjunct(
+        // Represents `그리고`.
+        vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 3))
+    )]
+    #[case::disjunct(
+        // Represents `또는`.
+        vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     fn single_token(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -625,6 +708,44 @@ mod tests {
             ),
         ])
     )]
+    #[case::two_conjuncts(
+        // Represents `참 그리고 참 그리고 참`, and expects to be parsed into `(참 그리고 참) 그리고 참`.
+        vec![
+            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
+            mktoken!(TokenKind::Bool(true), loc 0, 6, 0, 7),
+            mktoken!(TokenKind::Conjunct, loc 0, 8, 0, 11),
+            mktoken!(TokenKind::Bool(true), loc 0, 12, 0, 13),
+        ],
+        mkast!(prog loc 0, 0, 0, 13, vec![
+            mkast!(infix InfixConjunct, loc 0, 0, 0, 13,
+                left mkast!(infix InfixConjunct, loc 0, 0, 0, 7,
+                    left mkast!(boolean true, loc 0, 0, 0, 1),
+                    right mkast!(boolean true, loc 0, 6, 0, 7),
+                ),
+                right mkast!(boolean true, loc 0, 12, 0, 13),
+            ),
+        ])
+    )]
+    #[case::two_disjuncts(
+        // Represents `참 그리고 참 그리고 참`, and expects to be parsed into `(참 그리고 참) 그리고 참`.
+        vec![
+            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
+            mktoken!(TokenKind::Bool(true), loc 0, 5, 0, 6),
+            mktoken!(TokenKind::Disjunct, loc 0, 7, 0, 9),
+            mktoken!(TokenKind::Bool(true), loc 0, 10, 0, 11),
+        ],
+        mkast!(prog loc 0, 0, 0, 11, vec![
+            mkast!(infix InfixDisjunct, loc 0, 0, 0, 11,
+                left mkast!(infix InfixDisjunct, loc 0, 0, 0, 6,
+                    left mkast!(boolean true, loc 0, 0, 0, 1),
+                    right mkast!(boolean true, loc 0, 5, 0, 6),
+                ),
+                right mkast!(boolean true, loc 0, 10, 0, 11),
+            ),
+        ])
+    )]
     fn left_associativity(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
         assert_parse!(&tokens, expected);
     }
@@ -692,7 +813,7 @@ mod tests {
     }
 
     #[rstest]
-    #[case::grouping(
+    #[case::arithmetic_grouping(
         // Represents `(1-2)*3`
         vec![
             mktoken!(TokenKind::LParen, loc 0, 0, 0, 1),
@@ -713,7 +834,7 @@ mod tests {
             ),
         ])
     )]
-    #[case::nested_grouping(
+    #[case::arithmetic_nested_grouping(
         // Represents `1-(2*(3-4))`
         vec![
             mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
@@ -736,6 +857,55 @@ mod tests {
                     right mkast!(infix InfixMinus, loc 0, 5, 0, 10,
                         left mkast!(num 3.0, loc 0, 6, 0, 7),
                         right mkast!(num 4.0, loc 0, 8, 0, 9),
+                    ),
+                ),
+            ),
+        ])
+    )]
+    #[case::connective_grouping(
+        // Represents `참 또는 (참 그리고 참)`
+        vec![
+            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
+            mktoken!(TokenKind::LParen, loc 0, 5, 0, 6),
+            mktoken!(TokenKind::Bool(true), loc 0, 6, 0, 7),
+            mktoken!(TokenKind::Conjunct, loc 0, 8, 0, 10),
+            mktoken!(TokenKind::Bool(true), loc 0, 11, 0, 12),
+            mktoken!(TokenKind::RParen, loc 0, 12, 0, 13),
+        ],
+        mkast!(prog loc 0, 0, 0, 13, vec![
+            mkast!(infix InfixDisjunct, loc 0, 0, 0, 13,
+                left mkast!(boolean true, loc 0, 0, 0, 1),
+                right mkast!(infix InfixConjunct, loc 0, 5, 0, 13,
+                    left mkast!(boolean true, loc 0, 6, 0, 7),
+                    right mkast!(boolean true, loc 0, 11, 0, 12),
+                ),
+            ),
+        ])
+    )]
+    #[case::connective_nested_grouping(
+        // Represents `참 또는 (참 그리고 (참 또는 참))`
+        vec![
+            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
+            mktoken!(TokenKind::LParen, loc 0, 5, 0, 6),
+            mktoken!(TokenKind::Bool(true), loc 0, 6, 0, 7),
+            mktoken!(TokenKind::Conjunct, loc 0, 8, 0, 10),
+            mktoken!(TokenKind::LParen, loc 0, 11, 0, 12),
+            mktoken!(TokenKind::Bool(true), loc 0, 12, 0, 13),
+            mktoken!(TokenKind::Conjunct, loc 0, 14, 0, 17),
+            mktoken!(TokenKind::Bool(true), loc 0, 18, 0, 19),
+            mktoken!(TokenKind::RParen, loc 0, 19, 0, 20),
+            mktoken!(TokenKind::RParen, loc 0, 20, 0, 21),
+        ],
+        mkast!(prog loc 0, 0, 0, 21, vec![
+            mkast!(infix InfixDisjunct, loc 0, 0, 0, 21,
+                left mkast!(boolean true, loc 0, 0, 0, 1),
+                right mkast!(infix InfixConjunct, loc 0, 5, 0, 21,
+                    left mkast!(boolean true, loc 0, 6, 0, 7),
+                    right mkast!(infix InfixConjunct, loc 0, 11, 0, 20,
+                        left mkast!(boolean true, loc 0, 12, 0, 13),
+                        right mkast!(boolean true, loc 0, 18, 0, 19),
                     ),
                 ),
             ),

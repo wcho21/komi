@@ -24,6 +24,10 @@ pub enum TokenKind {
     RParen,
     /// A bang `!`.
     Bang,
+    /// A conjunction `그리고`.
+    Conjunct,
+    /// A disjunction `또는`.
+    Disjunct,
 }
 
 /// A token produced during lexing.
@@ -38,6 +42,7 @@ impl Token {
         Token { kind, location }
     }
 
+    // TODO: really need to use `from_*()` functions, instead of `new()`??
     pub const fn from_num(num: f64, location: Range) -> Self {
         Token::new(TokenKind::Number(num), location)
     }
