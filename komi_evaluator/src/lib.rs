@@ -39,7 +39,8 @@ impl<'a> Evaluator<'a> {
             Ast { kind: AstKind::InfixAsterisk { left, right }, location: _ } => Self::eval_infix_asterisk(left, right),
             Ast { kind: AstKind::InfixSlash { left, right }, location: _ } => Self::eval_infix_slash(left, right),
             Ast { kind: AstKind::InfixPercent { left, right }, location: _ } => Self::eval_infix_percent(left, right),
-            _ => todo!(),
+            Ast { kind: AstKind::InfixConjunct { left, right }, location: _ } => Self::eval_infix_conjunct(left, right),
+            Ast { kind: AstKind::InfixDisjunct { left, right }, location: _ } => Self::eval_infix_disjunct(left, right),
         }
     }
 
@@ -123,6 +124,7 @@ impl<'a> Evaluator<'a> {
         Ok(Value::new(ValueKind::Number(evaluated), location))
     }
 
+    // TODO: reduce code using closure for evaluating part and do the same thing for other arithmetic infix evaluation
     fn eval_infix_percent(left: &Ast, right: &Ast) -> ResVal {
         let left_val = Self::eval_infix_operand_num(left)?;
         let right_val = Self::eval_infix_operand_num(right)?;
@@ -131,6 +133,26 @@ impl<'a> Evaluator<'a> {
 
         let location = Range::new(left.location.begin, right.location.end);
         Ok(Value::new(ValueKind::Number(evaluated), location))
+    }
+
+    fn eval_infix_conjunct(left: &Ast, right: &Ast) -> ResVal {
+        let left_val = Self::eval_infix_operand_bool(left)?;
+        let right_val = Self::eval_infix_operand_bool(right)?;
+
+        let evaluated = left_val && right_val;
+
+        let location = Range::new(left.location.begin, right.location.end);
+        Ok(Value::new(ValueKind::Bool(evaluated), location))
+    }
+
+    fn eval_infix_disjunct(left: &Ast, right: &Ast) -> ResVal {
+        let left_val = Self::eval_infix_operand_bool(left)?;
+        let right_val = Self::eval_infix_operand_bool(right)?;
+
+        let evaluated = left_val || right_val;
+
+        let location = Range::new(left.location.begin, right.location.end);
+        Ok(Value::new(ValueKind::Bool(evaluated), location))
     }
 
     fn eval_prefix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
@@ -158,6 +180,18 @@ impl<'a> Evaluator<'a> {
         } else {
             Err(EvalError::new(EvalErrorKind::InvalidAdditionOperand, val.location)) // TODO: rename error (not only for addition)
         }
+    }
+
+    fn eval_infix_operand_bool(operand: &Ast) -> Result<bool, EvalError> {
+        let val = Self::eval_ast(operand)?;
+        let ValueKind::Bool(boolean) = val.kind else {
+            return Err(EvalError::new(
+                EvalErrorKind::InvalidConnectiveInfixOperand,
+                val.location,
+            ));
+        };
+
+        Ok(boolean)
     }
 }
 
@@ -410,6 +444,91 @@ mod tests {
     }
 
     #[rstest]
+    #[case::conjunction_on_true_true(
+        // Represents `참 그리고 참`.
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixConjunct, loc 0, 0, 0, 7,
+                left mkast!(boolean true, loc 0, 0, 0, 1),
+                right mkast!(boolean true, loc 0, 6, 0, 7),
+            ),
+        ]),
+        Value::from_bool(true, Range::from_nums(0, 0, 0, 7))
+    )]
+    #[case::conjunction_on_true_false(
+        // Represents `참 그리고 거짓`.
+        mkast!(prog loc 0, 0, 0, 8, vec![
+            mkast!(infix InfixConjunct, loc 0, 0, 0, 8,
+                left mkast!(boolean true, loc 0, 0, 0, 1),
+                right mkast!(boolean false, loc 0, 6, 0, 8),
+            ),
+        ]),
+        Value::from_bool(false, Range::from_nums(0, 0, 0, 8))
+    )]
+    #[case::conjunction_on_false_true(
+        // Represents `거짓 그리고 참`.
+        mkast!(prog loc 0, 0, 0, 8, vec![
+            mkast!(infix InfixConjunct, loc 0, 0, 0, 8,
+                left mkast!(boolean false, loc 0, 0, 0, 2),
+                right mkast!(boolean true, loc 0, 7, 0, 8),
+            ),
+        ]),
+        Value::from_bool(false, Range::from_nums(0, 0, 0, 8))
+    )]
+    #[case::conjunction_on_false_false(
+        // Represents `거짓 그리고 거짓`.
+        mkast!(prog loc 0, 0, 0, 9, vec![
+            mkast!(infix InfixConjunct, loc 0, 0, 0, 9,
+                left mkast!(boolean false, loc 0, 0, 0, 2),
+                right mkast!(boolean false, loc 0, 7, 0, 9),
+            ),
+        ]),
+        Value::from_bool(false, Range::from_nums(0, 0, 0, 9))
+    )]
+    #[case::disjunction_on_true_true(
+        // Represents `참 또는 참`.
+        mkast!(prog loc 0, 0, 0, 6, vec![
+            mkast!(infix InfixDisjunct, loc 0, 0, 0, 6,
+                left mkast!(boolean true, loc 0, 0, 0, 1),
+                right mkast!(boolean true, loc 0, 5, 0, 6),
+            ),
+        ]),
+        Value::from_bool(true, Range::from_nums(0, 0, 0, 6))
+    )]
+    #[case::disjunction_on_true_false(
+        // Represents `참 또는 거짓`.
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixDisjunct, loc 0, 0, 0, 7,
+                left mkast!(boolean true, loc 0, 0, 0, 1),
+                right mkast!(boolean false, loc 0, 5, 0, 7),
+            ),
+        ]),
+        Value::from_bool(true, Range::from_nums(0, 0, 0, 7))
+    )]
+    #[case::disjunction_on_false_true(
+        // Represents `거짓 또는 참`.
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixDisjunct, loc 0, 0, 0, 7,
+                left mkast!(boolean false, loc 0, 0, 0, 2),
+                right mkast!(boolean true, loc 0, 6, 0, 7),
+            ),
+        ]),
+        Value::from_bool(true, Range::from_nums(0, 0, 0, 7))
+    )]
+    #[case::disjunction_on_false_false(
+        // Represents `거짓 또는 거짓`.
+        mkast!(prog loc 0, 0, 0, 8, vec![
+            mkast!(infix InfixDisjunct, loc 0, 0, 0, 8,
+                left mkast!(boolean false, loc 0, 0, 0, 2),
+                right mkast!(boolean false, loc 0, 6, 0, 8),
+            ),
+        ]),
+        Value::from_bool(false, Range::from_nums(0, 0, 0, 8))
+    )]
+    fn connective_infix(#[case] ast: Box<Ast>, #[case] expected: Value) {
+        assert_eval!(&ast, expected);
+    }
+
+    #[rstest]
     #[case::left_bool_addition(
         // Represents `참+1`.
         mkast!(prog loc 0, 0, 0, 3, vec![
@@ -511,6 +630,51 @@ mod tests {
         EvalError::new(EvalErrorKind::InvalidAdditionOperand, Range::from_nums(0, 2, 0, 3)),
     )]
     fn arithmetic_infix_with_wrong_type_operand(#[case] ast: Box<Ast>, #[case] error: EvalError) {
+        assert_eval_fail!(&ast, error);
+    }
+
+    #[rstest]
+    #[case::left_num_conjunction(
+        // Represents `1 그리고 참`.
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixConjunct, loc 0, 0, 0, 7,
+                left mkast!(num 1.0, loc 0, 0, 0, 1),
+                right mkast!(boolean true, loc 0, 6, 0, 7),
+            ),
+        ]),
+        EvalError::new(EvalErrorKind::InvalidConnectiveInfixOperand, Range::from_nums(0, 0, 0, 1)),
+    )]
+    #[case::right_num_conjunction(
+        // Represents `참 그리고 1`.
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixConjunct, loc 0, 0, 0, 7,
+                left mkast!(boolean true, loc 0, 0, 0, 1),
+                right mkast!(num 1.0, loc 0, 6, 0, 7),
+            ),
+        ]),
+        EvalError::new(EvalErrorKind::InvalidConnectiveInfixOperand, Range::from_nums(0, 6, 0, 7)),
+    )]
+    #[case::left_num_disjunction(
+        // Represents `1 또는 참`.
+        mkast!(prog loc 0, 0, 0, 6, vec![
+            mkast!(infix InfixDisjunct, loc 0, 0, 0, 6,
+                left mkast!(num 1.0, loc 0, 0, 0, 1),
+                right mkast!(boolean true, loc 0, 5, 0, 6),
+            ),
+        ]),
+        EvalError::new(EvalErrorKind::InvalidConnectiveInfixOperand, Range::from_nums(0, 0, 0, 1)),
+    )]
+    #[case::right_num_disjunction(
+        // Represents `참 또는 1`.
+        mkast!(prog loc 0, 0, 0, 6, vec![
+            mkast!(infix InfixConjunct, loc 0, 0, 0, 6,
+                left mkast!(boolean true, loc 0, 0, 0, 1),
+                right mkast!(num 1.0, loc 0, 5, 0, 6),
+            ),
+        ]),
+        EvalError::new(EvalErrorKind::InvalidConnectiveInfixOperand, Range::from_nums(0, 5, 0, 6)),
+    )]
+    fn connective_infix_with_wrong_type_operand(#[case] ast: Box<Ast>, #[case] error: EvalError) {
         assert_eval_fail!(&ast, error);
     }
 

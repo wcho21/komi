@@ -123,6 +123,14 @@ mod tests {
         "!",
         ExecError::Parse(ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1)))
     )]
+    #[case::conjunction(
+        "그리고",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 3)))
+    )]
+    #[case::disjunction(
+        "또는",
+        ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2)))
+    )]
     #[case::dot(
         ".",
         ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))
@@ -165,7 +173,7 @@ mod tests {
     #[rstest]
     #[case::five_kinds("9 * 8 % 7 - 6 + 5 / 4", "-2.75")]
     #[case::grouping("16 - (8 - (4 - 2))", "10")]
-    fn arithmetic_compound(#[case] source: &str, #[case] expected: String) {
+    fn arithmetic_infix_compound(#[case] source: &str, #[case] expected: String) {
         assert_exec!(source, expected);
     }
 
@@ -223,6 +231,26 @@ mod tests {
     )]
     fn illegal_two_arithmetic_infixes(#[case] source: &str, #[case] error: ExecError) {
         assert_exec_fail!(source, error);
+    }
+
+    #[rstest]
+    #[case::conjunction("참 그리고 거짓", "거짓")]
+    #[case::disjunction("참 또는 거짓", "참")]
+    fn connective_infix(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
+    }
+
+    #[rstest]
+    #[case::two_kinds("참 그리고 거짓 또는 참", "참")]
+    #[case::grouping("(참 그리고 거짓) 또는 (참 그리고 (참 그리고 참))", "참")]
+    fn connective_infix_compound(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
+    }
+
+    #[rstest]
+    #[case::three_kinds("!(참 그리고 거짓)", "참")]
+    fn boolean_compount(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
     }
 
     #[rstest]
