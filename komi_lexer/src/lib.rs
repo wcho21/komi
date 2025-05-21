@@ -110,6 +110,9 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
+    /// Returns a number literal token if successfully lexed, or error otherwise.
+    ///
+    /// Call after advancing the scanner `self.scanner` past the initial character, with its location passed as `first_location`.
     fn lex_num(&mut self, first_location: &Range, first_char: &'a str) -> ResToken {
         let mut lexeme = String::new();
         let begin = first_location.begin;
@@ -154,6 +157,9 @@ impl<'a> Lexer<'a> {
         Ok(Token::from_boolean(true, *first_location))
     }
 
+    /// Returns a false literal token `거짓` if successfully lexed, or error otherwise.
+    ///
+    /// Call after advancing the scanner `self.scanner` past the initial character `거`, with its location passed as `first_location`.
     fn lex_false(&mut self, first_location: &Range) -> ResToken {
         let Some("짓") = self.scanner.read() else {
             // TODO: return an identifier token, when the identifier token is implemented.
@@ -201,7 +207,6 @@ impl<'a> Lexer<'a> {
     /// Returns a conjunction token `그리고` if successfully lexed, or error otherwise.
     ///
     /// Call after advancing the scanner `self.scanner` past the initial character `그`, with its location passed as `first_location`.
-    // TODO: document other functions like this.
     fn lex_conjunct(&mut self, first_location: &Range) -> ResToken {
         let Some("리") = self.scanner.read() else {
             // TODO: return an identifier token, when the identifier token is implemented.
