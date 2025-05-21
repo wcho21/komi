@@ -13,8 +13,6 @@ use komi_util::{Range, Scanner};
 use token_scanner::TokenScanner;
 
 type ResAst = Result<Box<Ast>, ParseError>;
-type MakePrefixAst<'a> = fn(Box<Ast>, &'a Range) -> Ast;
-type MakeInfixAst = fn(Box<Ast>, Box<Ast>) -> Ast;
 
 /// Produces an AST from tokens.
 struct Parser<'a> {
@@ -91,40 +89,51 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_plus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
-        self.read_operand_and_make_prefix_ast(prefix_location, Ast::from_prefix_plus)
+        let get_kind = |operand| AstKind::PrefixPlus { operand };
+        self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
     fn parse_minus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
-        self.read_operand_and_make_prefix_ast(prefix_location, Ast::from_prefix_minus)
+        let get_kind = |operand| AstKind::PrefixMinus { operand };
+        self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
     fn parse_bang_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
-        self.read_operand_and_make_prefix_ast(prefix_location, Ast::from_prefix_bang)
+        let get_kind = |operand| AstKind::PrefixBang { operand };
+        self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
     fn parse_infix_expression(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
         match infix.kind {
-            TokenKind::Plus => self.read_right_and_make_infix_ast(left, &bp::ADDITIVE_BP, Ast::from_infix_plus),
-            TokenKind::Minus => self.read_right_and_make_infix_ast(left, &bp::ADDITIVE_BP, Ast::from_infix_minus),
+            TokenKind::Plus => {
+                let get_kind = |left, right| AstKind::InfixPlus { left, right };
+                self.read_right_and_make_infix_ast(left, &bp::ADDITIVE_BP, get_kind)
+            }
+            TokenKind::Minus => {
+                let get_kind = |left, right| AstKind::InfixMinus { left, right };
+                self.read_right_and_make_infix_ast(left, &bp::ADDITIVE_BP, get_kind)
+            }
             TokenKind::Asterisk => {
-                self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, Ast::from_infix_asterisk)
+                let get_kind = |left, right| AstKind::InfixAsterisk { left, right };
+                self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, get_kind)
             }
-            TokenKind::Slash => self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, Ast::from_infix_slash),
+            TokenKind::Slash => {
+                let get_kind = |left, right| AstKind::InfixSlash { left, right };
+                self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, get_kind)
+            }
             TokenKind::Percent => {
-                self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, Ast::from_infix_percent)
+                let get_kind = |left, right| AstKind::InfixPercent { left, right };
+                self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, get_kind)
             }
-            // TODO: choose which has better readability between this one below and the other one using `from_*` functions like above
-            TokenKind::Conjunct => self.read_right_and_make_infix_ast(left, &bp::CONNECTIVE_BP, |left, right| {
-                let location = Range::new(left.location.begin, right.location.end);
-                let kind = AstKind::InfixConjunct { left, right };
-                Ast::new(kind, location)
-            }),
-            TokenKind::Disjunct => self.read_right_and_make_infix_ast(left, &bp::CONNECTIVE_BP, |left, right| {
-                let location = Range::new(left.location.begin, right.location.end);
-                let kind = AstKind::InfixDisjunct { left, right };
-                Ast::new(kind, location)
-            }),
-            _ => panic!("todo"), // TODO: can this happen? return unexpected error if not
+            TokenKind::Conjunct => {
+                let get_kind = |left, right| AstKind::InfixConjunct { left, right };
+                self.read_right_and_make_infix_ast(left, &bp::CONNECTIVE_BP, get_kind)
+            }
+            TokenKind::Disjunct => {
+                let get_kind = |left, right| AstKind::InfixDisjunct { left, right };
+                self.read_right_and_make_infix_ast(left, &bp::CONNECTIVE_BP, get_kind)
+            }
+            _ => panic!("todo"), // NOTE: this undetermined cases came from calling of the parse_expression(), and bp says nothing about the token kinds explicitly
         }
     }
 
@@ -148,34 +157,48 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn read_operand_and_make_prefix_ast(&mut self, prefix_location: &'a Range, make_ast: MakePrefixAst<'a>) -> ResAst {
+    fn read_operand_and_make_prefix_ast<F>(&mut self, prefix_location: &'a Range, get_kind: F) -> ResAst
+    where
+        F: Fn(Box<Ast>) -> AstKind,
+    {
+        // Return an error if end
         let Some(x) = self.scanner.read() else {
             let location = Range::new(prefix_location.begin, self.scanner.locate().end);
             return Err(ParseError::new(ParseErrorKind::NoPrefixOperand, location));
         };
 
-        let operand_ast = self.parse_expression(x, &bp::PREFIX_BP)?;
-        let prefix_ast = Box::new(make_ast(operand_ast, prefix_location));
-        Ok(prefix_ast)
+        let operand = self.parse_expression(x, &bp::PREFIX_BP)?;
+
+        let location = Range::new(prefix_location.begin, operand.location.end);
+        let kind = get_kind(operand);
+        let prefix = Box::new(Ast::new(kind, location));
+        Ok(prefix)
     }
 
-    fn read_right_and_make_infix_ast(&mut self, left: Box<Ast>, bp: &Bp, make_ast: MakeInfixAst) -> ResAst {
+    fn read_right_and_make_infix_ast<F>(&mut self, left: Box<Ast>, bp: &Bp, get_kind: F) -> ResAst
+    where
+        F: Fn(Box<Ast>, Box<Ast>) -> AstKind,
+    {
+        // Return an error if end
         let Some(x) = self.scanner.read() else {
             let location = Range::new(left.location.begin, self.scanner.locate().end);
             return Err(ParseError::new(ParseErrorKind::NoInfixRightOperand, location));
         };
 
         let right = self.parse_expression(x, bp)?;
-        let infix_ast = Box::new(make_ast(left, right));
-        Ok(infix_ast)
+
+        let location = Range::new(left.location.begin, right.location.end);
+        let kind = get_kind(left, right);
+        let infix = Box::new(Ast::new(kind, location));
+        Ok(infix)
     }
 
     fn make_num_ast(&mut self, num: f64, location: &Range) -> ResAst {
-        Ok(Box::new(Ast::from_num(num, location)))
+        Ok(Box::new(Ast::new(AstKind::Number(num), *location)))
     }
 
     fn make_bool_ast(&mut self, boolean: bool, location: &Range) -> ResAst {
-        Ok(Box::new(Ast::from_bool(boolean, location)))
+        Ok(Box::new(Ast::new(AstKind::Bool(boolean), *location)))
     }
 }
 
