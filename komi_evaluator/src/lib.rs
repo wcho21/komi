@@ -29,8 +29,8 @@ impl<'a> Evaluator<'a> {
     fn eval_ast(ast: &Ast) -> ResVal {
         match ast {
             Ast { kind: AstKind::Program { expressions: e }, location: loc } => Self::evaluate_expressions(e, loc),
-            Ast { kind: AstKind::Number(n), location } => Self::eval_number(n, location),
-            Ast { kind: AstKind::Bool(b), location } => Self::eval_bool(b, location),
+            Ast { kind: AstKind::Number(n), location: loc } => Self::evaluate_number(*n, loc),
+            Ast { kind: AstKind::Bool(b), location: loc } => Self::evaluate_bool(*b, loc),
             Ast { kind: AstKind::PrefixPlus { operand }, location } => Self::eval_prefix_plus(operand, location),
             Ast { kind: AstKind::PrefixMinus { operand }, location } => Self::eval_prefix_minus(operand, location),
             Ast { kind: AstKind::PrefixBang { operand }, location } => Self::eval_prefix_bang(operand, location),
@@ -57,12 +57,14 @@ impl<'a> Evaluator<'a> {
         Ok(last_value)
     }
 
-    fn eval_number(num: &f64, location: &Range) -> ResVal {
-        Ok(Value::new(ValueKind::Number(*num), *location))
+    /// Returns the numeric evaluated result, from number `num` and its location `location`.
+    fn evaluate_number(num: f64, location: &Range) -> ResVal {
+        Ok(Value::new(ValueKind::Number(num), *location))
     }
 
-    fn eval_bool(boolean: &bool, location: &Range) -> ResVal {
-        Ok(Value::new(ValueKind::Bool(*boolean), *location))
+    /// Returns the boolean evaluated result, from boolean `boolean` and its location `location`.
+    fn evaluate_bool(boolean: bool, location: &Range) -> ResVal {
+        Ok(Value::new(ValueKind::Bool(boolean), *location))
     }
 
     fn eval_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
