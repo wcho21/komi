@@ -3,7 +3,7 @@ use std::fmt;
 
 /// Errors that may occur during the evaluating process.
 /// Serves as the interface between a evaluator and its user.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum EvalErrorKind {
     InvalidAdditionOperand, // TODO: rename, because it is not only for addition, but for arithmetic infix.
     InvalidConnectiveInfixOperand,
