@@ -71,78 +71,71 @@ impl<'a> Evaluator<'a> {
     ///
     /// The location in the returned value will span from the prefix to operand.
     fn evaluate_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
-        Self::evaluate_prefix(operand, prefix_location, Self::evaluate_prefix_operand_num, |v| {
-            ValueKind::Number(v)
-        })
+        Self::evaluate_num_prefix(operand, prefix_location, |v| ValueKind::Number(v))
     }
 
     /// Returns the evaluated numeric result of the AST `operand` as an operand of the prefix minus.
     ///
     /// The location in the returned value will span from the prefix to operand.
     fn evaluate_prefix_minus(operand: &Ast, prefix_location: &Range) -> ResVal {
-        Self::evaluate_prefix(operand, prefix_location, Self::evaluate_prefix_operand_num, |v| {
-            ValueKind::Number(-v)
-        })
+        Self::evaluate_num_prefix(operand, prefix_location, |v| ValueKind::Number(-v))
     }
 
     /// Returns the evaluated boolean result of the AST `operand` as an operand of the prefix bang.
     ///
     /// The location in the returned value will span from the prefix to operand.
     fn evaluate_prefix_bang(operand: &Ast, prefix_location: &Range) -> ResVal {
-        Self::evaluate_prefix(operand, prefix_location, Self::evaluate_prefix_operand_bool, |v| {
-            ValueKind::Bool(!v)
-        })
+        Self::evaluate_bool_prefix(operand, prefix_location, |v| ValueKind::Bool(!v))
     }
 
     fn eval_infix_plus(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::evaluate_infix_operand_num(left)?;
-        let right_val = Self::evaluate_infix_operand_num(right)?;
-
-        let evaluated = left_val + right_val;
-
-        let location = Range::new(left.location.begin, right.location.end);
-        Ok(Value::new(ValueKind::Number(evaluated), location))
+        Self::evaluate_infix(
+            left,
+            right,
+            Self::evaluate_infix_operand_num,
+            |l, r| l + r,
+            |v| ValueKind::Number(v),
+        )
     }
 
     fn eval_infix_minus(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::evaluate_infix_operand_num(left)?;
-        let right_val = Self::evaluate_infix_operand_num(right)?;
-
-        let evaluated = left_val - right_val;
-
-        let location = Range::new(left.location.begin, right.location.end);
-        Ok(Value::new(ValueKind::Number(evaluated), location))
+        Self::evaluate_infix(
+            left,
+            right,
+            Self::evaluate_infix_operand_num,
+            |l, r| l - r,
+            |v| ValueKind::Number(v),
+        )
     }
 
     fn eval_infix_asterisk(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::evaluate_infix_operand_num(left)?;
-        let right_val = Self::evaluate_infix_operand_num(right)?;
-
-        let evaluated = left_val * right_val;
-
-        let location = Range::new(left.location.begin, right.location.end);
-        Ok(Value::new(ValueKind::Number(evaluated), location))
+        Self::evaluate_infix(
+            left,
+            right,
+            Self::evaluate_infix_operand_num,
+            |l, r| l * r,
+            |v| ValueKind::Number(v),
+        )
     }
 
     fn eval_infix_slash(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::evaluate_infix_operand_num(left)?;
-        let right_val = Self::evaluate_infix_operand_num(right)?;
-
-        let evaluated = left_val / right_val;
-
-        let location = Range::new(left.location.begin, right.location.end);
-        Ok(Value::new(ValueKind::Number(evaluated), location))
+        Self::evaluate_infix(
+            left,
+            right,
+            Self::evaluate_infix_operand_num,
+            |l, r| l / r,
+            |v| ValueKind::Number(v),
+        )
     }
 
-    // TODO: reduce code using closure for evaluating part and do the same thing for other arithmetic infix evaluation
     fn eval_infix_percent(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::evaluate_infix_operand_num(left)?;
-        let right_val = Self::evaluate_infix_operand_num(right)?;
-
-        let evaluated = left_val % right_val;
-
-        let location = Range::new(left.location.begin, right.location.end);
-        Ok(Value::new(ValueKind::Number(evaluated), location))
+        Self::evaluate_infix(
+            left,
+            right,
+            Self::evaluate_infix_operand_num,
+            |l, r| l % r,
+            |v| ValueKind::Number(v),
+        )
     }
 
     fn eval_infix_conjunct(left: &Ast, right: &Ast) -> ResVal {
@@ -197,6 +190,21 @@ impl<'a> Evaluator<'a> {
         })
     }
 
+    // TODO: make names consistent (num_something or something_num)
+    fn evaluate_num_prefix<F>(operand: &Ast, prefix_location: &Range, get_kind: F) -> ResVal
+    where
+        F: Fn(f64) -> ValueKind,
+    {
+        Self::evaluate_prefix(operand, prefix_location, Self::evaluate_prefix_operand_num, get_kind)
+    }
+
+    fn evaluate_bool_prefix<F>(operand: &Ast, prefix_location: &Range, get_kind: F) -> ResVal
+    where
+        F: Fn(bool) -> ValueKind,
+    {
+        Self::evaluate_prefix::<bool, _, _>(operand, prefix_location, Self::evaluate_prefix_operand_bool, get_kind)
+    }
+
     /// Returns the evaluated result of the AST `operand` as an operand of a prefix.
     ///
     /// - `evaluate_operand` determines how to evaluate the AST `operand` itself to some value `x`.
@@ -211,6 +219,29 @@ impl<'a> Evaluator<'a> {
         let evaluated_operand = evaluate_operand(operand)?;
         let kind = get_kind(evaluated_operand);
         let location = Range::new(prefix_location.begin, operand.location.end);
+        Ok(Value::new(kind, location))
+    }
+
+    fn evaluate_infix<T, F, G, H>(
+        left: &Ast,
+        right: &Ast,
+        evaluate_operand: F,
+        evaluate_infix: G,
+        make_value_kind: H,
+    ) -> ResVal
+    where
+        F: Fn(&Ast) -> Result<T, EvalError>,
+        G: Fn(T, T) -> T,
+        H: Fn(T) -> ValueKind,
+    {
+        let left_val = evaluate_operand(left)?;
+        let right_val = evaluate_operand(right)?;
+
+        let infix_val = evaluate_infix(left_val, right_val);
+
+        let kind = make_value_kind(infix_val);
+        let location = Range::new(left.location.begin, right.location.end);
+
         Ok(Value::new(kind, location))
     }
 
