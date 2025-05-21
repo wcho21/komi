@@ -26,11 +26,11 @@ where
 }
 
 fn get_num_primitive(ast: &Ast) -> Result<f64, EvalError> {
-    util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidAdditionOperand)
+    util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidNumInfixOperand)
 }
 
 fn get_bool_primitive(ast: &Ast) -> Result<bool, EvalError> {
-    util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidConnectiveInfixOperand)
+    util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidBoolInfixOperand)
 }
 
 /// Reduces the operand `operand` of an infix to a value.

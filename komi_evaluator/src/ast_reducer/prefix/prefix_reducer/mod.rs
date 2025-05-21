@@ -22,11 +22,11 @@ where
 }
 
 fn get_num_primitive(ast: &Ast) -> Result<f64, EvalError> {
-    util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidPrefixNumOperand)
+    util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidNumPrefixOperand)
 }
 
 fn get_bool_primitive(ast: &Ast) -> Result<bool, EvalError> {
-    util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidPrefixBoolOperand)
+    util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidBoolPrefixOperand)
 }
 
 /// Reduces the operand `operand` of a prefix to an evaluated result.

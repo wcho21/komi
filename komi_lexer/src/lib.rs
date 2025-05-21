@@ -42,70 +42,67 @@ impl<'a> Lexer<'a> {
     pub fn lex(&mut self) -> ResTokens {
         let mut tokens: Vec<Token> = vec![];
 
-        loop {
-            match self.scanner.read() {
-                Some(s) if string::is_digit(s) => {
-                    let token = advance_and_lex!(self, Self::lex_num, s)?;
+        while let Some(x) = self.scanner.read() {
+            match x {
+                x if string::is_digit(x) => {
+                    let token = advance_and_lex!(self, Self::lex_num, x)?;
                     tokens.push(token);
                 }
-                Some("참") => {
+                "참" => {
                     let token = advance_and_lex!(self, Self::lex_true)?;
                     tokens.push(token);
                 }
-                Some("거") => {
+                "거" => {
                     let token = advance_and_lex!(self, Self::lex_false)?;
                     tokens.push(token);
                 }
-                Some("+") => {
+                "+" => {
                     let token = advance_and_lex!(self, Self::lex_plus)?;
                     tokens.push(token);
                 }
-                Some("-") => {
+                "-" => {
                     let token = advance_and_lex!(self, Self::lex_minus)?;
                     tokens.push(token);
                 }
-                Some("*") => {
+                "*" => {
                     let token = advance_and_lex!(self, Self::lex_asterisk)?;
                     tokens.push(token);
                 }
-                Some("/") => {
+                "/" => {
                     let token = advance_and_lex!(self, Self::lex_slash)?;
                     tokens.push(token);
                 }
-                Some("%") => {
+                "%" => {
                     let token = advance_and_lex!(self, Self::lex_percent)?;
                     tokens.push(token);
                 }
-                Some("(") => {
+                "(" => {
                     let token = advance_and_lex!(self, Self::lex_lparen)?;
                     tokens.push(token);
                 }
-                Some(")") => {
+                ")" => {
                     let token = advance_and_lex!(self, Self::lex_rparen)?;
                     tokens.push(token);
                 }
-                Some("!") => {
+                "!" => {
                     let token = advance_and_lex!(self, Self::lex_bang)?;
                     tokens.push(token);
                 }
-                Some("그") => {
+                "그" => {
                     let token = advance_and_lex!(self, Self::lex_conjunct)?;
                     tokens.push(token);
                 }
-                Some("또") => {
+                "또" => {
                     let token = advance_and_lex!(self, Self::lex_disjunct)?;
                     tokens.push(token);
                 }
-                Some("#") => {
+                "#" => {
                     self.scanner.advance();
                     self.skip_comment();
                 }
-                Some(s) if string::is_whitespace(s) => self.scanner.advance(),
-                Some(_) => {
+                s if string::is_whitespace(s) => self.scanner.advance(),
+                _ => {
                     return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
-                }
-                None => {
-                    break;
                 }
             }
         }
@@ -113,82 +110,66 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
+    /// Returns a number literal token if successfully lexed, or error otherwise.
+    ///
+    /// Call after advancing the scanner `self.scanner` past the initial character, with its location passed as `first_location`.
     fn lex_num(&mut self, first_location: &Range, first_char: &'a str) -> ResToken {
-        let mut lexeme = first_char.to_string();
+        let mut lexeme = String::new();
         let begin = first_location.begin;
 
-        // read whole number part
-        loop {
-            match self.scanner.read() {
-                Some(s) if string::is_digit(s) => {
-                    lexeme.push_str(s);
-                    self.scanner.advance();
-                }
-                _ => {
-                    break;
-                }
-            }
-        }
+        // Read the whole number part.
+        lexeme.push_str(&self.read_digits(first_char));
 
-        // return if not dot
+        // Return a token if not a dot.
         let Some(".") = self.scanner.read() else {
-            let num = lexeme.parse::<f64>().unwrap();
             let end = self.scanner.locate().begin;
+            let token = Self::parse_num_lexeme(&lexeme, Range::new(begin, end));
 
-            let token = Token::from_num(num, Range::new(begin, end));
             return Ok(token);
         };
 
-        // read dot
+        // Read a dot.
         self.scanner.advance();
         lexeme.push_str(".");
 
-        // return if not digit
-        match self.scanner.read() {
-            Some(s) if string::is_digit(s) => (),
-            _ => {
-                let location = Range::new(begin, self.scanner.locate().end);
-                return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
-            }
+        // Return an error if end or not a digit.
+        let Some(x) = self.scanner.read() else {
+            let location = Range::new(begin, self.scanner.locate().end);
+            return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
+        };
+        if !string::is_digit(x) {
+            let location = Range::new(begin, self.scanner.locate().end);
+            return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
         }
+        self.scanner.advance();
 
-        // read decimal part
-        loop {
-            match self.scanner.read() {
-                Some(s) if string::is_digit(s) => {
-                    lexeme.push_str(s);
-                    self.scanner.advance();
-                }
-                _ => {
-                    break;
-                }
-            }
-        }
+        // Read the decimal part.
+        lexeme.push_str(&self.read_digits(x));
 
-        // parse into number and return token
-        let num = lexeme.parse::<f64>().unwrap();
+        // Parse into a number and return a token.
         let end = self.scanner.locate().begin;
+        let token = Self::parse_num_lexeme(&lexeme, Range::new(begin, end));
 
-        let token = Token::from_num(num, Range::new(begin, end));
-        return Ok(token);
+        Ok(token)
     }
 
     fn lex_true(&mut self, first_location: &Range) -> ResToken {
         Ok(Token::from_boolean(true, *first_location))
     }
 
+    /// Returns a false literal token `거짓` if successfully lexed, or error otherwise.
+    ///
+    /// Call after advancing the scanner `self.scanner` past the initial character `거`, with its location passed as `first_location`.
     fn lex_false(&mut self, first_location: &Range) -> ResToken {
-        match self.scanner.read() {
-            Some("짓") => {
-                let location = Range::new(first_location.begin, self.scanner.locate().end);
-                self.scanner.advance();
-                Ok(Token::from_boolean(false, location))
-            }
-            _ => {
-                // TODO: return an identifier token, when the identifier token is implemented.
-                return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
-            }
-        }
+        let Some("짓") = self.scanner.read() else {
+            // TODO: return an identifier token, when the identifier token is implemented.
+            return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
+        };
+
+        let location = Range::new(first_location.begin, self.scanner.locate().end);
+        self.scanner.advance();
+
+        Ok(Token::from_boolean(false, location))
     }
 
     fn lex_plus(&mut self, first_location: &Range) -> ResToken {
@@ -226,24 +207,21 @@ impl<'a> Lexer<'a> {
     /// Returns a conjunction token `그리고` if successfully lexed, or error otherwise.
     ///
     /// Call after advancing the scanner `self.scanner` past the initial character `그`, with its location passed as `first_location`.
-    // TODO: document other functions like this.
     fn lex_conjunct(&mut self, first_location: &Range) -> ResToken {
-        // TODO: more readable than using match as in `lex_false()` and `lex_num()`? then refactor them
-        let second_char = self.scanner.read();
-        let Some("리") = second_char else {
+        let Some("리") = self.scanner.read() else {
             // TODO: return an identifier token, when the identifier token is implemented.
             return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
         };
 
         self.scanner.advance();
-        let third_char = self.scanner.read();
-        let Some("고") = third_char else {
+        let Some("고") = self.scanner.read() else {
             // TODO: return an identifier token, when the identifier token is implemented.
             return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
         };
 
         let location = Range::new(first_location.begin, self.scanner.locate().end);
         self.scanner.advance();
+
         // TODO: enough to make a token, is helper function `from_*()` in syntax token library really necessary, or just increasing bundled output size?
         Ok(Token::new(TokenKind::Conjunct, location))
     }
@@ -252,28 +230,45 @@ impl<'a> Lexer<'a> {
     ///
     /// Call after advancing the scanner `self.scanner` past the initial character `또`, with its location passed as `first_location`.
     fn lex_disjunct(&mut self, first_location: &Range) -> ResToken {
-        let second_char = self.scanner.read();
-        let Some("는") = second_char else {
+        let Some("는") = self.scanner.read() else {
             return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
         };
 
         let location = Range::new(first_location.begin, self.scanner.locate().end);
         self.scanner.advance();
+
         Ok(Token::new(TokenKind::Disjunct, location))
     }
 
     fn skip_comment(&mut self) -> () {
-        loop {
-            match self.scanner.read() {
-                Some("\n") | Some("\r") | Some("\r\n") | None => {
-                    self.scanner.advance();
-                    break;
-                }
-                _ => {
-                    self.scanner.advance();
-                }
+        while let Some(x) = self.scanner.read() {
+            self.scanner.advance();
+
+            if let "\n" | "\r" | "\r\n" = x {
+                break;
             }
         }
+    }
+
+    fn parse_num_lexeme(lexeme: &String, location: Range) -> Token {
+        let num = lexeme.parse::<f64>().unwrap();
+
+        Token::from_num(num, location)
+    }
+
+    fn read_digits(&mut self, first_char: &'a str) -> String {
+        let mut lexeme = first_char.to_string();
+
+        while let Some(x) = self.scanner.read() {
+            if !string::is_digit(x) {
+                break;
+            }
+
+            lexeme.push_str(x);
+            self.scanner.advance();
+        }
+
+        lexeme
     }
 }
 
