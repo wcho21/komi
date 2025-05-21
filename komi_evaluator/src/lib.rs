@@ -71,7 +71,7 @@ impl<'a> Evaluator<'a> {
     ///
     /// The location in the returned value will span from the prefix to operand.
     fn evaluate_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
-        Self::evaluate_prefix(operand, prefix_location, Self::eval_prefix_operand_num, |v| {
+        Self::evaluate_prefix(operand, prefix_location, Self::evaluate_prefix_operand_num, |v| {
             ValueKind::Number(v)
         })
     }
@@ -80,7 +80,7 @@ impl<'a> Evaluator<'a> {
     ///
     /// The location in the returned value will span from the prefix to operand.
     fn evaluate_prefix_minus(operand: &Ast, prefix_location: &Range) -> ResVal {
-        Self::evaluate_prefix(operand, prefix_location, Self::eval_prefix_operand_num, |v| {
+        Self::evaluate_prefix(operand, prefix_location, Self::evaluate_prefix_operand_num, |v| {
             ValueKind::Number(-v)
         })
     }
@@ -89,14 +89,14 @@ impl<'a> Evaluator<'a> {
     ///
     /// The location in the returned value will span from the prefix to operand.
     fn evaluate_prefix_bang(operand: &Ast, prefix_location: &Range) -> ResVal {
-        Self::evaluate_prefix(operand, prefix_location, Self::eval_prefix_operand_bool, |v| {
+        Self::evaluate_prefix(operand, prefix_location, Self::evaluate_prefix_operand_bool, |v| {
             ValueKind::Bool(!v)
         })
     }
 
     fn eval_infix_plus(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::eval_infix_operand_num(left)?;
-        let right_val = Self::eval_infix_operand_num(right)?;
+        let left_val = Self::evaluate_infix_operand_num(left)?;
+        let right_val = Self::evaluate_infix_operand_num(right)?;
 
         let evaluated = left_val + right_val;
 
@@ -105,8 +105,8 @@ impl<'a> Evaluator<'a> {
     }
 
     fn eval_infix_minus(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::eval_infix_operand_num(left)?;
-        let right_val = Self::eval_infix_operand_num(right)?;
+        let left_val = Self::evaluate_infix_operand_num(left)?;
+        let right_val = Self::evaluate_infix_operand_num(right)?;
 
         let evaluated = left_val - right_val;
 
@@ -115,8 +115,8 @@ impl<'a> Evaluator<'a> {
     }
 
     fn eval_infix_asterisk(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::eval_infix_operand_num(left)?;
-        let right_val = Self::eval_infix_operand_num(right)?;
+        let left_val = Self::evaluate_infix_operand_num(left)?;
+        let right_val = Self::evaluate_infix_operand_num(right)?;
 
         let evaluated = left_val * right_val;
 
@@ -125,8 +125,8 @@ impl<'a> Evaluator<'a> {
     }
 
     fn eval_infix_slash(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::eval_infix_operand_num(left)?;
-        let right_val = Self::eval_infix_operand_num(right)?;
+        let left_val = Self::evaluate_infix_operand_num(left)?;
+        let right_val = Self::evaluate_infix_operand_num(right)?;
 
         let evaluated = left_val / right_val;
 
@@ -136,8 +136,8 @@ impl<'a> Evaluator<'a> {
 
     // TODO: reduce code using closure for evaluating part and do the same thing for other arithmetic infix evaluation
     fn eval_infix_percent(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::eval_infix_operand_num(left)?;
-        let right_val = Self::eval_infix_operand_num(right)?;
+        let left_val = Self::evaluate_infix_operand_num(left)?;
+        let right_val = Self::evaluate_infix_operand_num(right)?;
 
         let evaluated = left_val % right_val;
 
@@ -146,8 +146,8 @@ impl<'a> Evaluator<'a> {
     }
 
     fn eval_infix_conjunct(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::eval_infix_operand_bool(left)?;
-        let right_val = Self::eval_infix_operand_bool(right)?;
+        let left_val = Self::evaluate_infix_operand_bool(left)?;
+        let right_val = Self::evaluate_infix_operand_bool(right)?;
 
         let evaluated = left_val && right_val;
 
@@ -156,8 +156,8 @@ impl<'a> Evaluator<'a> {
     }
 
     fn eval_infix_disjunct(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::eval_infix_operand_bool(left)?;
-        let right_val = Self::eval_infix_operand_bool(right)?;
+        let left_val = Self::evaluate_infix_operand_bool(left)?;
+        let right_val = Self::evaluate_infix_operand_bool(right)?;
 
         let evaluated = left_val || right_val;
 
@@ -165,43 +165,36 @@ impl<'a> Evaluator<'a> {
         Ok(Value::new(ValueKind::Bool(evaluated), location))
     }
 
-    fn eval_prefix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
-        let val = Self::eval_ast(operand)?;
-        if let ValueKind::Number(num) = val.kind {
-            Ok(num)
-        } else {
-            Err(EvalError::new(EvalErrorKind::InvalidPrefixNumOperand, val.location))
-        }
+    /// Returns the evaluated numeric result of the AST `operand` as a leaf operand of a prefix.
+    fn evaluate_prefix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
+        Self::evaluate_leaf_operand(operand, |value_kind| match value_kind {
+            ValueKind::Number(x) => Ok(*x),
+            _ => Err(EvalErrorKind::InvalidPrefixNumOperand),
+        })
     }
 
-    fn eval_prefix_operand_bool(operand: &Ast) -> Result<bool, EvalError> {
-        let val = Self::eval_ast(operand)?;
-        if let ValueKind::Bool(boolean) = val.kind {
-            Ok(boolean)
-        } else {
-            Err(EvalError::new(EvalErrorKind::InvalidPrefixBoolOperand, val.location))
-        }
+    /// Returns the evaluated boolean result of the AST `operand` as a leaf operand of a prefix.
+    fn evaluate_prefix_operand_bool(operand: &Ast) -> Result<bool, EvalError> {
+        Self::evaluate_leaf_operand(operand, |value_kind| match value_kind {
+            ValueKind::Bool(x) => Ok(*x),
+            _ => Err(EvalErrorKind::InvalidPrefixBoolOperand),
+        })
     }
 
-    fn eval_infix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
-        let val = Self::eval_ast(operand)?;
-        if let ValueKind::Number(num) = val.kind {
-            Ok(num)
-        } else {
-            Err(EvalError::new(EvalErrorKind::InvalidAdditionOperand, val.location)) // TODO: rename error (not only for addition)
-        }
+    /// Returns the evaluated numeric result of the AST `operand` as a leaf operand of an infix.
+    fn evaluate_infix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
+        Self::evaluate_leaf_operand(operand, |value_kind| match value_kind {
+            ValueKind::Number(x) => Ok(*x),
+            _ => Err(EvalErrorKind::InvalidAdditionOperand),
+        })
     }
 
-    fn eval_infix_operand_bool(operand: &Ast) -> Result<bool, EvalError> {
-        let val = Self::eval_ast(operand)?;
-        let ValueKind::Bool(boolean) = val.kind else {
-            return Err(EvalError::new(
-                EvalErrorKind::InvalidConnectiveInfixOperand,
-                val.location,
-            ));
-        };
-
-        Ok(boolean)
+    /// Returns the evaluated boolean result of the AST `operand` as a leaf operand of an infix.
+    fn evaluate_infix_operand_bool(operand: &Ast) -> Result<bool, EvalError> {
+        Self::evaluate_leaf_operand(operand, |value_kind| match value_kind {
+            ValueKind::Bool(x) => Ok(*x),
+            _ => Err(EvalErrorKind::InvalidConnectiveInfixOperand),
+        })
     }
 
     /// Returns the evaluated result of the AST `operand` as an operand of a prefix.
@@ -219,6 +212,23 @@ impl<'a> Evaluator<'a> {
         let kind = get_kind(evaluated_operand);
         let location = Range::new(prefix_location.begin, operand.location.end);
         Ok(Value::new(kind, location))
+    }
+
+    /// Returns the evalauted result of the AST `operand` as a leaf operand of a prefix or an infix.
+    ///
+    /// `extract` specifies the expected kind `x` of the evaluated result of `operand`.
+    /// - If `x` encountered, it returns `Ok` from `x`.
+    /// - Otherwise, returns `Err(e)` where `e` is `EvalError`.
+    fn evaluate_leaf_operand<T, F>(operand: &Ast, extract: F) -> Result<T, EvalError>
+    where
+        F: Fn(&ValueKind) -> Result<T, EvalErrorKind>,
+    {
+        let val = Self::eval_ast(operand)?;
+
+        match extract(&val.kind) {
+            Ok(x) => Ok(x),
+            Err(kind) => Err(EvalError::new(kind, val.location)),
+        }
     }
 }
 
