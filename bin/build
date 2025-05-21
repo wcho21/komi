@@ -6,8 +6,7 @@ BUILD_MODE="--release"
 COMMAND="build"
 WASM_OUT_NAME="komi"
 WASM_OUT_SCOPE="wcho21"
-
-echo "build: started."
+OUT_DIR="./komi_wasm/pkg"
 
 fail() {
   echo "build: failed."
@@ -16,6 +15,8 @@ fail() {
 
 # script body
 build() {
+  echo "build: started."
+
   cd komi_wasm
 
   # build as bundled library
@@ -31,7 +32,9 @@ build() {
 }
 
 clean() {
+  echo "build: removing build artifact..."
   rm -rf ${OUT_DIR}
+  echo "build: removed."
 }
 
 help() {
