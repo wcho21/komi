@@ -117,7 +117,7 @@ impl<'a> Evaluator<'a> {
     }
 
     /// Returns the evaluated numeric result of the AST `operand` as a leaf operand of a prefix.
-    fn evaluate_prefix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
+    fn evaluate_num_prefix_operand(operand: &Ast) -> Result<f64, EvalError> {
         Self::evaluate_leaf_operand(operand, |value_kind| match value_kind {
             ValueKind::Number(x) => Ok(*x),
             _ => Err(EvalErrorKind::InvalidPrefixNumOperand),
@@ -125,7 +125,7 @@ impl<'a> Evaluator<'a> {
     }
 
     /// Returns the evaluated boolean result of the AST `operand` as a leaf operand of a prefix.
-    fn evaluate_prefix_operand_bool(operand: &Ast) -> Result<bool, EvalError> {
+    fn evaluate_bool_prefix_operand(operand: &Ast) -> Result<bool, EvalError> {
         Self::evaluate_leaf_operand(operand, |value_kind| match value_kind {
             ValueKind::Bool(x) => Ok(*x),
             _ => Err(EvalErrorKind::InvalidPrefixBoolOperand),
@@ -133,7 +133,7 @@ impl<'a> Evaluator<'a> {
     }
 
     /// Returns the evaluated numeric result of the AST `operand` as a leaf operand of an infix.
-    fn evaluate_infix_operand_num(operand: &Ast) -> Result<f64, EvalError> {
+    fn evaluate_num_infix_operand(operand: &Ast) -> Result<f64, EvalError> {
         Self::evaluate_leaf_operand(operand, |value_kind| match value_kind {
             ValueKind::Number(x) => Ok(*x),
             _ => Err(EvalErrorKind::InvalidAdditionOperand),
@@ -141,26 +141,25 @@ impl<'a> Evaluator<'a> {
     }
 
     /// Returns the evaluated boolean result of the AST `operand` as a leaf operand of an infix.
-    fn evaluate_infix_operand_bool(operand: &Ast) -> Result<bool, EvalError> {
+    fn evaluate_bool_infix_operand(operand: &Ast) -> Result<bool, EvalError> {
         Self::evaluate_leaf_operand(operand, |value_kind| match value_kind {
             ValueKind::Bool(x) => Ok(*x),
             _ => Err(EvalErrorKind::InvalidConnectiveInfixOperand),
         })
     }
 
-    // TODO: make names consistent (num_something or something_num)
     fn evaluate_num_prefix<F>(operand: &Ast, prefix_location: &Range, get_kind: F) -> ResVal
     where
         F: Fn(f64) -> ValueKind,
     {
-        Self::evaluate_prefix(operand, prefix_location, Self::evaluate_prefix_operand_num, get_kind)
+        Self::evaluate_prefix(operand, prefix_location, Self::evaluate_num_prefix_operand, get_kind)
     }
 
     fn evaluate_bool_prefix<F>(operand: &Ast, prefix_location: &Range, get_kind: F) -> ResVal
     where
         F: Fn(bool) -> ValueKind,
     {
-        Self::evaluate_prefix::<bool, _, _>(operand, prefix_location, Self::evaluate_prefix_operand_bool, get_kind)
+        Self::evaluate_prefix::<bool, _, _>(operand, prefix_location, Self::evaluate_bool_prefix_operand, get_kind)
     }
 
     /// Returns the evaluated result of the AST `operand` as an operand of a prefix.
@@ -188,7 +187,7 @@ impl<'a> Evaluator<'a> {
         Self::evaluate_infix(
             left,
             right,
-            Self::evaluate_infix_operand_bool,
+            Self::evaluate_bool_infix_operand,
             evaluate_infix,
             make_value_kind,
         )
@@ -202,7 +201,7 @@ impl<'a> Evaluator<'a> {
         Self::evaluate_infix(
             left,
             right,
-            Self::evaluate_infix_operand_num,
+            Self::evaluate_num_infix_operand,
             evaluate_infix,
             make_value_kind,
         )
