@@ -313,7 +313,7 @@ mod tests {
     #[case::lparen("(", vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)])]
     #[case::rparen(")", vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)])]
     #[case::bang("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)])]
-    fn single_chars(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn single_token(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
@@ -328,7 +328,7 @@ mod tests {
         mktoken!(TokenKind::Plus, loc 0, "12 ".len(), 0, "12 +".len()),
         mktoken!(TokenKind::Number(34.675), loc 0, "12 + ".len(), 0, "12 + 34.675".len()),
     ])]
-    fn multiple_chars(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn multiple_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
