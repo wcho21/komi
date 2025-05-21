@@ -15,6 +15,8 @@ pub enum AstKind {
     InfixAsterisk { left: Box<Ast>, right: Box<Ast> },
     InfixSlash { left: Box<Ast>, right: Box<Ast> },
     InfixPercent { left: Box<Ast>, right: Box<Ast> },
+    InfixConjunct { left: Box<Ast>, right: Box<Ast> },
+    InfixDisjunct { left: Box<Ast>, right: Box<Ast> },
 }
 
 /// An abstract syntax tree, or AST produced during parsing.
@@ -29,6 +31,7 @@ impl Ast {
         Ast { kind, location }
     }
 
+    // TODO: really need to use `from_*()` functions, instead of `new()`??
     pub fn from_program(expressions: Vec<Box<Ast>>) -> Self {
         let location = Self::locate_expressions(&expressions);
 
