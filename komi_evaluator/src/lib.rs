@@ -57,17 +57,17 @@ impl<'a> Evaluator<'a> {
         Ok(last_value)
     }
 
-    /// Returns the numeric evaluated result, from number `num` and its location `location`.
+    /// Returns the evaluated numeric result, from number `num` and its location `location`.
     fn evaluate_number(num: f64, location: &Range) -> ResVal {
         Ok(Value::new(ValueKind::Number(num), *location))
     }
 
-    /// Returns the boolean evaluated result, from boolean `boolean` and its location `location`.
+    /// Returns the evaluated boolean result, from boolean `boolean` and its location `location`.
     fn evaluate_bool(boolean: bool, location: &Range) -> ResVal {
         Ok(Value::new(ValueKind::Bool(boolean), *location))
     }
 
-    /// Returns the numeric evaluated result of the AST `operand` as an operand of the prefix plus.
+    /// Returns the evaluated numeric result of the AST `operand` as an operand of the prefix plus.
     ///
     /// The location in the returned value will span from the prefix to operand.
     fn evaluate_prefix_plus(operand: &Ast, prefix_location: &Range) -> ResVal {
@@ -76,7 +76,7 @@ impl<'a> Evaluator<'a> {
         })
     }
 
-    /// Returns the numeric evaluated result of the AST `operand` as an operand of the prefix minus.
+    /// Returns the evaluated numeric result of the AST `operand` as an operand of the prefix minus.
     ///
     /// The location in the returned value will span from the prefix to operand.
     fn evaluate_prefix_minus(operand: &Ast, prefix_location: &Range) -> ResVal {
@@ -85,7 +85,7 @@ impl<'a> Evaluator<'a> {
         })
     }
 
-    /// Returns the boolean evaluated result of the AST `operand` as an operand of the prefix bang.
+    /// Returns the evaluated boolean result of the AST `operand` as an operand of the prefix bang.
     ///
     /// The location in the returned value will span from the prefix to operand.
     fn evaluate_prefix_bang(operand: &Ast, prefix_location: &Range) -> ResVal {
