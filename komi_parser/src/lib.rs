@@ -160,26 +160,25 @@ impl<'a> Parser<'a> {
     }
 
     fn read_operand_and_make_prefix_ast(&mut self, prefix_location: &'a Range, make_ast: MakePrefixAst<'a>) -> ResAst {
-        if let Some(x) = self.scanner.read() {
-            let operand_ast = self.parse_expression(x, Bp::get_prefix())?;
-            let prefix_ast = Box::new(make_ast(operand_ast, prefix_location));
-            Ok(prefix_ast)
-        } else {
+        let Some(x) = self.scanner.read() else {
             let location = Range::new(prefix_location.begin, self.scanner.locate().end);
-            Err(ParseError::new(ParseErrorKind::NoPrefixOperand, location))
-        }
+            return Err(ParseError::new(ParseErrorKind::NoPrefixOperand, location));
+        };
+
+        let operand_ast = self.parse_expression(x, Bp::get_prefix())?;
+        let prefix_ast = Box::new(make_ast(operand_ast, prefix_location));
+        Ok(prefix_ast)
     }
 
     fn read_right_and_make_infix_ast(&mut self, left: Box<Ast>, bp: &Bp, make_ast: MakeInfixAst) -> ResAst {
-        // TODO: write exceptional case (else case here) first
-        if let Some(x) = self.scanner.read() {
-            let right = self.parse_expression(x, bp)?;
-            let infix_ast = Box::new(make_ast(left, right));
-            Ok(infix_ast)
-        } else {
+        let Some(x) = self.scanner.read() else {
             let location = Range::new(left.location.begin, self.scanner.locate().end);
-            Err(ParseError::new(ParseErrorKind::NoInfixRightOperand, location))
-        }
+            return Err(ParseError::new(ParseErrorKind::NoInfixRightOperand, location));
+        };
+
+        let right = self.parse_expression(x, bp)?;
+        let infix_ast = Box::new(make_ast(left, right));
+        Ok(infix_ast)
     }
 
     fn make_num_ast(&mut self, num: f64, location: &Range) -> ResAst {
