@@ -27,20 +27,21 @@ impl<'a> Evaluator<'a> {
     }
 
     fn eval_ast(ast: &Ast) -> ResVal {
-        match ast {
-            Ast { kind: AstKind::Program { expressions: e }, location: loc } => Self::evaluate_expressions(e, loc),
-            Ast { kind: AstKind::Number(n), location: loc } => Self::evaluate_number(*n, loc),
-            Ast { kind: AstKind::Bool(b), location: loc } => Self::evaluate_bool(*b, loc),
-            Ast { kind: AstKind::PrefixPlus { operand: op }, location: loc } => Self::evaluate_prefix_plus(op, loc),
-            Ast { kind: AstKind::PrefixMinus { operand: op }, location: loc } => Self::evaluate_prefix_minus(op, loc),
-            Ast { kind: AstKind::PrefixBang { operand: op }, location: loc } => Self::evaluate_prefix_bang(op, loc),
-            Ast { kind: AstKind::InfixPlus { left, right }, location: _ } => Self::eval_infix_plus(left, right),
-            Ast { kind: AstKind::InfixMinus { left, right }, location: _ } => Self::eval_infix_minus(left, right),
-            Ast { kind: AstKind::InfixAsterisk { left, right }, location: _ } => Self::eval_infix_asterisk(left, right),
-            Ast { kind: AstKind::InfixSlash { left, right }, location: _ } => Self::eval_infix_slash(left, right),
-            Ast { kind: AstKind::InfixPercent { left, right }, location: _ } => Self::eval_infix_percent(left, right),
-            Ast { kind: AstKind::InfixConjunct { left, right }, location: _ } => Self::eval_infix_conjunct(left, right),
-            Ast { kind: AstKind::InfixDisjunct { left, right }, location: _ } => Self::eval_infix_disjunct(left, right),
+        let loc = ast.location;
+        match &ast.kind {
+            AstKind::Program { expressions: e } => Self::evaluate_expressions(&e, &loc),
+            AstKind::Number(x) => Self::evaluate_number(*x, &loc),
+            AstKind::Bool(x) => Self::evaluate_bool(*x, &loc),
+            AstKind::PrefixPlus { operand: op } => Self::evaluate_prefix_plus(&op, &loc),
+            AstKind::PrefixMinus { operand: op } => Self::evaluate_prefix_minus(&op, &loc),
+            AstKind::PrefixBang { operand: op } => Self::evaluate_prefix_bang(&op, &loc),
+            AstKind::InfixPlus { left, right } => Self::eval_infix_plus(&left, &right),
+            AstKind::InfixMinus { left, right } => Self::eval_infix_minus(&left, &right),
+            AstKind::InfixAsterisk { left, right } => Self::eval_infix_asterisk(&left, &right),
+            AstKind::InfixSlash { left, right } => Self::eval_infix_slash(&left, &right),
+            AstKind::InfixPercent { left, right } => Self::eval_infix_percent(&left, &right),
+            AstKind::InfixConjunct { left, right } => Self::eval_infix_conjunct(&left, &right),
+            AstKind::InfixDisjunct { left, right } => Self::eval_infix_disjunct(&left, &right),
         }
     }
 
