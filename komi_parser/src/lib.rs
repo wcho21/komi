@@ -34,7 +34,7 @@ impl<'a> Parser<'a> {
         let mut expressions: Vec<Box<Ast>> = vec![];
 
         while let Some(x) = self.scanner.read() {
-            let e = self.parse_expression(x, Bp::get_lowest())?;
+            let e = self.parse_expression(x, &bp::LOWEST_BP)?;
             expressions.push(e);
         }
 
@@ -104,25 +104,14 @@ impl<'a> Parser<'a> {
 
     fn parse_infix_expression(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
         match infix.kind {
-            TokenKind::Plus => {
-                let bp = Bp::get_additive();
-                self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_plus)
-            }
-            TokenKind::Minus => {
-                let bp = Bp::get_additive();
-                self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_minus)
-            }
+            TokenKind::Plus => self.read_right_and_make_infix_ast(left, &bp::ADDITIVE_BP, Ast::from_infix_plus),
+            TokenKind::Minus => self.read_right_and_make_infix_ast(left, &bp::ADDITIVE_BP, Ast::from_infix_minus),
             TokenKind::Asterisk => {
-                let bp = Bp::get_multiplicative();
-                self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_asterisk)
+                self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, Ast::from_infix_asterisk)
             }
-            TokenKind::Slash => {
-                let bp = Bp::get_multiplicative();
-                self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_slash)
-            }
+            TokenKind::Slash => self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, Ast::from_infix_slash),
             TokenKind::Percent => {
-                let bp = Bp::get_multiplicative();
-                self.read_right_and_make_infix_ast(left, bp, Ast::from_infix_percent)
+                self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, Ast::from_infix_percent)
             }
             // TODO: choose which has better readability between this one below and the other one using `from_*` functions like above
             TokenKind::Conjunct => self.read_right_and_make_infix_ast(left, &bp::CONNECTIVE_BP, |left, right| {
@@ -141,7 +130,7 @@ impl<'a> Parser<'a> {
 
     fn parse_grouped_expression(&mut self, first_token: &'a Token) -> ResAst {
         let mut grouped_ast = match self.scanner.read() {
-            Some(x) => self.parse_expression(x, Bp::get_lowest()),
+            Some(x) => self.parse_expression(x, &bp::LOWEST_BP),
             None => Err(ParseError::new(ParseErrorKind::LParenNotClosed, first_token.location)),
         }?;
 
@@ -165,7 +154,7 @@ impl<'a> Parser<'a> {
             return Err(ParseError::new(ParseErrorKind::NoPrefixOperand, location));
         };
 
-        let operand_ast = self.parse_expression(x, Bp::get_prefix())?;
+        let operand_ast = self.parse_expression(x, &bp::PREFIX_BP)?;
         let prefix_ast = Box::new(make_ast(operand_ast, prefix_location));
         Ok(prefix_ast)
     }
