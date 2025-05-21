@@ -89,73 +89,31 @@ impl<'a> Evaluator<'a> {
     }
 
     fn eval_infix_plus(left: &Ast, right: &Ast) -> ResVal {
-        Self::evaluate_infix(
-            left,
-            right,
-            Self::evaluate_infix_operand_num,
-            |l, r| l + r,
-            |v| ValueKind::Number(v),
-        )
+        Self::evaluate_num_infix(left, right, |l, r| l + r, |v| ValueKind::Number(v))
     }
 
     fn eval_infix_minus(left: &Ast, right: &Ast) -> ResVal {
-        Self::evaluate_infix(
-            left,
-            right,
-            Self::evaluate_infix_operand_num,
-            |l, r| l - r,
-            |v| ValueKind::Number(v),
-        )
+        Self::evaluate_num_infix(left, right, |l, r| l - r, |v| ValueKind::Number(v))
     }
 
     fn eval_infix_asterisk(left: &Ast, right: &Ast) -> ResVal {
-        Self::evaluate_infix(
-            left,
-            right,
-            Self::evaluate_infix_operand_num,
-            |l, r| l * r,
-            |v| ValueKind::Number(v),
-        )
+        Self::evaluate_num_infix(left, right, |l, r| l * r, |v| ValueKind::Number(v))
     }
 
     fn eval_infix_slash(left: &Ast, right: &Ast) -> ResVal {
-        Self::evaluate_infix(
-            left,
-            right,
-            Self::evaluate_infix_operand_num,
-            |l, r| l / r,
-            |v| ValueKind::Number(v),
-        )
+        Self::evaluate_num_infix(left, right, |l, r| l / r, |v| ValueKind::Number(v))
     }
 
     fn eval_infix_percent(left: &Ast, right: &Ast) -> ResVal {
-        Self::evaluate_infix(
-            left,
-            right,
-            Self::evaluate_infix_operand_num,
-            |l, r| l % r,
-            |v| ValueKind::Number(v),
-        )
+        Self::evaluate_num_infix(left, right, |l, r| l % r, |v| ValueKind::Number(v))
     }
 
     fn eval_infix_conjunct(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::evaluate_infix_operand_bool(left)?;
-        let right_val = Self::evaluate_infix_operand_bool(right)?;
-
-        let evaluated = left_val && right_val;
-
-        let location = Range::new(left.location.begin, right.location.end);
-        Ok(Value::new(ValueKind::Bool(evaluated), location))
+        Self::evaluate_bool_infix(left, right, |l, r| l && r, |v| ValueKind::Bool(v))
     }
 
     fn eval_infix_disjunct(left: &Ast, right: &Ast) -> ResVal {
-        let left_val = Self::evaluate_infix_operand_bool(left)?;
-        let right_val = Self::evaluate_infix_operand_bool(right)?;
-
-        let evaluated = left_val || right_val;
-
-        let location = Range::new(left.location.begin, right.location.end);
-        Ok(Value::new(ValueKind::Bool(evaluated), location))
+        Self::evaluate_bool_infix(left, right, |l, r| l || r, |v| ValueKind::Bool(v))
     }
 
     /// Returns the evaluated numeric result of the AST `operand` as a leaf operand of a prefix.
@@ -220,6 +178,34 @@ impl<'a> Evaluator<'a> {
         let kind = get_kind(evaluated_operand);
         let location = Range::new(prefix_location.begin, operand.location.end);
         Ok(Value::new(kind, location))
+    }
+
+    fn evaluate_bool_infix<F, G>(left: &Ast, right: &Ast, evaluate_infix: F, make_value_kind: G) -> ResVal
+    where
+        F: Fn(bool, bool) -> bool,
+        G: Fn(bool) -> ValueKind,
+    {
+        Self::evaluate_infix(
+            left,
+            right,
+            Self::evaluate_infix_operand_bool,
+            evaluate_infix,
+            make_value_kind,
+        )
+    }
+
+    fn evaluate_num_infix<F, G>(left: &Ast, right: &Ast, evaluate_infix: F, make_value_kind: G) -> ResVal
+    where
+        F: Fn(f64, f64) -> f64,
+        G: Fn(f64) -> ValueKind,
+    {
+        Self::evaluate_infix(
+            left,
+            right,
+            Self::evaluate_infix_operand_num,
+            evaluate_infix,
+            make_value_kind,
+        )
     }
 
     fn evaluate_infix<T, F, G, H>(
