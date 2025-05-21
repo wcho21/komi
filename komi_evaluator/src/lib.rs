@@ -208,6 +208,8 @@ impl<'a> Evaluator<'a> {
         )
     }
 
+    // TODO: document
+    // TODO(?): factor out into separate file
     fn evaluate_infix<T, F, G, H>(
         left: &Ast,
         right: &Ast,
