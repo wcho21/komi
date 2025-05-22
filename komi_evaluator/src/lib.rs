@@ -26,9 +26,9 @@ impl<'a> Evaluator<'a> {
     }
 
     pub fn eval(&self) -> ResVal {
-        let env = Environment::new();
+        let mut env = Environment::new();
 
-        reduce_ast(self.ast, &env)
+        reduce_ast(self.ast, &mut env)
     }
 }
 

@@ -18,6 +18,7 @@ pub enum AstKind {
     InfixPercent { left: Box<Ast>, right: Box<Ast> },
     InfixConjunct { left: Box<Ast>, right: Box<Ast> },
     InfixDisjunct { left: Box<Ast>, right: Box<Ast> },
+    InfixEquals { left: Box<Ast>, right: Box<Ast> },
 }
 
 /// An abstract syntax tree, or AST produced during parsing.
@@ -139,7 +140,7 @@ macro_rules! mkast {
     };
     (identifier $name:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {
         Box::new(Ast::new(
-            AstKind::Identifier($name),
+            AstKind::Identifier(String::from($name)),
             Range::from_nums($br, $bc, $er, $ec),
         ))
     };

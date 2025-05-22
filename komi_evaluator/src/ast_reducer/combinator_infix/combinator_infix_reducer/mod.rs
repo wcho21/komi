@@ -12,7 +12,7 @@ pub fn reduce_num<F, G>(
     left: &Ast,
     right: &Ast,
     location: &Range,
-    env: &Environment,
+    env: &mut Environment,
     reduce_infix: F,
     get_kind: G,
 ) -> ResVal
@@ -29,7 +29,7 @@ pub fn reduce_bool<F, G>(
     left: &Ast,
     right: &Ast,
     location: &Range,
-    env: &Environment,
+    env: &mut Environment,
     reduce_infix: F,
     get_kind: G,
 ) -> ResVal
@@ -40,11 +40,11 @@ where
     reduce(left, right, location, env, get_bool_primitive, reduce_infix, get_kind)
 }
 
-fn get_num_primitive(ast: &Ast, env: &Environment) -> Result<f64, EvalError> {
+fn get_num_primitive(ast: &Ast, env: &mut Environment) -> Result<f64, EvalError> {
     util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidNumInfixOperand, env)
 }
 
-fn get_bool_primitive(ast: &Ast, env: &Environment) -> Result<bool, EvalError> {
+fn get_bool_primitive(ast: &Ast, env: &mut Environment) -> Result<bool, EvalError> {
     util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidBoolInfixOperand, env)
 }
 
@@ -59,13 +59,13 @@ fn reduce<T, F, G, H>(
     left: &Ast,
     right: &Ast,
     location: &Range,
-    env: &Environment,
+    env: &mut Environment,
     reduce_operand: F,
     reduce_infix: G,
     get_kind: H,
 ) -> ResVal
 where
-    F: Fn(&Ast, &Environment) -> Result<T, EvalError>,
+    F: Fn(&Ast, &mut Environment) -> Result<T, EvalError>,
     G: Fn(T, T) -> T,
     H: Fn(T) -> ValueKind,
 {
