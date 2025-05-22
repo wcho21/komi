@@ -5,6 +5,7 @@
 //! Designed to be loosely coupled, so it does not rely on the implementation details of the parser.
 
 mod ast_reducer;
+mod environment;
 mod err;
 
 use ast_reducer::reduce_ast;

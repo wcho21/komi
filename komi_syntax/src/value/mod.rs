@@ -2,7 +2,7 @@ use komi_util::Range;
 
 /// Kinds of values produced during evaluation.
 /// Serves as the interface between an evaluator and its user.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ValueKind {
     Number(f64),
     Bool(bool),
@@ -10,7 +10,7 @@ pub enum ValueKind {
 }
 
 /// A representation of the value produced during evaluation.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Value {
     pub kind: ValueKind,
     pub location: Range,
@@ -19,7 +19,7 @@ pub struct Value {
 /// Test code as a specification.
 /// Each test case shows which value the function returns for a given location.
 impl Value {
-    pub fn new(kind: ValueKind, location: Range) -> Self {
+    pub const fn new(kind: ValueKind, location: Range) -> Self {
         Value { kind, location }
     }
 
