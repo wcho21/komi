@@ -8,6 +8,7 @@ mod ast_reducer;
 mod environment;
 mod err;
 
+use crate::environment::Environment;
 use ast_reducer::reduce_ast;
 pub use err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, Value};
@@ -25,7 +26,9 @@ impl<'a> Evaluator<'a> {
     }
 
     pub fn eval(&self) -> ResVal {
-        reduce_ast(self.ast)
+        let env = Environment::new();
+
+        reduce_ast(self.ast, &env)
     }
 }
 
