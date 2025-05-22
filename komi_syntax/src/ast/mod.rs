@@ -137,6 +137,12 @@ macro_rules! mkast {
             Range::from_nums($br as u32, $bc as u32, $er as u32, $ec as u32),
         ))
     };
+    (identifier $name:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {
+        Box::new(Ast::new(
+            AstKind::Identifier($name),
+            Range::from_nums($br, $bc, $er, $ec),
+        ))
+    };
     (num $val:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {
         Box::new(Ast::new(AstKind::Number($val), Range::from_nums($br, $bc, $er, $ec)))
     };
