@@ -1,5 +1,5 @@
+mod combinator_infix;
 mod expressions;
-mod infix;
 mod leaf;
 mod prefix;
 mod util;
@@ -25,13 +25,13 @@ pub fn reduce_ast(ast: &Ast, env: &Environment) -> ResVal {
         AstKind::PrefixPlus { operand: op } => prefix::reduce_plus(&op, &loc, env),
         AstKind::PrefixMinus { operand: op } => prefix::reduce_minus(&op, &loc, env),
         AstKind::PrefixBang { operand: op } => prefix::reduce_bang(&op, &loc, env),
-        AstKind::InfixPlus { left: l, right: r } => infix::reduce_plus(&l, &r, &loc, env),
-        AstKind::InfixMinus { left: l, right: r } => infix::reduce_minus(&l, &r, &loc, env),
-        AstKind::InfixAsterisk { left: l, right: r } => infix::reduce_asterisk(&l, &r, &loc, env),
-        AstKind::InfixSlash { left: l, right: r } => infix::reduce_slash(&l, &r, &loc, env),
-        AstKind::InfixPercent { left: l, right: r } => infix::reduce_percent(&l, &r, &loc, env),
-        AstKind::InfixConjunct { left: l, right: r } => infix::reduce_conjunct(&l, &r, &loc, env),
-        AstKind::InfixDisjunct { left: l, right: r } => infix::reduce_disjunct(&l, &r, &loc, env),
+        AstKind::InfixPlus { left: l, right: r } => combinator_infix::reduce_plus(&l, &r, &loc, env),
+        AstKind::InfixMinus { left: l, right: r } => combinator_infix::reduce_minus(&l, &r, &loc, env),
+        AstKind::InfixAsterisk { left: l, right: r } => combinator_infix::reduce_asterisk(&l, &r, &loc, env),
+        AstKind::InfixSlash { left: l, right: r } => combinator_infix::reduce_slash(&l, &r, &loc, env),
+        AstKind::InfixPercent { left: l, right: r } => combinator_infix::reduce_percent(&l, &r, &loc, env),
+        AstKind::InfixConjunct { left: l, right: r } => combinator_infix::reduce_conjunct(&l, &r, &loc, env),
+        AstKind::InfixDisjunct { left: l, right: r } => combinator_infix::reduce_disjunct(&l, &r, &loc, env),
     }
 }
 
