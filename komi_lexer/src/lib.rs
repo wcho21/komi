@@ -154,7 +154,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_true(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_boolean(true, *first_location))
+        Ok(Token::new(TokenKind::Bool(true), *first_location))
     }
 
     /// Returns a false literal token `거짓` if successfully lexed, or error otherwise.
@@ -169,39 +169,39 @@ impl<'a> Lexer<'a> {
         let location = Range::new(first_location.begin, self.scanner.locate().end);
         self.scanner.advance();
 
-        Ok(Token::from_boolean(false, location))
+        Ok(Token::new(TokenKind::Bool(false), location))
     }
 
     fn lex_plus(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_plus(*first_location))
+        Ok(Token::new(TokenKind::Plus, *first_location))
     }
 
     fn lex_minus(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_minus(*first_location))
+        Ok(Token::new(TokenKind::Minus, *first_location))
     }
 
     fn lex_asterisk(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_asterisk(*first_location))
+        Ok(Token::new(TokenKind::Asterisk, *first_location))
     }
 
     fn lex_slash(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_slash(*first_location))
+        Ok(Token::new(TokenKind::Slash, *first_location))
     }
 
     fn lex_percent(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_percent(*first_location))
+        Ok(Token::new(TokenKind::Percent, *first_location))
     }
 
     fn lex_lparen(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_lparen(*first_location))
+        Ok(Token::new(TokenKind::LParen, *first_location))
     }
 
     fn lex_rparen(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_rparen(*first_location))
+        Ok(Token::new(TokenKind::RParen, *first_location))
     }
 
     fn lex_bang(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::from_bang(*first_location))
+        Ok(Token::new(TokenKind::Bang, *first_location))
     }
 
     /// Returns a conjunction token `그리고` if successfully lexed, or error otherwise.
@@ -253,7 +253,7 @@ impl<'a> Lexer<'a> {
     fn parse_num_lexeme(lexeme: &String, location: Range) -> Token {
         let num = lexeme.parse::<f64>().unwrap();
 
-        Token::from_num(num, location)
+        Token::new(TokenKind::Number(num), location)
     }
 
     fn read_digits(&mut self, first_char: &'a str) -> String {

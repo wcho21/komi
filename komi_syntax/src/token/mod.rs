@@ -53,47 +53,6 @@ impl Token {
     pub const fn new(kind: TokenKind, location: Range) -> Self {
         Token { kind, location }
     }
-
-    // TODO: really need to use `from_*()` functions, instead of `new()`??
-    pub const fn from_num(num: f64, location: Range) -> Self {
-        Token::new(TokenKind::Number(num), location)
-    }
-
-    pub const fn from_boolean(boolean: bool, location: Range) -> Self {
-        Token::new(TokenKind::Bool(boolean), location)
-    }
-
-    pub const fn from_plus(location: Range) -> Self {
-        Token::new(TokenKind::Plus, location)
-    }
-
-    pub const fn from_minus(location: Range) -> Self {
-        Token::new(TokenKind::Minus, location)
-    }
-
-    pub const fn from_asterisk(location: Range) -> Self {
-        Token::new(TokenKind::Asterisk, location)
-    }
-
-    pub const fn from_slash(location: Range) -> Self {
-        Token::new(TokenKind::Slash, location)
-    }
-
-    pub const fn from_percent(location: Range) -> Self {
-        Token::new(TokenKind::Percent, location)
-    }
-
-    pub const fn from_lparen(location: Range) -> Self {
-        Token::new(TokenKind::LParen, location)
-    }
-
-    pub const fn from_rparen(location: Range) -> Self {
-        Token::new(TokenKind::RParen, location)
-    }
-
-    pub const fn from_bang(location: Range) -> Self {
-        Token::new(TokenKind::Bang, location)
-    }
 }
 
 /// Makes a token with the kind and the location specified by four numbers.
@@ -119,75 +78,5 @@ mod tests {
         let token = Token::new(TokenKind::Number(1.0), RANGE_MOCK);
 
         assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_num() {
-        let token = Token::from_num(1.0, RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_boolean() {
-        let token = Token::from_boolean(true, RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::Bool(true), location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_plus() {
-        let token = Token::from_plus(RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::Plus, location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_minus() {
-        let token = Token::from_minus(RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::Minus, location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_asterisk() {
-        let token = Token::from_asterisk(RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::Asterisk, location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_slash() {
-        let token = Token::from_slash(RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::Slash, location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_percent() {
-        let token = Token::from_percent(RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::Percent, location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_lparen() {
-        let token = Token::from_lparen(RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::LParen, location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_rparen() {
-        let token = Token::from_rparen(RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::RParen, location: RANGE_MOCK })
-    }
-
-    #[test]
-    fn test_from_bang() {
-        let token = Token::from_bang(RANGE_MOCK);
-
-        assert_eq!(token, Token { kind: TokenKind::Bang, location: RANGE_MOCK })
     }
 }
