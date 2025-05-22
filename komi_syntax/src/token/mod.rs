@@ -2,12 +2,14 @@ use komi_util::Range;
 
 /// Kinds of tokens produced during lexing.
 /// Serves as the interface between a lexer and its user.
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenKind {
     /// A number with or without decimal, such as `12` or `12.25`.
     Number(f64),
     /// A boolean `참` or `거짓`.
     Bool(bool),
+    /// An identifier, such as `사과` or `오렌지`.
+    Identifier(String),
     /// A plus `+`.
     Plus,
     /// A minus `-`.
@@ -43,7 +45,7 @@ pub enum TokenKind {
 }
 
 /// A token produced during lexing.
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub kind: TokenKind,
     pub location: Range,

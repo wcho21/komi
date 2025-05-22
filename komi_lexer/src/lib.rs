@@ -53,7 +53,7 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "거" => {
-                    let token = advance_and_lex!(self, Self::lex_false)?;
+                    let token = advance_and_lex!(self, Self::lex_false_or_identifier)?;
                     tokens.push(token);
                 }
                 "+" => {
@@ -93,7 +93,7 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "또" => {
-                    let token = advance_and_lex!(self, Self::lex_disjunct)?;
+                    let token = advance_and_lex!(self, Self::lex_disjunct_or_identifier)?;
                     tokens.push(token);
                 }
                 "#" => {
@@ -101,6 +101,10 @@ impl<'a> Lexer<'a> {
                     self.skip_comment();
                 }
                 s if string::is_whitespace(s) => self.scanner.advance(),
+                s if string::is_identifier_domain(s) => {
+                    let token = self.lex_identifier(&self.scanner.locate(), &String::new())?;
+                    tokens.push(token);
+                }
                 _ => {
                     return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
                 }
@@ -160,16 +164,48 @@ impl<'a> Lexer<'a> {
     /// Returns a false literal token `거짓` if successfully lexed, or error otherwise.
     ///
     /// Call after advancing the scanner `self.scanner` past the initial character `거`, with its location passed as `first_location`.
-    fn lex_false(&mut self, first_location: &Range) -> ResToken {
-        let Some("짓") = self.scanner.read() else {
-            // TODO: return an identifier token, when the identifier token is implemented.
-            return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
-        };
+    fn lex_false_or_identifier(&mut self, first_location: &Range) -> ResToken {
+        match self.scanner.read() {
+            Some("짓") => {
+                let location = Range::new(first_location.begin, self.scanner.locate().end);
+                self.scanner.advance();
+
+                Ok(Token::new(TokenKind::Bool(false), location))
+            }
+            Some(x) if string::is_identifier_domain(x) => {
+                let begin_chars = String::from("거") + x;
+                self.scanner.advance();
+                let token = self.lex_identifier(first_location, &begin_chars)?;
+
+                Ok(token)
+            }
+            Some(x) if !string::is_whitespace(x) => {
+                Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()))
+            }
+            _ => {
+                // For whitespace or None
+                let token = Token::new(TokenKind::Identifier(String::from("거")), *first_location);
+
+                Ok(token)
+            }
+        }
+    }
+
+    fn lex_identifier(&mut self, first_location: &Range, begin_chars: &str) -> ResToken {
+        let mut lexeme = String::from(begin_chars);
+
+        while let Some(x) = self.scanner.read() {
+            if !string::is_identifier_domain(x) {
+                break;
+            }
+
+            lexeme.push_str(x);
+
+            self.scanner.advance();
+        }
 
         let location = Range::new(first_location.begin, self.scanner.locate().end);
-        self.scanner.advance();
-
-        Ok(Token::new(TokenKind::Bool(false), location))
+        Ok(Token::new(TokenKind::Identifier(lexeme), location))
     }
 
     fn lex_plus(&mut self, first_location: &Range) -> ResToken {
@@ -229,15 +265,31 @@ impl<'a> Lexer<'a> {
     /// Returns a conjunction token `또는` if successfully lexed, or error otherwise.
     ///
     /// Call after advancing the scanner `self.scanner` past the initial character `또`, with its location passed as `first_location`.
-    fn lex_disjunct(&mut self, first_location: &Range) -> ResToken {
-        let Some("는") = self.scanner.read() else {
-            return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
-        };
+    fn lex_disjunct_or_identifier(&mut self, first_location: &Range) -> ResToken {
+        match self.scanner.read() {
+            Some("는") => {
+                let location = Range::new(first_location.begin, self.scanner.locate().end);
+                self.scanner.advance();
 
-        let location = Range::new(first_location.begin, self.scanner.locate().end);
-        self.scanner.advance();
+                Ok(Token::new(TokenKind::Disjunct, location))
+            }
+            Some(x) if string::is_identifier_domain(x) => {
+                let begin_chars = String::from("또") + x;
+                self.scanner.advance();
+                let token = self.lex_identifier(first_location, &begin_chars)?;
 
-        Ok(Token::new(TokenKind::Disjunct, location))
+                Ok(token)
+            }
+            Some(x) if !string::is_whitespace(x) => {
+                Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()))
+            }
+            _ => {
+                // For whitespace or None
+                let token = Token::new(TokenKind::Identifier(String::from("또")), *first_location);
+
+                Ok(token)
+            }
+        }
     }
 
     fn skip_comment(&mut self) -> () {
@@ -355,9 +407,19 @@ mod tests {
     #[case::lparen("(", vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)])]
     #[case::rparen(")", vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)])]
     #[case::bang("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)])]
-    #[case::bang("그리고", vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)])]
-    #[case::bang("또는", vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)])]
+    #[case::conjunct("그리고", vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)])]
+    #[case::disjunct("또는", vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)])]
     fn single_token(#[case] source: &str, #[case] expected: Vec<Token>) {
+        assert_lex!(source, expected);
+    }
+
+    #[rstest]
+    #[case::single_char("가", vec![mktoken!(TokenKind::Identifier(String::from("가")), loc 0, 0, 0, 1)])]
+    #[case::not_false1("거", vec![mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1)])]
+    #[case::not_false2("거짔", vec![mktoken!(TokenKind::Identifier(String::from("거짔")), loc 0, 0, 0, 2)])]
+    #[case::not_disjunct1("또", vec![mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1)])]
+    #[case::not_disjunct2("또늗", vec![mktoken!(TokenKind::Identifier(String::from("또늗")), loc 0, 0, 0, 2)])]
+    fn single_identifier(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
