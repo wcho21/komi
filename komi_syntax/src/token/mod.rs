@@ -28,6 +28,18 @@ pub enum TokenKind {
     Conjunct,
     /// A disjunction `또는`.
     Disjunct,
+    /// An equals `=`.
+    Equals,
+    /// A plus-equals `+=`,
+    PlusEquals,
+    /// A minus-equals `-=`.
+    MinusEquals,
+    /// A asterisk-equals `*=`.
+    AsteriskEquals,
+    /// A slash-equals `/=`.
+    SlashEquals,
+    /// A percent-equals `%=`.
+    PercentEquals,
 }
 
 /// A token produced during lexing.
