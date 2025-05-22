@@ -5,6 +5,8 @@ use std::fmt;
 /// Serves as the interface between a evaluator and its user.
 #[derive(Debug, PartialEq, Clone)]
 pub enum EvalErrorKind {
+    UndefinedIdentifier,
+    InvalidAssignmentLeftValue,
     InvalidNumInfixOperand,
     InvalidBoolInfixOperand,
     InvalidNumPrefixOperand,
@@ -17,6 +19,8 @@ pub type EvalError = EngineError<EvalErrorKind>;
 impl fmt::Display for EvalErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self {
+            EvalErrorKind::UndefinedIdentifier => "UndefinedIdentifier",
+            EvalErrorKind::InvalidAssignmentLeftValue => "InvalidAssignmentLeftValue",
             EvalErrorKind::InvalidNumInfixOperand => "InvalidNumInfixOperand",
             EvalErrorKind::InvalidBoolInfixOperand => "InvalidBoolInfixOperand",
             EvalErrorKind::InvalidNumPrefixOperand => "InvalidNumPrefixOperand",

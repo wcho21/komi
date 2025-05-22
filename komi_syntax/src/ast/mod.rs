@@ -5,6 +5,7 @@ use komi_util::{Range, range};
 #[derive(Debug, PartialEq, Clone)]
 pub enum AstKind {
     Program { expressions: Vec<Box<Ast>> },
+    Identifier(String),
     Number(f64),
     Bool(bool),
     PrefixPlus { operand: Box<Ast> },
@@ -17,6 +18,7 @@ pub enum AstKind {
     InfixPercent { left: Box<Ast>, right: Box<Ast> },
     InfixConjunct { left: Box<Ast>, right: Box<Ast> },
     InfixDisjunct { left: Box<Ast>, right: Box<Ast> },
+    InfixEquals { left: Box<Ast>, right: Box<Ast> },
 }
 
 /// An abstract syntax tree, or AST produced during parsing.
@@ -134,6 +136,12 @@ macro_rules! mkast {
         Box::new(Ast::new(
             AstKind::$kind { left: $left, right: $right },
             Range::from_nums($br as u32, $bc as u32, $er as u32, $ec as u32),
+        ))
+    };
+    (identifier $name:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {
+        Box::new(Ast::new(
+            AstKind::Identifier(String::from($name)),
+            Range::from_nums($br, $bc, $er, $ec),
         ))
     };
     (num $val:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {
