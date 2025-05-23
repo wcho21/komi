@@ -1,7 +1,7 @@
+pub mod char_validator;
 pub mod error;
 pub mod location;
 pub mod scanner;
-pub mod string;
 pub mod tape;
 pub mod unpacker;
 

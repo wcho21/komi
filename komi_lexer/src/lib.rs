@@ -9,7 +9,7 @@ mod utf8_tape;
 
 pub use err::{LexError, LexErrorKind};
 use komi_syntax::{Token, TokenKind};
-use komi_util::string;
+use komi_util::char_validator;
 use komi_util::{Range, Scanner, Spot};
 use source_scanner::SourceScanner;
 
@@ -54,7 +54,7 @@ impl<'a> Lexer<'a> {
             let first_location = &self.scanner.locate();
 
             match first_char {
-                first_char if string::is_digit(first_char) => {
+                first_char if char_validator::is_digit(first_char) => {
                     let token = advance_and_lex!(self, Self::lex_num, first_char)?;
                     tokens.push(token);
                 }
@@ -68,14 +68,14 @@ impl<'a> Lexer<'a> {
                     self.scanner.advance();
 
                     let second_char = self.scanner.read();
-                    if second_char.is_none_or(|c| !string::is_id_domain(c)) {
+                    if second_char.is_none_or(|c| !char_validator::is_id_domain(c)) {
                         let lexeme = String::from(first_char);
                         let location = Range::new(first_location.begin, first_location.end);
                         let token = Token::new(TokenKind::Identifier(lexeme), location);
                         tokens.push(token);
 
                         continue;
-                    } else if second_char.is_some_and(|c| string::is_id_domain(c) && c != "짓") {
+                    } else if second_char.is_some_and(|c| char_validator::is_id_domain(c) && c != "짓") {
                         let init_seg_end = self.scanner.locate().end;
                         self.scanner.advance();
 
@@ -91,7 +91,7 @@ impl<'a> Lexer<'a> {
                     self.scanner.advance();
 
                     let third_char = self.scanner.read();
-                    if third_char.is_some_and(string::is_id_domain) {
+                    if third_char.is_some_and(char_validator::is_id_domain) {
                         let init_seg_end = self.scanner.locate().end;
                         self.scanner.advance();
 
@@ -151,8 +151,8 @@ impl<'a> Lexer<'a> {
                     self.scanner.advance();
                     self.skip_comment();
                 }
-                s if string::is_whitespace(s) => self.scanner.advance(),
-                s if string::is_id_domain(s) => {
+                s if char_validator::is_whitespace(s) => self.scanner.advance(),
+                s if char_validator::is_id_domain(s) => {
                     let token = self.lex_identifier(&self.scanner.locate(), &String::new())?;
                     tokens.push(token);
                 }
@@ -192,7 +192,7 @@ impl<'a> Lexer<'a> {
             let location = Range::new(begin, self.scanner.locate().end);
             return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
         };
-        if !string::is_digit(x) {
+        if !char_validator::is_digit(x) {
             let location = Range::new(begin, self.scanner.locate().end);
             return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
         }
@@ -223,14 +223,14 @@ impl<'a> Lexer<'a> {
 
                 Ok(Token::new(TokenKind::Bool(false), location))
             }
-            Some(x) if string::is_id_domain(x) => {
+            Some(x) if char_validator::is_id_domain(x) => {
                 let begin_chars = String::from("거") + x;
                 self.scanner.advance();
                 let token = self.lex_identifier(first_location, &begin_chars)?;
 
                 Ok(token)
             }
-            Some(x) if !string::is_whitespace(x) => {
+            Some(x) if !char_validator::is_whitespace(x) => {
                 Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()))
             }
             _ => {
@@ -247,7 +247,7 @@ impl<'a> Lexer<'a> {
         let mut lexeme_end = *init_seg_end;
 
         while let Some(x) = self.scanner.read() {
-            if !string::is_id_domain(x) {
+            if !char_validator::is_id_domain(x) {
                 break;
             }
 
@@ -265,7 +265,7 @@ impl<'a> Lexer<'a> {
         let mut lexeme = String::from(begin_chars);
 
         while let Some(x) = self.scanner.read() {
-            if !string::is_id_domain(x) {
+            if !char_validator::is_id_domain(x) {
                 break;
             }
 
@@ -343,14 +343,14 @@ impl<'a> Lexer<'a> {
 
                 Ok(Token::new(TokenKind::Disjunct, location))
             }
-            Some(x) if komi_util::string::is_id_domain(x) => {
+            Some(x) if komi_util::char_validator::is_id_domain(x) => {
                 let begin_chars = String::from("또") + x;
                 self.scanner.advance();
                 let token = self.lex_identifier(first_location, &begin_chars)?;
 
                 Ok(token)
             }
-            Some(x) if !string::is_whitespace(x) => {
+            Some(x) if !char_validator::is_whitespace(x) => {
                 Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()))
             }
             _ => {
@@ -382,7 +382,7 @@ impl<'a> Lexer<'a> {
         let mut lexeme = first_char.to_string();
 
         while let Some(x) = self.scanner.read() {
-            if !string::is_digit(x) {
+            if !char_validator::is_digit(x) {
                 break;
             }
 
