@@ -21,19 +21,6 @@ struct Lexer<'a> {
     scanner: SourceScanner<'a>,
 }
 
-macro_rules! advance_and_lex {
-    ($self:ident, $lex_fn:expr $(,)?) => {{
-        let first_location = $self.scanner.locate();
-        $self.scanner.advance();
-        $lex_fn($self, &first_location)
-    }};
-    ($self:ident, $lex_fn:expr, $first_char:expr $(,)?) => {{
-        let first_location = $self.scanner.locate();
-        $self.scanner.advance();
-        $lex_fn($self, &first_location, $first_char)
-    }};
-}
-
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
         Self { scanner: SourceScanner::new(source) }
@@ -55,11 +42,13 @@ impl<'a> Lexer<'a> {
 
             match first_char {
                 first_char if char_validator::is_digit(first_char) => {
-                    let token = advance_and_lex!(self, Self::lex_num, first_char)?;
+                    self.scanner.advance();
+                    let token = self.lex_num(first_location, first_char)?;
                     tokens.push(token);
                 }
                 "참" => {
-                    let token = advance_and_lex!(self, Self::lex_true)?;
+                    self.scanner.advance();
+                    let token = self.lex_true(first_location)?;
                     tokens.push(token);
                 }
                 "거" => {
@@ -108,43 +97,53 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "+" => {
-                    let token = advance_and_lex!(self, Self::lex_plus)?;
+                    self.scanner.advance();
+                    let token = self.lex_plus(first_location)?;
                     tokens.push(token);
                 }
                 "-" => {
-                    let token = advance_and_lex!(self, Self::lex_minus)?;
+                    self.scanner.advance();
+                    let token = self.lex_minus(first_location)?;
                     tokens.push(token);
                 }
                 "*" => {
-                    let token = advance_and_lex!(self, Self::lex_asterisk)?;
+                    self.scanner.advance();
+                    let token = self.lex_asterisk(first_location)?;
                     tokens.push(token);
                 }
                 "/" => {
-                    let token = advance_and_lex!(self, Self::lex_slash)?;
+                    self.scanner.advance();
+                    let token = self.lex_slash(first_location)?;
                     tokens.push(token);
                 }
                 "%" => {
-                    let token = advance_and_lex!(self, Self::lex_percent)?;
+                    self.scanner.advance();
+                    let token = self.lex_percent(first_location)?;
                     tokens.push(token);
                 }
                 "(" => {
-                    let token = advance_and_lex!(self, Self::lex_lparen)?;
+                    self.scanner.advance();
+                    let token = self.lex_lparen(first_location)?;
                     tokens.push(token);
                 }
                 ")" => {
-                    let token = advance_and_lex!(self, Self::lex_rparen)?;
+                    self.scanner.advance();
+                    let token = self.lex_rparen(first_location)?;
                     tokens.push(token);
                 }
                 "!" => {
-                    let token = advance_and_lex!(self, Self::lex_bang)?;
+                    self.scanner.advance();
+                    let token = self.lex_bang(first_location)?;
                     tokens.push(token);
                 }
                 "그" => {
-                    let token = advance_and_lex!(self, Self::lex_conjunct)?;
+                    self.scanner.advance();
+                    let token = self.lex_conjunct(first_location)?;
                     tokens.push(token);
                 }
                 "또" => {
-                    let token = advance_and_lex!(self, Self::lex_disjunct_or_identifier)?;
+                    self.scanner.advance();
+                    let token = self.lex_disjunct_or_identifier(first_location)?;
                     tokens.push(token);
                 }
                 "#" => {
