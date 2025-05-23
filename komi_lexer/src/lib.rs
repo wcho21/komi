@@ -42,6 +42,10 @@ impl<'a> Lexer<'a> {
         location
     }
 
+    fn expect_or(char: &'a str) -> Token {
+        todo!()
+    }
+
     pub fn lex(&mut self) -> ResTokens {
         let mut tokens: Vec<Token> = vec![];
 
@@ -131,7 +135,70 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "그" => {
-                    let token = self.lex_conjunct(&first_location)?;
+                    let second_char = self.scanner.read();
+                    if second_char.is_none_or(is_not_id_domain) {
+                        let first_char_end = first_location.end;
+                        let lexeme = String::from(first_char);
+                        let location = Range::new(first_location.begin, first_char_end);
+                        let token = Token::new(TokenKind::Identifier(lexeme), location);
+                        tokens.push(token);
+
+                        continue;
+                    } else if second_char.is_some_and(|c| is_id_domain_other_than(c, "리")) {
+                        let second_char_end = self.scanner.locate().end;
+                        self.scanner.advance();
+
+                        let init_seg = String::from(first_char) + second_char.unwrap();
+                        let token =
+                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &second_char_end)?;
+                        tokens.push(token);
+
+                        continue;
+                    }
+
+                    let second_location = self.locate_and_advance();
+
+                    let third_char = self.scanner.read();
+                    if third_char.is_none_or(is_not_id_domain) {
+                        let second_char_end = second_location.end;
+                        let lexeme = String::from(first_char) + second_char.unwrap();
+                        let location = Range::new(first_location.begin, second_char_end);
+                        let token = Token::new(TokenKind::Identifier(lexeme), location);
+                        tokens.push(token);
+
+                        continue;
+                    } else if third_char.is_some_and(|c| is_id_domain_other_than(c, "고")) {
+                        let third_char_end = self.scanner.locate().end;
+                        self.scanner.advance();
+
+                        let init_seg = String::from(first_char) + second_char.unwrap() + third_char.unwrap();
+                        let token =
+                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &third_char_end)?;
+                        tokens.push(token);
+
+                        continue;
+                    }
+
+                    let third_location = self.locate_and_advance();
+
+                    let fourth_char = self.scanner.read();
+                    if fourth_char.is_some_and(char_validator::is_id_domain) {
+                        let fourth_char_end = self.scanner.locate().end;
+                        self.scanner.advance();
+
+                        let init_seg = String::from(first_char)
+                            + second_char.unwrap()
+                            + third_char.unwrap()
+                            + fourth_char.unwrap();
+                        let token =
+                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &fourth_char_end)?;
+                        tokens.push(token);
+
+                        continue;
+                    }
+
+                    let lexeme_location = Range::new(first_location.begin, third_location.end);
+                    let token = Token::new(TokenKind::Conjunct, lexeme_location);
                     tokens.push(token);
                 }
                 "또" => {
@@ -480,7 +547,15 @@ mod tests {
     #[case::single_hangul_char("가", vec![mktoken!(TokenKind::Identifier(String::from("가")), loc 0, 0, 0, 1)])]
     #[case::first_char_false_but_end("거", vec![mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1)])]
     #[case::first_char_false_but_second_non_id("거 ", vec![mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1)])]
-    #[case::first_char_false_but_second_other_id("거짔", vec![mktoken!(TokenKind::Identifier(String::from("거짔")), loc 0, 0, 0, 2)])]
+    #[case::first_char_false_but_second_other_id("거a", vec![mktoken!(TokenKind::Identifier(String::from("거a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_false_but_third_other_id("거짓a", vec![mktoken!(TokenKind::Identifier(String::from("거짓a")), loc 0, 0, 0, 3)])]
+    #[case::first_char_conjunct_but_end("그", vec![mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1)])]
+    #[case::first_char_conjunct_but_second_non_id("그 ", vec![mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1)])]
+    #[case::first_char_conjunct_but_second_other_id("그a", vec![mktoken!(TokenKind::Identifier(String::from("그a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_conjunct_but_end("그리", vec![mktoken!(TokenKind::Identifier(String::from("그리")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_conjunct_but_third_non_id("그리 ", vec![mktoken!(TokenKind::Identifier(String::from("그리")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_conjunct_but_third_other_id("그리a", vec![mktoken!(TokenKind::Identifier(String::from("그리a")), loc 0, 0, 0, 3)])]
+    #[case::first_three_chars_conjunct_but_fourth_other_id("그리고a", vec![mktoken!(TokenKind::Identifier(String::from("그리고a")), loc 0, 0, 0, 4)])]
     #[case::first_two_chars_false_but_not_third("거짓a", vec![mktoken!(TokenKind::Identifier(String::from("거짓a")), loc 0, 0, 0, 3)])]
     #[case::first_char_disjunct_but_end("또", vec![mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1)])]
     #[case::first_char_disjunct_but_not_second("또늗", vec![mktoken!(TokenKind::Identifier(String::from("또늗")), loc 0, 0, 0, 2)])]
