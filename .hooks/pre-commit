@@ -2,9 +2,13 @@
 # pre-commit: pre commit hook for git
 
 # block commit if codes not formatted
+if ! command -v cargo >/dev/null 2>&1; then
+  echo "Warning: pre-commit hook didn't work since 'cargo' is not installed."
+  exit 0
+fi
+
 cargo fmt --check
 if [ $? -ne 0 ]; then
-  echo ""
   echo "Info: pre-commit hook blocked your commit."
   echo "Info: Rust code is not properly formatted. run 'cargo fmt' to fix."
   exit 1

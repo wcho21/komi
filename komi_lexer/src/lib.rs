@@ -9,7 +9,7 @@ mod utf8_tape;
 
 pub use err::{LexError, LexErrorKind};
 use komi_syntax::{Token, TokenKind};
-use komi_util::string;
+use komi_util::char_validator;
 use komi_util::{Range, Scanner, Spot};
 use source_scanner::SourceScanner;
 
@@ -21,143 +21,82 @@ struct Lexer<'a> {
     scanner: SourceScanner<'a>,
 }
 
-macro_rules! advance_and_lex {
-    ($self:ident, $lex_fn:expr $(,)?) => {{
-        let first_location = $self.scanner.locate();
-        $self.scanner.advance();
-        $lex_fn($self, &first_location)
-    }};
-    ($self:ident, $lex_fn:expr, $first_char:expr $(,)?) => {{
-        let first_location = $self.scanner.locate();
-        $self.scanner.advance();
-        $lex_fn($self, &first_location, $first_char)
-    }};
-}
-
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
         Self { scanner: SourceScanner::new(source) }
     }
 
-    // TODO: replace locate and advance logic with this, to force marking the previous location.
-    fn locate_and_advance(&mut self) -> Range {
-        let location = self.scanner.locate();
-        self.scanner.advance();
-
-        location
-    }
-
     pub fn lex(&mut self) -> ResTokens {
         let mut tokens: Vec<Token> = vec![];
 
-        while let Some(first_char) = self.scanner.read() {
-            let first_location = &self.scanner.locate();
+        while let Some(char) = self.scanner.read() {
+            let location = self.locate_and_advance();
 
-            match first_char {
-                first_char if string::is_digit(first_char) => {
-                    let token = advance_and_lex!(self, Self::lex_num, first_char)?;
+            match char {
+                char if char_validator::is_digit(char) => {
+                    let token = self.lex_num(&location, char)?;
                     tokens.push(token);
                 }
                 "참" => {
-                    let token = advance_and_lex!(self, Self::lex_true)?;
+                    let token = Token::new(TokenKind::Bool(true), location);
                     tokens.push(token);
                 }
                 "거" => {
-                    // TODO: move this advance out of while above.
-                    //       you should replace advance_and_lex! macros with lower level operations.
-                    self.scanner.advance();
-
-                    let second_char = self.scanner.read();
-                    if second_char.is_none_or(|c| !string::is_id_domain(c)) {
-                        let lexeme = String::from(first_char);
-                        let location = Range::new(first_location.begin, first_location.end);
-                        let token = Token::new(TokenKind::Identifier(lexeme), location);
-                        tokens.push(token);
-
-                        continue;
-                    } else if second_char.is_some_and(|c| string::is_id_domain(c) && c != "짓") {
-                        let init_seg_end = self.scanner.locate().end;
-                        self.scanner.advance();
-
-                        let init_seg = String::from(first_char) + second_char.unwrap();
-                        let token =
-                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &init_seg_end)?;
-                        tokens.push(token);
-
-                        continue;
-                    }
-
-                    let second_location = &self.scanner.locate();
-                    self.scanner.advance();
-
-                    let third_char = self.scanner.read();
-                    if third_char.is_some_and(string::is_id_domain) {
-                        let init_seg_end = self.scanner.locate().end;
-                        self.scanner.advance();
-
-                        let init_seg = String::from(first_char) + second_char.unwrap() + third_char.unwrap();
-                        let token =
-                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &init_seg_end)?;
-                        tokens.push(token);
-
-                        continue;
-                    }
-
-                    let location = Range::new(first_location.begin, second_location.end);
-                    let token = Token::new(TokenKind::Bool(false), location);
+                    let token = self.expect_or_lex_identifier("짓", TokenKind::Bool(false), char, &location)?;
                     tokens.push(token);
                 }
                 "+" => {
-                    let token = advance_and_lex!(self, Self::lex_plus)?;
+                    let token = Token::new(TokenKind::Plus, location);
                     tokens.push(token);
                 }
                 "-" => {
-                    let token = advance_and_lex!(self, Self::lex_minus)?;
+                    let token = Token::new(TokenKind::Minus, location);
                     tokens.push(token);
                 }
                 "*" => {
-                    let token = advance_and_lex!(self, Self::lex_asterisk)?;
+                    let token = Token::new(TokenKind::Asterisk, location);
                     tokens.push(token);
                 }
                 "/" => {
-                    let token = advance_and_lex!(self, Self::lex_slash)?;
+                    let token = Token::new(TokenKind::Slash, location);
                     tokens.push(token);
                 }
                 "%" => {
-                    let token = advance_and_lex!(self, Self::lex_percent)?;
+                    let token = Token::new(TokenKind::Percent, location);
                     tokens.push(token);
                 }
                 "(" => {
-                    let token = advance_and_lex!(self, Self::lex_lparen)?;
+                    let token = Token::new(TokenKind::LParen, location);
                     tokens.push(token);
                 }
                 ")" => {
-                    let token = advance_and_lex!(self, Self::lex_rparen)?;
+                    let token = Token::new(TokenKind::RParen, location);
                     tokens.push(token);
                 }
                 "!" => {
-                    let token = advance_and_lex!(self, Self::lex_bang)?;
+                    let token = Token::new(TokenKind::Bang, location);
                     tokens.push(token);
                 }
                 "그" => {
-                    let token = advance_and_lex!(self, Self::lex_conjunct)?;
+                    let token = self.expect_or_lex_identifier("리고", TokenKind::Conjunct, char, &location)?;
                     tokens.push(token);
                 }
                 "또" => {
-                    let token = advance_and_lex!(self, Self::lex_disjunct_or_identifier)?;
+                    let token = self.expect_or_lex_identifier("는", TokenKind::Disjunct, char, &location)?;
                     tokens.push(token);
                 }
                 "#" => {
-                    self.scanner.advance();
                     self.skip_comment();
                 }
-                s if string::is_whitespace(s) => self.scanner.advance(),
-                s if string::is_id_domain(s) => {
-                    let token = self.lex_identifier(&self.scanner.locate(), &String::new())?;
+                s if char_validator::is_in_identifier_domain(s) => {
+                    let token = self.lex_identifier_with_init_seg(&String::from(s), &location)?;
                     tokens.push(token);
                 }
+                s if char_validator::is_whitespace(s) => {
+                    continue;
+                }
                 _ => {
-                    return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
+                    return Err(LexError::new(LexErrorKind::IllegalChar, location));
                 }
             }
         }
@@ -192,7 +131,7 @@ impl<'a> Lexer<'a> {
             let location = Range::new(begin, self.scanner.locate().end);
             return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
         };
-        if !string::is_digit(x) {
+        if !char_validator::is_digit(x) {
             let location = Range::new(begin, self.scanner.locate().end);
             return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
         }
@@ -206,160 +145,6 @@ impl<'a> Lexer<'a> {
         let token = Self::parse_num_lexeme(&lexeme, Range::new(begin, end));
 
         Ok(token)
-    }
-
-    fn lex_true(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Bool(true), *first_location))
-    }
-
-    /// Returns a false literal token `거짓` if successfully lexed, or error otherwise.
-    ///
-    /// Call after advancing the scanner `self.scanner` past the initial character `거`, with its location passed as `first_location`.
-    fn lex_false_or_identifier(&mut self, first_location: &Range) -> ResToken {
-        match self.scanner.read() {
-            Some("짓") => {
-                let location = Range::new(first_location.begin, self.scanner.locate().end);
-                self.scanner.advance();
-
-                Ok(Token::new(TokenKind::Bool(false), location))
-            }
-            Some(x) if string::is_id_domain(x) => {
-                let begin_chars = String::from("거") + x;
-                self.scanner.advance();
-                let token = self.lex_identifier(first_location, &begin_chars)?;
-
-                Ok(token)
-            }
-            Some(x) if !string::is_whitespace(x) => {
-                Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()))
-            }
-            _ => {
-                // For whitespace or None
-                let token = Token::new(TokenKind::Identifier(String::from("거")), *first_location);
-
-                Ok(token)
-            }
-        }
-    }
-
-    fn lex_identifier_with_init_seg(&mut self, lexeme_begin: &Spot, init_seg: &str, init_seg_end: &Spot) -> ResToken {
-        let mut lexeme = String::from(init_seg);
-        let mut lexeme_end = *init_seg_end;
-
-        while let Some(x) = self.scanner.read() {
-            if !string::is_id_domain(x) {
-                break;
-            }
-
-            lexeme.push_str(x);
-            lexeme_end = self.scanner.locate().end;
-
-            self.scanner.advance();
-        }
-
-        let location = Range::new(*lexeme_begin, lexeme_end);
-        Ok(Token::new(TokenKind::Identifier(lexeme), location))
-    }
-
-    fn lex_identifier(&mut self, first_location: &Range, begin_chars: &str) -> ResToken {
-        let mut lexeme = String::from(begin_chars);
-
-        while let Some(x) = self.scanner.read() {
-            if !string::is_id_domain(x) {
-                break;
-            }
-
-            lexeme.push_str(x);
-
-            self.scanner.advance();
-        }
-
-        let location = Range::new(first_location.begin, self.scanner.locate().end);
-        Ok(Token::new(TokenKind::Identifier(lexeme), location))
-    }
-
-    fn lex_plus(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Plus, *first_location))
-    }
-
-    fn lex_minus(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Minus, *first_location))
-    }
-
-    fn lex_asterisk(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Asterisk, *first_location))
-    }
-
-    fn lex_slash(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Slash, *first_location))
-    }
-
-    fn lex_percent(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Percent, *first_location))
-    }
-
-    fn lex_lparen(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::LParen, *first_location))
-    }
-
-    fn lex_rparen(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::RParen, *first_location))
-    }
-
-    fn lex_bang(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Bang, *first_location))
-    }
-
-    /// Returns a conjunction token `그리고` if successfully lexed, or error otherwise.
-    ///
-    /// Call after advancing the scanner `self.scanner` past the initial character `그`, with its location passed as `first_location`.
-    fn lex_conjunct(&mut self, first_location: &Range) -> ResToken {
-        let Some("리") = self.scanner.read() else {
-            // TODO: return an identifier token, when the identifier token is implemented.
-            return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
-        };
-
-        self.scanner.advance();
-        let Some("고") = self.scanner.read() else {
-            // TODO: return an identifier token, when the identifier token is implemented.
-            return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
-        };
-
-        let location = Range::new(first_location.begin, self.scanner.locate().end);
-        self.scanner.advance();
-
-        // TODO: enough to make a token, is helper function `from_*()` in syntax token library really necessary, or just increasing bundled output size?
-        Ok(Token::new(TokenKind::Conjunct, location))
-    }
-
-    /// Returns a conjunction token `또는` if successfully lexed, or error otherwise.
-    ///
-    /// Call after advancing the scanner `self.scanner` past the initial character `또`, with its location passed as `first_location`.
-    fn lex_disjunct_or_identifier(&mut self, first_location: &Range) -> ResToken {
-        match self.scanner.read() {
-            Some("는") => {
-                let location = Range::new(first_location.begin, self.scanner.locate().end);
-                self.scanner.advance();
-
-                Ok(Token::new(TokenKind::Disjunct, location))
-            }
-            Some(x) if komi_util::string::is_id_domain(x) => {
-                let begin_chars = String::from("또") + x;
-                self.scanner.advance();
-                let token = self.lex_identifier(first_location, &begin_chars)?;
-
-                Ok(token)
-            }
-            Some(x) if !string::is_whitespace(x) => {
-                Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()))
-            }
-            _ => {
-                // For whitespace or None
-                let token = Token::new(TokenKind::Identifier(String::from("또")), *first_location);
-
-                Ok(token)
-            }
-        }
     }
 
     fn skip_comment(&mut self) -> () {
@@ -382,7 +167,7 @@ impl<'a> Lexer<'a> {
         let mut lexeme = first_char.to_string();
 
         while let Some(x) = self.scanner.read() {
-            if !string::is_digit(x) {
+            if !char_validator::is_digit(x) {
                 break;
             }
 
@@ -391,6 +176,104 @@ impl<'a> Lexer<'a> {
         }
 
         lexeme
+    }
+
+    /// Advances the scanner and returns a location before advancing.
+    fn locate_and_advance(&mut self) -> Range {
+        let location = self.scanner.locate();
+        self.scanner.advance();
+
+        location
+    }
+
+    /// Returns a token with the kind `expected_kind` if the scanner reads the expected characters `expected`; otherwise, returns an identifier token.
+    fn expect_or_lex_identifier(
+        &mut self,
+        expected: &str,
+        expected_kind: TokenKind,
+        first_char: &'a str,
+        first_location: &Range,
+    ) -> ResToken {
+        // Stores characters to lex an identifier token if an unexpected character encountered.
+        let mut init_seg = String::from(first_char);
+        let mut init_seg_location = *first_location;
+
+        // Return an identifier token if unexpected character encountered.
+        for expected_char in expected.chars().map(|c| String::from(c)) {
+            let char = self.scanner.read();
+
+            if !Self::is_equal_str(char, &expected_char) {
+                let token = self.lex_identifier_with_init_seg_or(char, &init_seg, &init_seg_location.begin, || {
+                    // An identifier with characters read so far.
+                    Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
+                })?;
+                return Ok(token);
+            }
+
+            init_seg.push_str(char.unwrap());
+            init_seg_location.end = self.locate_and_advance().end;
+        }
+
+        // All expected characters matched; return the token with the expected kind.
+        let char = self.scanner.read();
+        let token = self.lex_identifier_with_init_seg_or(char, &init_seg, &init_seg_location.begin, || {
+            Ok(Token::new(expected_kind.clone(), init_seg_location))
+        })?;
+        return Ok(token);
+    }
+
+    /// Returns an identifier token if `char_read` is a valid identifier character; otherwise, returns a token produced by `alt_op`.
+    ///
+    /// - `char_read`: A character just read by the scanner.
+    /// - `init_seg`: The initial segment of characters already read by the scanner.
+    /// - `init_seg_begin`: The beginning spot of the `init_seg`.
+    /// - `alt_op`: A closure to invoke if an identifier cannot be lexed.
+    fn lex_identifier_with_init_seg_or<F>(
+        &mut self,
+        char_read: Option<&'a str>,
+        init_seg: &String,
+        init_seg_begin: &Spot,
+        alt_op: F,
+    ) -> ResToken
+    where
+        F: Fn() -> ResToken,
+    {
+        match char_read {
+            Some(c) if char_validator::is_in_identifier_domain(c) => {
+                // Pass what the scanner just read to the identifier-lexing function below.
+                let init_seg = init_seg.to_owned() + c;
+                let char_end = self.scanner.locate().end;
+                self.scanner.advance();
+
+                let token = self.lex_identifier_with_init_seg(&init_seg, &Range::new(*init_seg_begin, char_end))?;
+                Ok(token)
+            }
+            _ => alt_op(),
+        }
+    }
+
+    /// Returns an identifier token with the characters `init_seg` and subsequent characters the scanner read.
+    fn lex_identifier_with_init_seg(&mut self, init_seg: &String, init_seg_location: &Range) -> ResToken {
+        let mut lexeme = init_seg.clone();
+        let mut lexeme_location = init_seg_location.clone();
+
+        while let Some(x) = self.scanner.read() {
+            if !char_validator::is_in_identifier_domain(x) {
+                break;
+            }
+
+            lexeme.push_str(x);
+            lexeme_location.end = self.scanner.locate().end;
+
+            self.scanner.advance();
+        }
+
+        Ok(Token::new(TokenKind::Identifier(lexeme), lexeme_location))
+    }
+
+    /// Returns true if `source` is `Some` and the value is equal to `target`.
+    fn is_equal_str(source: Option<&str>, target: &str) -> bool {
+        source.is_some_and(|c| c == target)
     }
 }
 
@@ -479,7 +362,7 @@ mod tests {
     #[case::bang("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)])]
     #[case::conjunct("그리고", vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)])]
     #[case::disjunct("또는", vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)])]
-    fn single_token(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn non_value_token(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
@@ -488,26 +371,36 @@ mod tests {
     #[case::single_hangul_char("가", vec![mktoken!(TokenKind::Identifier(String::from("가")), loc 0, 0, 0, 1)])]
     #[case::first_char_false_but_end("거", vec![mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1)])]
     #[case::first_char_false_but_second_non_id("거 ", vec![mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1)])]
-    #[case::first_char_false_but_second_other_id("거짔", vec![mktoken!(TokenKind::Identifier(String::from("거짔")), loc 0, 0, 0, 2)])]
+    #[case::first_char_false_but_second_other_id("거a", vec![mktoken!(TokenKind::Identifier(String::from("거a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_false_but_third_other_id("거짓a", vec![mktoken!(TokenKind::Identifier(String::from("거짓a")), loc 0, 0, 0, 3)])]
+    #[case::first_char_conjunct_but_end("그", vec![mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1)])]
+    #[case::first_char_conjunct_but_second_non_id("그 ", vec![mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1)])]
+    #[case::first_char_conjunct_but_second_other_id("그a", vec![mktoken!(TokenKind::Identifier(String::from("그a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_conjunct_but_end("그리", vec![mktoken!(TokenKind::Identifier(String::from("그리")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_conjunct_but_third_non_id("그리 ", vec![mktoken!(TokenKind::Identifier(String::from("그리")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_conjunct_but_third_other_id("그리a", vec![mktoken!(TokenKind::Identifier(String::from("그리a")), loc 0, 0, 0, 3)])]
+    #[case::first_three_chars_conjunct_but_fourth_other_id("그리고a", vec![mktoken!(TokenKind::Identifier(String::from("그리고a")), loc 0, 0, 0, 4)])]
     #[case::first_two_chars_false_but_not_third("거짓a", vec![mktoken!(TokenKind::Identifier(String::from("거짓a")), loc 0, 0, 0, 3)])]
     #[case::first_char_disjunct_but_end("또", vec![mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1)])]
-    #[case::first_char_disjunct_but_not_second("또늗", vec![mktoken!(TokenKind::Identifier(String::from("또늗")), loc 0, 0, 0, 2)])]
-    // TODO: add first_two_chars_disjuct_but_not_third
+    #[case::first_char_disjunct_but_second_non_id("또" , vec![mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1)])]
+    #[case::first_char_disjunct_but_second_other_id("또a", vec![mktoken!(TokenKind::Identifier(String::from("또a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_disjunct_but_third_other_id("또는a", vec![mktoken!(TokenKind::Identifier(String::from("또는a")), loc 0, 0, 0, 3)])]
     fn single_identifier(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
     #[rstest]
-    /// Should not fail, since the lexer does not know the syntax.
-    #[case::two_pluses("+ +", vec![
-        mktoken!(TokenKind::Plus, loc 0, 0, 0, "+".len()),
-        mktoken!(TokenKind::Plus, loc 0, "+ ".len(), 0, "+ +".len()),
-    ])]
     #[case::addition_expression("12 + 34.675", vec![
         mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len()),
         mktoken!(TokenKind::Plus, loc 0, "12 ".len(), 0, "12 +".len()),
         mktoken!(TokenKind::Number(34.675), loc 0, "12 + ".len(), 0, "12 + 34.675".len()),
     ])]
+    /// Should not fail in all below cases, since the lexer does not know the syntax.
+    #[case::two_pluses("+ +", vec![
+        mktoken!(TokenKind::Plus, loc 0, 0, 0, "+".len()),
+        mktoken!(TokenKind::Plus, loc 0, "+ ".len(), 0, "+ +".len()),
+    ])]
+    /// Cases below test locations when the first identifier token is lexed from the same lexing function with the second token.
     #[case::false_false("거짓 거짓", vec![
         mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2),
         mktoken!(TokenKind::Bool(false), loc 0, 3, 0, 5),
@@ -516,13 +409,53 @@ mod tests {
         mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1),
         mktoken!(TokenKind::Bool(false), loc 0, 2, 0, 4),
     ])]
-    #[case::id2_false("거짔 거짓", vec![
-        mktoken!(TokenKind::Identifier(String::from("거짔")), loc 0, 0, 0, 2),
+    #[case::id2_false("거a 거짓", vec![
+        mktoken!(TokenKind::Identifier(String::from("거a")), loc 0, 0, 0, 2),
         mktoken!(TokenKind::Bool(false), loc 0, 3, 0, 5),
     ])]
     #[case::id3_false("거짓a 거짓", vec![
         mktoken!(TokenKind::Identifier(String::from("거짓a")), loc 0, 0, 0, 3),
         mktoken!(TokenKind::Bool(false), loc 0, 4, 0, 6),
+    ])]
+    #[case::conjunct_conjunct("그리고 그리고", vec![
+        mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3),
+        mktoken!(TokenKind::Conjunct, loc 0, 4, 0, 7),
+    ])]
+    #[case::id1_conjuct("그 그리고", vec![
+        mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1),
+        mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
+    ])]
+    #[case::id2_conjunct("그a 그리고", vec![
+        mktoken!(TokenKind::Identifier(String::from("그a")), loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Conjunct, loc 0, 3, 0, 6),
+    ])]
+    #[case::id3_conjunct("그리 그리고", vec![
+        mktoken!(TokenKind::Identifier(String::from("그리")), loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Conjunct, loc 0, 3, 0, 6),
+    ])]
+    #[case::id4_conjunct("그리a 그리고", vec![
+        mktoken!(TokenKind::Identifier(String::from("그리a")), loc 0, 0, 0, 3),
+        mktoken!(TokenKind::Conjunct, loc 0, 4, 0, 7),
+    ])]
+    #[case::id4_conjunct("그리고a 그리고", vec![
+        mktoken!(TokenKind::Identifier(String::from("그리고a")), loc 0, 0, 0, 4),
+        mktoken!(TokenKind::Conjunct, loc 0, 5, 0, 8),
+    ])]
+    #[case::disjunct_disjunct("또는 또는", vec![
+        mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Disjunct, loc 0, 3, 0, 5),
+    ])]
+    #[case::id1_disjunct("또 또는", vec![
+        mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1),
+        mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
+    ])]
+    #[case::id2_disjunct("또a 또는", vec![
+        mktoken!(TokenKind::Identifier(String::from("또a")), loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Disjunct, loc 0, 3, 0, 5),
+    ])]
+    #[case::id3_disjunct("또는a 또는", vec![
+        mktoken!(TokenKind::Identifier(String::from("또는a")), loc 0, 0, 0, 3),
+        mktoken!(TokenKind::Disjunct, loc 0, 4, 0, 6),
     ])]
     fn multiple_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
