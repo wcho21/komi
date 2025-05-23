@@ -38,16 +38,15 @@ impl<'a> Lexer<'a> {
         let mut tokens: Vec<Token> = vec![];
 
         while let Some(first_char) = self.scanner.read() {
-            let first_location = &self.scanner.locate();
-            self.scanner.advance();
+            let first_location = self.locate_and_advance();
 
             match first_char {
                 first_char if char_validator::is_digit(first_char) => {
-                    let token = self.lex_num(first_location, first_char)?;
+                    let token = self.lex_num(&first_location, first_char)?;
                     tokens.push(token);
                 }
                 "참" => {
-                    let token = self.lex_true(first_location)?;
+                    let token = self.lex_true(&first_location)?;
                     tokens.push(token);
                 }
                 "거" => {
@@ -71,8 +70,7 @@ impl<'a> Lexer<'a> {
                         continue;
                     }
 
-                    let second_location = &self.scanner.locate();
-                    self.scanner.advance();
+                    let second_location = self.locate_and_advance();
 
                     let third_char = self.scanner.read();
                     if third_char.is_some_and(char_validator::is_id_domain) {
@@ -92,43 +90,43 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "+" => {
-                    let token = self.lex_plus(first_location)?;
+                    let token = self.lex_plus(&first_location)?;
                     tokens.push(token);
                 }
                 "-" => {
-                    let token = self.lex_minus(first_location)?;
+                    let token = self.lex_minus(&first_location)?;
                     tokens.push(token);
                 }
                 "*" => {
-                    let token = self.lex_asterisk(first_location)?;
+                    let token = self.lex_asterisk(&first_location)?;
                     tokens.push(token);
                 }
                 "/" => {
-                    let token = self.lex_slash(first_location)?;
+                    let token = self.lex_slash(&first_location)?;
                     tokens.push(token);
                 }
                 "%" => {
-                    let token = self.lex_percent(first_location)?;
+                    let token = self.lex_percent(&first_location)?;
                     tokens.push(token);
                 }
                 "(" => {
-                    let token = self.lex_lparen(first_location)?;
+                    let token = self.lex_lparen(&first_location)?;
                     tokens.push(token);
                 }
                 ")" => {
-                    let token = self.lex_rparen(first_location)?;
+                    let token = self.lex_rparen(&first_location)?;
                     tokens.push(token);
                 }
                 "!" => {
-                    let token = self.lex_bang(first_location)?;
+                    let token = self.lex_bang(&first_location)?;
                     tokens.push(token);
                 }
                 "그" => {
-                    let token = self.lex_conjunct(first_location)?;
+                    let token = self.lex_conjunct(&first_location)?;
                     tokens.push(token);
                 }
                 "또" => {
-                    let token = self.lex_disjunct_or_identifier(first_location)?;
+                    let token = self.lex_disjunct_or_identifier(&first_location)?;
                     tokens.push(token);
                 }
                 "#" => {
@@ -142,7 +140,7 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 _ => {
-                    return Err(LexError::new(LexErrorKind::IllegalChar, *first_location));
+                    return Err(LexError::new(LexErrorKind::IllegalChar, first_location));
                 }
             }
         }
