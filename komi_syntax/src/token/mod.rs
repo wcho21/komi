@@ -8,6 +8,8 @@ pub enum TokenKind {
     Number(f64),
     /// A boolean `참` or `거짓`.
     Bool(bool),
+    /// A string segment, such as `사과` in `"사과"`, or `오렌지` in `"{사과}오렌지"`.
+    StringSegment(String),
     /// An identifier, such as `사과` or `오렌지`.
     Identifier(String),
     /// A plus `+`.
@@ -24,12 +26,22 @@ pub enum TokenKind {
     LParen,
     /// A right parenthesis `)`.
     RParen,
+    /// A left brace `{`.
+    LBrace,
+    /// A right brace `}`.
+    RBrace,
+    /// A left bracket `<`.
+    LBracket,
+    /// A right bracket `>`.
+    RBracket,
+    /// A quote `"`.
+    Quote,
+    /// A colon `:`.
+    Colon,
+    /// A comma `,`.
+    Comma,
     /// A bang `!`.
     Bang,
-    /// A conjunction `그리고`.
-    Conjunct,
-    /// A disjunction `또는`.
-    Disjunct,
     /// An equals `=`.
     Equals,
     /// A plus-equals `+=`,
@@ -42,6 +54,26 @@ pub enum TokenKind {
     SlashEquals,
     /// A percent-equals `%=`.
     PercentEquals,
+    /// A double-equals `==`.
+    DoubleEquals,
+    /// A bang-equals `!=`.
+    BangEquals,
+    /// A left-bracket-equals `<=`.
+    LBracketEquals,
+    /// A right-bracket-equals `>=`.
+    RBracketEquals,
+    /// A conjunction `그리고`.
+    Conjunct,
+    /// A disjunction `또는`.
+    Disjunct,
+    /// A function keyword `함수`.
+    Function,
+    /// An if-branch keyword `만약`.
+    IfBranch,
+    /// An else-branch keyword `아니면`.
+    ElseBranch,
+    /// An iteration keyword `반복`.
+    Iteration,
 }
 
 /// A token produced during lexing.

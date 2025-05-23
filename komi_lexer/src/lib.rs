@@ -73,6 +73,34 @@ impl<'a> Lexer<'a> {
                     let token = Token::new(TokenKind::RParen, location);
                     tokens.push(token);
                 }
+                "{" => {
+                    let token = Token::new(TokenKind::LBrace, location);
+                    tokens.push(token);
+                }
+                "}" => {
+                    let token = Token::new(TokenKind::RBrace, location);
+                    tokens.push(token);
+                }
+                "<" => {
+                    let token = Token::new(TokenKind::LBracket, location);
+                    tokens.push(token);
+                }
+                ">" => {
+                    let token = Token::new(TokenKind::RBracket, location);
+                    tokens.push(token);
+                }
+                "\"" => {
+                    let token = Token::new(TokenKind::Quote, location);
+                    tokens.push(token);
+                }
+                ":" => {
+                    let token = Token::new(TokenKind::Colon, location);
+                    tokens.push(token);
+                }
+                "," => {
+                    let token = Token::new(TokenKind::Comma, location);
+                    tokens.push(token);
+                }
                 "!" => {
                     let token = Token::new(TokenKind::Bang, location);
                     tokens.push(token);
@@ -83,6 +111,22 @@ impl<'a> Lexer<'a> {
                 }
                 "또" => {
                     let token = self.expect_or_lex_identifier("는", TokenKind::Disjunct, char, &location)?;
+                    tokens.push(token);
+                }
+                "함" => {
+                    let token = self.expect_or_lex_identifier("수", TokenKind::Function, char, &location)?;
+                    tokens.push(token);
+                }
+                "만" => {
+                    let token = self.expect_or_lex_identifier("약", TokenKind::IfBranch, char, &location)?;
+                    tokens.push(token);
+                }
+                "아" => {
+                    let token = self.expect_or_lex_identifier("니면", TokenKind::ElseBranch, char, &location)?;
+                    tokens.push(token);
+                }
+                "반" => {
+                    let token = self.expect_or_lex_identifier("복", TokenKind::Iteration, char, &location)?;
                     tokens.push(token);
                 }
                 "#" => {
@@ -340,14 +384,14 @@ mod tests {
     #[case::ending_with_two_dots("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
     #[case::ending_with_two_dots("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
     #[case::illegal_decimal("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
-    fn illegal_num(#[case] source: &str, #[case] expected: LexError) {
+    fn illegal_num_literal(#[case] source: &str, #[case] expected: LexError) {
         assert_lex_fail!(source, expected);
     }
 
     #[rstest]
     #[case::the_true("참", vec![mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)])]
     #[case::the_false("거짓", vec![mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2)])]
-    fn boolean(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn boolean_literal(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
@@ -359,10 +403,33 @@ mod tests {
     #[case::percent("%", vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)])]
     #[case::lparen("(", vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)])]
     #[case::rparen(")", vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)])]
+    #[case::lbrace("{", vec![mktoken!(TokenKind::LBrace, loc 0, 0, 0, 1)])]
+    #[case::lbrace("}", vec![mktoken!(TokenKind::RBrace, loc 0, 0, 0, 1)])]
+    #[case::lbracket("<", vec![mktoken!(TokenKind::LBracket, loc 0, 0, 0, 1)])]
+    #[case::rbracket(">", vec![mktoken!(TokenKind::RBracket, loc 0, 0, 0, 1)])]
+    #[case::quote("\"", vec![mktoken!(TokenKind::Quote, loc 0, 0, 0, 1)])]
+    #[case::colon(":", vec![mktoken!(TokenKind::Colon, loc 0, 0, 0, 1)])]
+    #[case::comma(",", vec![mktoken!(TokenKind::Comma, loc 0, 0, 0, 1)])]
     #[case::bang("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)])]
+    /*
+    #[case::equals("=", vec![mktoken!(TokenKind::Equals, loc 0, 0, 0, 1)])]
+    #[case::plus_equals("+=", vec![mktoken!(TokenKind::PlusEquals, loc 0, 0, 0, 1)])]
+    #[case::minus_equals("-=", vec![mktoken!(TokenKind::MinusEquals, loc 0, 0, 0, 1)])]
+    #[case::asterisk_equals("*=", vec![mktoken!(TokenKind::AsteriskEquals, loc 0, 0, 0, 1)])]
+    #[case::slash_equals("/=", vec![mktoken!(TokenKind::SlashEquals, loc 0, 0, 0, 1)])]
+    #[case::percent_equals("%=", vec![mktoken!(TokenKind::PercentEquals, loc 0, 0, 0, 1)])]
+    #[case::double_equals("==", vec![mktoken!(TokenKind::DoubleEquals, loc 0, 0, 0, 1)])]
+    #[case::bang_equals("!=", vec![mktoken!(TokenKind::BangEquals, loc 0, 0, 0, 1)])]
+    #[case::lbracket_equals("<=", vec![mktoken!(TokenKind::LBracketEquals, loc 0, 0, 0, 1)])]
+    #[case::rbracket_equals(">=", vec![mktoken!(TokenKind::LBracketEquals, loc 0, 0, 0, 1)])]
+    */
     #[case::conjunct("그리고", vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)])]
     #[case::disjunct("또는", vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)])]
-    fn non_value_token(#[case] source: &str, #[case] expected: Vec<Token>) {
+    #[case::function("함수", vec![mktoken!(TokenKind::Function, loc 0, 0, 0, 2)])]
+    #[case::if_branch("만약", vec![mktoken!(TokenKind::IfBranch, loc 0, 0, 0, 2)])]
+    #[case::else_branch("아니면", vec![mktoken!(TokenKind::ElseBranch, loc 0, 0, 0, 3)])]
+    #[case::iteration("반복", vec![mktoken!(TokenKind::Iteration, loc 0, 0, 0, 2)])]
+    fn non_value_literal(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
