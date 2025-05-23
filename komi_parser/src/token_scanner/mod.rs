@@ -50,15 +50,9 @@ impl<'a> Scanner for TokenScanner<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fixtures::*;
     use komi_syntax::TokenKind;
     use komi_util::Range;
-
-    const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
-    const TOKEN_KIND_MOCKS: &[TokenKind] = &[TokenKind::Number(1.0), TokenKind::Number(2.0)];
-    const TOKEN_MOCKS: &[Token] = &[
-        Token::new(TOKEN_KIND_MOCKS[0], RANGE_MOCKS[0]),
-        Token::new(TOKEN_KIND_MOCKS[1], RANGE_MOCKS[1]),
-    ];
 
     #[test]
     fn test_read_for_empty() {
@@ -71,22 +65,22 @@ mod tests {
 
     #[test]
     fn test_read_twice() {
-        let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
+        let tokens = vec![token1(), token2()];
 
         let scanner = TokenScanner::new(&tokens);
 
-        assert_eq!(scanner.read(), Some(&TOKEN_MOCKS[0]));
-        assert_eq!(scanner.read(), Some(&TOKEN_MOCKS[0]));
+        assert_eq!(scanner.read(), Some(&token1()));
+        assert_eq!(scanner.read(), Some(&token1()));
     }
 
     #[test]
     fn test_advance() {
-        let tokens = vec![TOKEN_MOCKS[0], TOKEN_MOCKS[1]];
+        let tokens = vec![token1(), token2()];
 
         let mut scanner = TokenScanner::new(&tokens);
 
         scanner.advance();
-        assert_eq!(scanner.read(), Some(&TOKEN_MOCKS[1]));
+        assert_eq!(scanner.read(), Some(&token2()));
     }
 
     #[test]
@@ -102,8 +96,8 @@ mod tests {
     #[test]
     fn test_locate() {
         let tokens = vec![
-            Token::new(TOKEN_KIND_MOCKS[0], Range::from_nums(0, 0, 0, 2)),
-            Token::new(TOKEN_KIND_MOCKS[1], Range::from_nums(0, 2, 0, 5)),
+            Token::new(token_kind1(), Range::from_nums(0, 0, 0, 2)),
+            Token::new(token_kind2(), Range::from_nums(0, 2, 0, 5)),
         ];
 
         let mut scanner = TokenScanner::new(&tokens);
@@ -124,5 +118,28 @@ mod tests {
         assert_eq!(scanner.locate(), range::ORIGIN);
         scanner.advance();
         assert_eq!(scanner.locate(), range::ORIGIN);
+    }
+
+    mod fixtures {
+        use super::*;
+
+        pub fn range1() -> Range {
+            Range::from_nums(0, 0, 0, 1)
+        }
+        pub fn range2() -> Range {
+            Range::from_nums(0, 1, 0, 2)
+        }
+        pub fn token_kind1() -> TokenKind {
+            TokenKind::Number(1.0)
+        }
+        pub fn token_kind2() -> TokenKind {
+            TokenKind::Number(2.0)
+        }
+        pub fn token1() -> Token {
+            Token::new(token_kind1(), range1())
+        }
+        pub fn token2() -> Token {
+            Token::new(token_kind2(), range2())
+        }
     }
 }
