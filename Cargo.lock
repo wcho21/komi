@@ -197,9 +197,6 @@ dependencies = [
 [[package]]
 name = "komi_util"
 version = "0.0.0-local"
-dependencies = [
- "rstest",
-]
 
 [[package]]
 name = "komi_wasm"
