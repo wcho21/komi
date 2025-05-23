@@ -21,6 +21,14 @@ struct Lexer<'a> {
     scanner: SourceScanner<'a>,
 }
 
+fn is_not_id_domain(char: &str) -> bool {
+    !char_validator::is_id_domain(char)
+}
+
+fn is_id_domain_other_than(char: &str, filter: &str) -> bool {
+    char_validator::is_id_domain(char) && char != filter
+}
+
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
         Self { scanner: SourceScanner::new(source) }
@@ -51,7 +59,7 @@ impl<'a> Lexer<'a> {
                 }
                 "거" => {
                     let second_char = self.scanner.read();
-                    if second_char.is_none_or(|c| !char_validator::is_id_domain(c)) {
+                    if second_char.is_none_or(is_not_id_domain) {
                         let first_char_end = first_location.end;
                         let lexeme = String::from(first_char);
                         let location = Range::new(first_location.begin, first_char_end);
@@ -59,7 +67,7 @@ impl<'a> Lexer<'a> {
                         tokens.push(token);
 
                         continue;
-                    } else if second_char.is_some_and(|c| char_validator::is_id_domain(c) && c != "짓") {
+                    } else if second_char.is_some_and(|c| is_id_domain_other_than(c, "짓")) {
                         let second_char_end = self.scanner.locate().end;
                         self.scanner.advance();
 
