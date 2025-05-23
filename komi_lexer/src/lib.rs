@@ -137,6 +137,8 @@ impl<'a> Lexer<'a> {
                 "그" => {
                     let second_char = self.scanner.read();
                     if second_char.is_none_or(is_not_id_domain) {
+                        // if end or non id, stop reading and make a first char to token
+                        // part *1
                         let first_char_end = first_location.end;
                         let lexeme = String::from(first_char);
                         let location = Range::new(first_location.begin, first_char_end);
@@ -145,6 +147,8 @@ impl<'a> Lexer<'a> {
 
                         continue;
                     } else if second_char.is_some_and(|c| is_id_domain_other_than(c, "리")) {
+                        // if id other than expected, consume the char and pass it to id lexer
+                        // part *2
                         let second_char_end = self.scanner.locate().end;
                         self.scanner.advance();
 
@@ -160,6 +164,8 @@ impl<'a> Lexer<'a> {
 
                     let third_char = self.scanner.read();
                     if third_char.is_none_or(is_not_id_domain) {
+                        // if end or non id, stop reading and make first and second char to token
+                        // part *1
                         let second_char_end = second_location.end;
                         let lexeme = String::from(first_char) + second_char.unwrap();
                         let location = Range::new(first_location.begin, second_char_end);
@@ -168,6 +174,8 @@ impl<'a> Lexer<'a> {
 
                         continue;
                     } else if third_char.is_some_and(|c| is_id_domain_other_than(c, "고")) {
+                        // if id other than expected, consume the char and pass it to id lexer
+                        // part *2
                         let third_char_end = self.scanner.locate().end;
                         self.scanner.advance();
 
@@ -183,6 +191,8 @@ impl<'a> Lexer<'a> {
 
                     let fourth_char = self.scanner.read();
                     if fourth_char.is_some_and(char_validator::is_id_domain) {
+                        // if id still, consume the char and pass it to id lexer
+                        // part *2
                         let fourth_char_end = self.scanner.locate().end;
                         self.scanner.advance();
 
