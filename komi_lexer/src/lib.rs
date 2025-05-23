@@ -29,78 +29,74 @@ impl<'a> Lexer<'a> {
     pub fn lex(&mut self) -> ResTokens {
         let mut tokens: Vec<Token> = vec![];
 
-        while let Some(first_char) = self.scanner.read() {
-            let first_location = self.locate_and_advance();
+        while let Some(char) = self.scanner.read() {
+            let location = self.locate_and_advance();
 
-            match first_char {
-                first_char if char_validator::is_digit(first_char) => {
-                    let token = self.lex_num(&first_location, first_char)?;
+            match char {
+                char if char_validator::is_digit(char) => {
+                    let token = self.lex_num(&location, char)?;
                     tokens.push(token);
                 }
                 "참" => {
-                    let token = self.lex_true(&first_location)?;
+                    let token = Token::new(TokenKind::Bool(true), location);
                     tokens.push(token);
                 }
                 "거" => {
-                    let token =
-                        self.expect_or_lex_identifier("짓", TokenKind::Bool(false), first_char, &first_location)?;
+                    let token = self.expect_or_lex_identifier("짓", TokenKind::Bool(false), char, &location)?;
                     tokens.push(token);
                 }
                 "+" => {
-                    // TODO: just make token
-                    let token = self.lex_plus(&first_location)?;
+                    let token = Token::new(TokenKind::Plus, location);
                     tokens.push(token);
                 }
                 "-" => {
-                    let token = self.lex_minus(&first_location)?;
+                    let token = Token::new(TokenKind::Minus, location);
                     tokens.push(token);
                 }
                 "*" => {
-                    let token = self.lex_asterisk(&first_location)?;
+                    let token = Token::new(TokenKind::Asterisk, location);
                     tokens.push(token);
                 }
                 "/" => {
-                    let token = self.lex_slash(&first_location)?;
+                    let token = Token::new(TokenKind::Slash, location);
                     tokens.push(token);
                 }
                 "%" => {
-                    let token = self.lex_percent(&first_location)?;
+                    let token = Token::new(TokenKind::Percent, location);
                     tokens.push(token);
                 }
                 "(" => {
-                    let token = self.lex_lparen(&first_location)?;
+                    let token = Token::new(TokenKind::LParen, location);
                     tokens.push(token);
                 }
                 ")" => {
-                    let token = self.lex_rparen(&first_location)?;
+                    let token = Token::new(TokenKind::RParen, location);
                     tokens.push(token);
                 }
                 "!" => {
-                    let token = self.lex_bang(&first_location)?;
+                    let token = Token::new(TokenKind::Bang, location);
                     tokens.push(token);
                 }
                 "그" => {
-                    let token =
-                        self.expect_or_lex_identifier("리고", TokenKind::Conjunct, first_char, &first_location)?;
+                    let token = self.expect_or_lex_identifier("리고", TokenKind::Conjunct, char, &location)?;
                     tokens.push(token);
                 }
                 "또" => {
-                    let token =
-                        self.expect_or_lex_identifier("는", TokenKind::Disjunct, first_char, &first_location)?;
+                    let token = self.expect_or_lex_identifier("는", TokenKind::Disjunct, char, &location)?;
                     tokens.push(token);
                 }
                 "#" => {
                     self.skip_comment();
                 }
+                s if char_validator::is_in_identifier_domain(s) => {
+                    let token = self.lex_identifier_with_init_seg(&String::from(s), &location)?;
+                    tokens.push(token);
+                }
                 s if char_validator::is_whitespace(s) => {
                     continue;
                 }
-                s if char_validator::is_in_identifier_domain(s) => {
-                    let token = self.lex_identifier_with_init_seg(&String::from(s), &first_location)?;
-                    tokens.push(token);
-                }
                 _ => {
-                    return Err(LexError::new(LexErrorKind::IllegalChar, first_location));
+                    return Err(LexError::new(LexErrorKind::IllegalChar, location));
                 }
             }
         }
@@ -149,42 +145,6 @@ impl<'a> Lexer<'a> {
         let token = Self::parse_num_lexeme(&lexeme, Range::new(begin, end));
 
         Ok(token)
-    }
-
-    fn lex_true(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Bool(true), *first_location))
-    }
-
-    fn lex_plus(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Plus, *first_location))
-    }
-
-    fn lex_minus(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Minus, *first_location))
-    }
-
-    fn lex_asterisk(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Asterisk, *first_location))
-    }
-
-    fn lex_slash(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Slash, *first_location))
-    }
-
-    fn lex_percent(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Percent, *first_location))
-    }
-
-    fn lex_lparen(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::LParen, *first_location))
-    }
-
-    fn lex_rparen(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::RParen, *first_location))
-    }
-
-    fn lex_bang(&mut self, first_location: &Range) -> ResToken {
-        Ok(Token::new(TokenKind::Bang, *first_location))
     }
 
     fn skip_comment(&mut self) -> () {
