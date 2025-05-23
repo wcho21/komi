@@ -98,28 +98,12 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "거" => {
-                    let mut init_seg = String::from(first_char);
-                    let mut init_seg_location = first_location;
-
-                    let second_char = self.scanner.read();
-                    if !Self::is_str(second_char, "짓") {
-                        let token = self.lex_id_chars_or(second_char, &init_seg, &init_seg_location.begin, || {
-                            Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
-                        })?;
-                        tokens.push(token);
-                        continue;
-                    }
-
-                    init_seg.push_str(second_char.unwrap());
-                    init_seg_location.end = self.locate_and_advance().end;
-
-                    let third_char = self.scanner.read();
-                    let token = self.lex_id_chars_or(third_char, &init_seg, &init_seg_location.begin, || {
-                        Ok(Token::new(TokenKind::Bool(false), init_seg_location))
-                    })?;
+                    let token =
+                        self.expect_or_lex_identifier("짓", TokenKind::Bool(false), first_char, &first_location)?;
                     tokens.push(token);
                 }
                 "+" => {
+                    // TODO: just make token
                     let token = self.lex_plus(&first_location)?;
                     tokens.push(token);
                 }
@@ -152,59 +136,13 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "그" => {
-                    let mut init_seg = String::from(first_char);
-                    let mut init_seg_location = first_location;
-
-                    let second_char = self.scanner.read();
-                    if !Self::is_str(second_char, "리") {
-                        let token = self.lex_id_chars_or(second_char, &init_seg, &init_seg_location.begin, || {
-                            Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
-                        })?;
-                        tokens.push(token);
-                        continue;
-                    }
-
-                    init_seg.push_str(second_char.unwrap());
-                    init_seg_location.end = self.locate_and_advance().end;
-
-                    let third_char = self.scanner.read();
-                    if !Self::is_str(third_char, "고") {
-                        let token = self.lex_id_chars_or(third_char, &init_seg, &init_seg_location.begin, || {
-                            Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
-                        })?;
-                        tokens.push(token);
-                        continue;
-                    }
-
-                    init_seg.push_str(third_char.unwrap());
-                    init_seg_location.end = self.locate_and_advance().end;
-
-                    let fourth_char = self.scanner.read();
-                    let token = self.lex_id_chars_or(fourth_char, &init_seg, &init_seg_location.begin, || {
-                        Ok(Token::new(TokenKind::Conjunct, init_seg_location))
-                    })?;
+                    let token =
+                        self.expect_or_lex_identifier("리고", TokenKind::Conjunct, first_char, &first_location)?;
                     tokens.push(token);
                 }
                 "또" => {
-                    let mut init_seg = String::from(first_char);
-                    let mut init_seg_location = first_location;
-
-                    let second_char = self.scanner.read();
-                    if !Self::is_str(second_char, "는") {
-                        let token = self.lex_id_chars_or(second_char, &init_seg, &init_seg_location.begin, || {
-                            Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
-                        })?;
-                        tokens.push(token);
-                        continue;
-                    }
-
-                    init_seg.push_str(second_char.unwrap());
-                    init_seg_location.end = self.locate_and_advance().end;
-
-                    let third_char = self.scanner.read();
-                    let token = self.lex_id_chars_or(third_char, &init_seg, &init_seg_location.begin, || {
-                        Ok(Token::new(TokenKind::Disjunct, init_seg_location))
-                    })?;
+                    let token =
+                        self.expect_or_lex_identifier("는", TokenKind::Disjunct, first_char, &first_location)?;
                     tokens.push(token);
                 }
                 "#" => {
@@ -273,6 +211,7 @@ impl<'a> Lexer<'a> {
         Ok(Token::new(TokenKind::Bool(true), *first_location))
     }
 
+    /// TODO: document
     fn lex_identifier_with_init_seg(&mut self, lexeme_begin: &Spot, init_seg: &str, init_seg_end: &Spot) -> ResToken {
         let mut lexeme = String::from(init_seg);
         let mut lexeme_end = *init_seg_end;
@@ -357,6 +296,37 @@ impl<'a> Lexer<'a> {
 
     fn is_str(char: Option<&str>, to_be: &str) -> bool {
         char.is_some_and(|c| c == to_be)
+    }
+
+    /// TODO: document
+    fn expect_or_lex_identifier(
+        &mut self,
+        expected: &str,
+        expected_kind: TokenKind,
+        first_char: &'a str,
+        first_location: &Range,
+    ) -> ResToken {
+        let mut init_seg = String::from(first_char);
+        let mut init_seg_location = *first_location;
+
+        for expected_char in expected.chars().map(|c| String::from(c)) {
+            let char = self.scanner.read();
+            if !Self::is_str(char, &expected_char) {
+                let token = self.lex_id_chars_or(char, &init_seg, &init_seg_location.begin, || {
+                    Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
+                })?;
+                return Ok(token);
+            }
+
+            init_seg.push_str(char.unwrap());
+            init_seg_location.end = self.locate_and_advance().end;
+        }
+
+        let char = self.scanner.read();
+        let token = self.lex_id_chars_or(char, &init_seg, &init_seg_location.begin, || {
+            Ok(Token::new(expected_kind.clone(), init_seg_location))
+        })?;
+        return Ok(token);
     }
 }
 
