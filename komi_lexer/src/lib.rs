@@ -52,19 +52,20 @@ impl<'a> Lexer<'a> {
                 "거" => {
                     let second_char = self.scanner.read();
                     if second_char.is_none_or(|c| !char_validator::is_id_domain(c)) {
+                        let first_char_end = first_location.end;
                         let lexeme = String::from(first_char);
-                        let location = Range::new(first_location.begin, first_location.end);
+                        let location = Range::new(first_location.begin, first_char_end);
                         let token = Token::new(TokenKind::Identifier(lexeme), location);
                         tokens.push(token);
 
                         continue;
                     } else if second_char.is_some_and(|c| char_validator::is_id_domain(c) && c != "짓") {
-                        let init_seg_end = self.scanner.locate().end;
+                        let second_char_end = self.scanner.locate().end;
                         self.scanner.advance();
 
                         let init_seg = String::from(first_char) + second_char.unwrap();
                         let token =
-                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &init_seg_end)?;
+                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &second_char_end)?;
                         tokens.push(token);
 
                         continue;
@@ -74,19 +75,19 @@ impl<'a> Lexer<'a> {
 
                     let third_char = self.scanner.read();
                     if third_char.is_some_and(char_validator::is_id_domain) {
-                        let init_seg_end = self.scanner.locate().end;
+                        let third_char_end = self.scanner.locate().end;
                         self.scanner.advance();
 
                         let init_seg = String::from(first_char) + second_char.unwrap() + third_char.unwrap();
                         let token =
-                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &init_seg_end)?;
+                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &third_char_end)?;
                         tokens.push(token);
 
                         continue;
                     }
 
-                    let location = Range::new(first_location.begin, second_location.end);
-                    let token = Token::new(TokenKind::Bool(false), location);
+                    let lexeme_location = Range::new(first_location.begin, second_location.end);
+                    let token = Token::new(TokenKind::Bool(false), lexeme_location);
                     tokens.push(token);
                 }
                 "+" => {
