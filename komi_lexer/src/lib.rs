@@ -39,23 +39,18 @@ impl<'a> Lexer<'a> {
 
         while let Some(first_char) = self.scanner.read() {
             let first_location = &self.scanner.locate();
+            self.scanner.advance();
 
             match first_char {
                 first_char if char_validator::is_digit(first_char) => {
-                    self.scanner.advance();
                     let token = self.lex_num(first_location, first_char)?;
                     tokens.push(token);
                 }
                 "참" => {
-                    self.scanner.advance();
                     let token = self.lex_true(first_location)?;
                     tokens.push(token);
                 }
                 "거" => {
-                    // TODO: move this advance out of while above.
-                    //       you should replace advance_and_lex! macros with lower level operations.
-                    self.scanner.advance();
-
                     let second_char = self.scanner.read();
                     if second_char.is_none_or(|c| !char_validator::is_id_domain(c)) {
                         let lexeme = String::from(first_char);
@@ -97,66 +92,57 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "+" => {
-                    self.scanner.advance();
                     let token = self.lex_plus(first_location)?;
                     tokens.push(token);
                 }
                 "-" => {
-                    self.scanner.advance();
                     let token = self.lex_minus(first_location)?;
                     tokens.push(token);
                 }
                 "*" => {
-                    self.scanner.advance();
                     let token = self.lex_asterisk(first_location)?;
                     tokens.push(token);
                 }
                 "/" => {
-                    self.scanner.advance();
                     let token = self.lex_slash(first_location)?;
                     tokens.push(token);
                 }
                 "%" => {
-                    self.scanner.advance();
                     let token = self.lex_percent(first_location)?;
                     tokens.push(token);
                 }
                 "(" => {
-                    self.scanner.advance();
                     let token = self.lex_lparen(first_location)?;
                     tokens.push(token);
                 }
                 ")" => {
-                    self.scanner.advance();
                     let token = self.lex_rparen(first_location)?;
                     tokens.push(token);
                 }
                 "!" => {
-                    self.scanner.advance();
                     let token = self.lex_bang(first_location)?;
                     tokens.push(token);
                 }
                 "그" => {
-                    self.scanner.advance();
                     let token = self.lex_conjunct(first_location)?;
                     tokens.push(token);
                 }
                 "또" => {
-                    self.scanner.advance();
                     let token = self.lex_disjunct_or_identifier(first_location)?;
                     tokens.push(token);
                 }
                 "#" => {
-                    self.scanner.advance();
                     self.skip_comment();
                 }
-                s if char_validator::is_whitespace(s) => self.scanner.advance(),
+                s if char_validator::is_whitespace(s) => {
+                    continue;
+                }
                 s if char_validator::is_id_domain(s) => {
-                    let token = self.lex_identifier(&self.scanner.locate(), &String::new())?;
+                    let token = self.lex_identifier_with_init_seg(&first_location.begin, s, &first_location.end)?;
                     tokens.push(token);
                 }
                 _ => {
-                    return Err(LexError::new(LexErrorKind::IllegalChar, self.scanner.locate()));
+                    return Err(LexError::new(LexErrorKind::IllegalChar, *first_location));
                 }
             }
         }
