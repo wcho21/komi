@@ -97,8 +97,8 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "\"" => {
-                    let token = Token::new(TokenKind::Quote, char_location);
-                    tokens.push(token);
+                    let mut string_tokens = self.lex_string(&char_location)?;
+                    tokens.append(&mut string_tokens);
                 }
                 ":" => {
                     let token = Token::new(TokenKind::Colon, char_location);
@@ -204,6 +204,66 @@ impl<'a> Lexer<'a> {
         Ok(token)
     }
 
+    fn lex_string(&mut self, first_location: &Range) -> ResTokens {
+        let mut tokens: Vec<Token> = vec![];
+        tokens.push(Token::new(TokenKind::Quote, *first_location));
+
+        let mut segment = String::new();
+        let mut segment_location = self.scanner.locate();
+
+        loop {
+            let Some(char) = self.scanner.read() else {
+                return Err(LexError::new(LexErrorKind::QuoteNotClosed, segment_location));
+            };
+
+            if char == "\"" {
+                tokens.push(Token::new(TokenKind::StringSegment(segment), segment_location));
+                tokens.push(Token::new(TokenKind::Quote, self.scanner.locate()));
+                self.scanner.advance();
+
+                break;
+            }
+
+            if char == "{" {
+                self.scanner.advance();
+
+                match self.scanner.read() {
+                    // `{{` is an escape for `{`.
+                    Some("{") => {
+                        segment.push_str("{");
+                        self.scanner.advance();
+                        continue;
+                    }
+                    _ => {
+                        todo!()
+                    }
+                }
+            }
+
+            if char == "}" {
+                self.scanner.advance();
+
+                match self.scanner.read() {
+                    Some("}") => {
+                        segment.push_str("}");
+                        self.scanner.advance();
+                        continue;
+                    }
+                    _ => {
+                        todo!()
+                    }
+                }
+            }
+
+            segment.push_str(char);
+            segment_location.end = self.scanner.locate().end;
+
+            self.scanner.advance();
+        }
+
+        Ok(tokens)
+    }
+
     fn skip_comment(&mut self) -> () {
         while let Some(x) = self.scanner.read() {
             self.scanner.advance();
@@ -221,18 +281,18 @@ impl<'a> Lexer<'a> {
     }
 
     fn read_digits(&mut self, first_char: &'a str) -> String {
-        let mut lexeme = first_char.to_string();
+        let mut digits = first_char.to_string();
 
         while let Some(x) = self.scanner.read() {
             if !char_validator::is_digit(x) {
                 break;
             }
 
-            lexeme.push_str(x);
+            digits.push_str(x);
             self.scanner.advance();
         }
 
-        lexeme
+        digits
     }
 
     /// Advances the scanner and returns a location before advancing.
@@ -438,7 +498,6 @@ mod tests {
     #[case::lbrace("}", vec![mktoken!(TokenKind::RBrace, loc 0, 0, 0, 1)])]
     #[case::lbracket("<", vec![mktoken!(TokenKind::LBracket, loc 0, 0, 0, 1)])]
     #[case::rbracket(">", vec![mktoken!(TokenKind::RBracket, loc 0, 0, 0, 1)])]
-    #[case::quote("\"", vec![mktoken!(TokenKind::Quote, loc 0, 0, 0, 1)])]
     #[case::colon(":", vec![mktoken!(TokenKind::Colon, loc 0, 0, 0, 1)])]
     #[case::comma(",", vec![mktoken!(TokenKind::Comma, loc 0, 0, 0, 1)])]
     #[case::bang("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)])]
@@ -497,6 +556,53 @@ mod tests {
     #[case::first_char_iteration_but_second_other_id("반a", vec![mktoken!(TokenKind::Identifier(String::from("반a")), loc 0, 0, 0, 2)])]
     #[case::first_two_chars_iteration_but_third_other_id("반복a", vec![mktoken!(TokenKind::Identifier(String::from("반복a")), loc 0, 0, 0, 3)])]
     fn single_identifier(#[case] source: &str, #[case] expected: Vec<Token>) {
+        assert_lex!(source, expected);
+    }
+
+    #[rstest]
+    #[case::simple_string("\"사과\"", vec![
+        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
+        mktoken!(TokenKind::StringSegment(String::from("사과")), loc 0, 1, 0, 3),
+        mktoken!(TokenKind::Quote, loc 0, 3, 0, 4),
+    ])]
+    #[case::lbrace_escape("\"사{{과\"", vec![
+        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
+        mktoken!(TokenKind::StringSegment(String::from("사{과")), loc 0, 1, 0, 5),
+        mktoken!(TokenKind::Quote, loc 0, 5, 0, 6),
+    ])]
+    #[case::rbrace_escape("\"사}}과\"", vec![
+        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
+        mktoken!(TokenKind::StringSegment(String::from("사}과")), loc 0, 1, 0, 5),
+        mktoken!(TokenKind::Quote, loc 0, 5, 0, 6),
+    ])]
+    /* TODO
+    #[case::num_literal_interpolation("\"사{1}과\"", vec![
+        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
+        mktoken!(TokenKind::LBrace, loc 0, 1, 0, 2),
+        mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+        mktoken!(TokenKind::RBrace, loc 0, 3, 0, 4),
+        mktoken!(TokenKind::Quote, loc 0, 4, 0, 5),
+    ])]
+    #[case::bool_literal_interpolation("\"사{참}과\"", vec![
+        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
+        mktoken!(TokenKind::LBrace, loc 0, 1, 0, 2),
+        mktoken!(TokenKind::Bool(true), loc 0, 2, 0, 3),
+        mktoken!(TokenKind::RBrace, loc 0, 3, 0, 4),
+        mktoken!(TokenKind::Quote, loc 0, 4, 0, 5),
+    ])]
+    #[case::string_literal_interpolation("\"사{\"오렌지\"}과\"", vec![
+        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
+        mktoken!(TokenKind::LBrace, loc 0, 1, 0, 2),
+        mktoken!(TokenKind::Quote, loc 0, 2, 0, 3),
+        mktoken!(TokenKind::StringSegment(String::from("오렌지")), loc 0, 3, 0, 6),
+        mktoken!(TokenKind::Quote, loc 0, 6, 0, 7),
+        mktoken!(TokenKind::RBrace, loc 0, 7, 0, 8),
+        mktoken!(TokenKind::Quote, loc 0, 8, 0, 9),
+    ])]
+    */
+    // TODO: test string literal nested interpolation
+    // TODO: test other interpolations
+    fn string_segment(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 

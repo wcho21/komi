@@ -35,6 +35,7 @@ pub enum TokenKind {
     /// A right bracket `>`.
     RBracket,
     /// A quote `"`.
+    // TODO(?): or LQuote and RQuote?
     Quote,
     /// A colon `:`.
     Colon,

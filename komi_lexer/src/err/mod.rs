@@ -9,6 +9,8 @@ pub enum LexErrorKind {
     IllegalChar,
     /// An illegal number literal, such as `12.`.
     IllegalNumLiteral,
+    /// Not closed quote, such as `"...`
+    QuoteNotClosed,
     /// An internal error impossible to occur if lexed as expected.
     Unexpected,
 }
@@ -20,6 +22,7 @@ impl fmt::Display for LexErrorKind {
         let s = match self {
             LexErrorKind::IllegalChar => "IllegalChar",
             LexErrorKind::IllegalNumLiteral => "IllegalNumLiteral",
+            LexErrorKind::QuoteNotClosed => "QuoteNotClosed",
             LexErrorKind::Unexpected => "Unexpected",
         };
         write!(f, "{}", s)
