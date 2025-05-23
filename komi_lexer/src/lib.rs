@@ -26,34 +26,9 @@ impl<'a> Lexer<'a> {
         Self { scanner: SourceScanner::new(source) }
     }
 
-    fn lex_id_chars(
+    fn lex_identifier_with_init_seg_or<F>(
         &mut self,
-        char: Option<&'a str>,
-        init_seg: &String,
-        init_seg_begin: &Spot,
-        init_seg_end: &Spot,
-    ) -> ResToken {
-        match char {
-            Some(c) if char_validator::is_id_domain(c) => {
-                let char_end = self.scanner.locate().end;
-                self.scanner.advance();
-
-                let init_seg = init_seg.to_owned() + c;
-                let token = self.lex_identifier_with_init_seg(&init_seg_begin, &init_seg, &char_end)?;
-                Ok(token)
-            }
-            _ => {
-                let lexeme = init_seg.clone();
-                let location = Range::new(*init_seg_begin, *init_seg_end);
-                let token = Token::new(TokenKind::Identifier(lexeme), location);
-                Ok(token)
-            }
-        }
-    }
-
-    fn lex_id_chars_or<F>(
-        &mut self,
-        char: Option<&'a str>,
+        char_read: Option<&'a str>,
         init_seg: &String,
         init_seg_begin: &Spot,
         alt_op: F,
@@ -61,8 +36,8 @@ impl<'a> Lexer<'a> {
     where
         F: Fn() -> ResToken,
     {
-        match char {
-            Some(c) if char_validator::is_id_domain(c) => {
+        match char_read {
+            Some(c) if char_validator::is_in_identifier_domain(c) => {
                 let char_end = self.scanner.locate().end;
                 self.scanner.advance();
 
@@ -151,7 +126,7 @@ impl<'a> Lexer<'a> {
                 s if char_validator::is_whitespace(s) => {
                     continue;
                 }
-                s if char_validator::is_id_domain(s) => {
+                s if char_validator::is_in_identifier_domain(s) => {
                     let token = self.lex_identifier_with_init_seg(&first_location.begin, s, &first_location.end)?;
                     tokens.push(token);
                 }
@@ -217,7 +192,7 @@ impl<'a> Lexer<'a> {
         let mut lexeme_end = *init_seg_end;
 
         while let Some(x) = self.scanner.read() {
-            if !char_validator::is_id_domain(x) {
+            if !char_validator::is_in_identifier_domain(x) {
                 break;
             }
 
@@ -312,7 +287,7 @@ impl<'a> Lexer<'a> {
         for expected_char in expected.chars().map(|c| String::from(c)) {
             let char = self.scanner.read();
             if !Self::is_str(char, &expected_char) {
-                let token = self.lex_id_chars_or(char, &init_seg, &init_seg_location.begin, || {
+                let token = self.lex_identifier_with_init_seg_or(char, &init_seg, &init_seg_location.begin, || {
                     Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
                 })?;
                 return Ok(token);
@@ -323,7 +298,7 @@ impl<'a> Lexer<'a> {
         }
 
         let char = self.scanner.read();
-        let token = self.lex_id_chars_or(char, &init_seg, &init_seg_location.begin, || {
+        let token = self.lex_identifier_with_init_seg_or(char, &init_seg, &init_seg_location.begin, || {
             Ok(Token::new(expected_kind.clone(), init_seg_location))
         })?;
         return Ok(token);

@@ -12,7 +12,7 @@ pub fn is_whitespace(s: &str) -> bool {
 /// Specifically, it includes:
 /// - ASCII alphabets and number characters.
 /// - Hangul, from `U+AC00` (`가`) to `U+D7A3` (`힣`)
-pub fn is_id_domain(s: &str) -> bool {
+pub fn is_in_identifier_domain(s: &str) -> bool {
     let ascii = s.len() == 1 && s.chars().next().unwrap().is_ascii_alphanumeric();
     if ascii {
         return true;
@@ -73,7 +73,7 @@ mod tests {
     #[case::below_hangul_boundary(&String::from(char::from_u32(0xD7A4).unwrap()), false)]
     #[case::above_hangul_boundary(&String::from(char::from_u32(0xD7A4).unwrap()), false)]
     fn test_is_id_domain(#[case] s: &str, #[case] expected: bool) {
-        assert_eq!(is_id_domain(s), expected);
+        assert_eq!(is_in_identifier_domain(s), expected);
     }
 
     #[rstest]
