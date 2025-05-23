@@ -26,37 +26,6 @@ impl<'a> Lexer<'a> {
         Self { scanner: SourceScanner::new(source) }
     }
 
-    fn lex_identifier_with_init_seg_or<F>(
-        &mut self,
-        char_read: Option<&'a str>,
-        init_seg: &String,
-        init_seg_begin: &Spot,
-        alt_op: F,
-    ) -> ResToken
-    where
-        F: Fn() -> ResToken,
-    {
-        match char_read {
-            Some(c) if char_validator::is_in_identifier_domain(c) => {
-                let char_end = self.scanner.locate().end;
-                self.scanner.advance();
-
-                let init_seg = init_seg.to_owned() + c;
-                let token = self.lex_identifier_with_init_seg(&init_seg_begin, &init_seg, &char_end)?;
-                Ok(token)
-            }
-            _ => alt_op(),
-        }
-    }
-
-    // TODO: replace locate and advance logic with this, to force marking the previous location.
-    fn locate_and_advance(&mut self) -> Range {
-        let location = self.scanner.locate();
-        self.scanner.advance();
-
-        location
-    }
-
     pub fn lex(&mut self) -> ResTokens {
         let mut tokens: Vec<Token> = vec![];
 
@@ -127,7 +96,7 @@ impl<'a> Lexer<'a> {
                     continue;
                 }
                 s if char_validator::is_in_identifier_domain(s) => {
-                    let token = self.lex_identifier_with_init_seg(&first_location.begin, s, &first_location.end)?;
+                    let token = self.lex_identifier_with_init_seg(&String::from(s), &first_location)?;
                     tokens.push(token);
                 }
                 _ => {
@@ -184,26 +153,6 @@ impl<'a> Lexer<'a> {
 
     fn lex_true(&mut self, first_location: &Range) -> ResToken {
         Ok(Token::new(TokenKind::Bool(true), *first_location))
-    }
-
-    /// TODO: document
-    fn lex_identifier_with_init_seg(&mut self, lexeme_begin: &Spot, init_seg: &str, init_seg_end: &Spot) -> ResToken {
-        let mut lexeme = String::from(init_seg);
-        let mut lexeme_end = *init_seg_end;
-
-        while let Some(x) = self.scanner.read() {
-            if !char_validator::is_in_identifier_domain(x) {
-                break;
-            }
-
-            lexeme.push_str(x);
-            lexeme_end = self.scanner.locate().end;
-
-            self.scanner.advance();
-        }
-
-        let location = Range::new(*lexeme_begin, lexeme_end);
-        Ok(Token::new(TokenKind::Identifier(lexeme), location))
     }
 
     fn lex_plus(&mut self, first_location: &Range) -> ResToken {
@@ -269,11 +218,15 @@ impl<'a> Lexer<'a> {
         lexeme
     }
 
-    fn is_str(char: Option<&str>, to_be: &str) -> bool {
-        char.is_some_and(|c| c == to_be)
+    /// Advances the scanner and returns a location before advancing.
+    fn locate_and_advance(&mut self) -> Range {
+        let location = self.scanner.locate();
+        self.scanner.advance();
+
+        location
     }
 
-    /// TODO: document
+    /// Returns a token with the kind `expected_kind` if the scanner reads the expected characters `expected`; otherwise, returns an identifier token.
     fn expect_or_lex_identifier(
         &mut self,
         expected: &str,
@@ -281,13 +234,17 @@ impl<'a> Lexer<'a> {
         first_char: &'a str,
         first_location: &Range,
     ) -> ResToken {
+        // Stores characters to lex an identifier token if an unexpected character encountered.
         let mut init_seg = String::from(first_char);
         let mut init_seg_location = *first_location;
 
+        // Return an identifier token if unexpected character encountered.
         for expected_char in expected.chars().map(|c| String::from(c)) {
             let char = self.scanner.read();
-            if !Self::is_str(char, &expected_char) {
+
+            if !Self::is_equal_str(char, &expected_char) {
                 let token = self.lex_identifier_with_init_seg_or(char, &init_seg, &init_seg_location.begin, || {
+                    // An identifier with characters read so far.
                     Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
                 })?;
                 return Ok(token);
@@ -297,11 +254,66 @@ impl<'a> Lexer<'a> {
             init_seg_location.end = self.locate_and_advance().end;
         }
 
+        // All expected characters matched; return the token with the expected kind.
         let char = self.scanner.read();
         let token = self.lex_identifier_with_init_seg_or(char, &init_seg, &init_seg_location.begin, || {
             Ok(Token::new(expected_kind.clone(), init_seg_location))
         })?;
         return Ok(token);
+    }
+
+    /// Returns an identifier token if `char_read` is a valid identifier character; otherwise, returns a token produced by `alt_op`.
+    ///
+    /// - `char_read`: A character just read by the scanner.
+    /// - `init_seg`: The initial segment of characters already read by the scanner.
+    /// - `init_seg_begin`: The beginning spot of the `init_seg`.
+    /// - `alt_op`: A closure to invoke if an identifier cannot be lexed.
+    fn lex_identifier_with_init_seg_or<F>(
+        &mut self,
+        char_read: Option<&'a str>,
+        init_seg: &String,
+        init_seg_begin: &Spot,
+        alt_op: F,
+    ) -> ResToken
+    where
+        F: Fn() -> ResToken,
+    {
+        match char_read {
+            Some(c) if char_validator::is_in_identifier_domain(c) => {
+                // Pass what the scanner just read to the identifier-lexing function below.
+                let init_seg = init_seg.to_owned() + c;
+                let char_end = self.scanner.locate().end;
+                self.scanner.advance();
+
+                let token = self.lex_identifier_with_init_seg(&init_seg, &Range::new(*init_seg_begin, char_end))?;
+                Ok(token)
+            }
+            _ => alt_op(),
+        }
+    }
+
+    /// Returns an identifier token with the characters `init_seg` and subsequent characters the scanner read.
+    fn lex_identifier_with_init_seg(&mut self, init_seg: &String, init_seg_location: &Range) -> ResToken {
+        let mut lexeme = init_seg.clone();
+        let mut lexeme_location = init_seg_location.clone();
+
+        while let Some(x) = self.scanner.read() {
+            if !char_validator::is_in_identifier_domain(x) {
+                break;
+            }
+
+            lexeme.push_str(x);
+            lexeme_location.end = self.scanner.locate().end;
+
+            self.scanner.advance();
+        }
+
+        Ok(Token::new(TokenKind::Identifier(lexeme), lexeme_location))
+    }
+
+    /// Returns true if `source` is `Some` and the value is equal to `target`.
+    fn is_equal_str(source: Option<&str>, target: &str) -> bool {
+        source.is_some_and(|c| c == target)
     }
 }
 
