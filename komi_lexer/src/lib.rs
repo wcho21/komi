@@ -21,10 +21,16 @@ struct Lexer<'a> {
     scanner: SourceScanner<'a>,
 }
 
+#[deprecated]
 fn is_not_id_domain(char: &str) -> bool {
     !char_validator::is_id_domain(char)
 }
 
+fn is_str(char: Option<&str>, to_be: &str) -> bool {
+    char.is_some_and(|c| c == to_be)
+}
+
+#[deprecated]
 fn is_id_domain_other_than(char: &str, filter: &str) -> bool {
     char_validator::is_id_domain(char) && char != filter
 }
@@ -34,16 +40,60 @@ impl<'a> Lexer<'a> {
         Self { scanner: SourceScanner::new(source) }
     }
 
+    fn lex_id_chars(
+        &mut self,
+        char: Option<&'a str>,
+        init_seg: &String,
+        init_seg_begin: &Spot,
+        init_seg_end: &Spot,
+    ) -> ResToken {
+        match char {
+            Some(c) if char_validator::is_id_domain(c) => {
+                let char_end = self.scanner.locate().end;
+                self.scanner.advance();
+
+                let init_seg = init_seg.to_owned() + c;
+                let token = self.lex_identifier_with_init_seg(&init_seg_begin, &init_seg, &char_end)?;
+                Ok(token)
+            }
+            _ => {
+                let lexeme = init_seg.clone();
+                let location = Range::new(*init_seg_begin, *init_seg_end);
+                let token = Token::new(TokenKind::Identifier(lexeme), location);
+                Ok(token)
+            }
+        }
+    }
+
+    fn lex_id_chars_or<F>(
+        &mut self,
+        char: Option<&'a str>,
+        init_seg: &String,
+        init_seg_begin: &Spot,
+        alt_op: F,
+    ) -> ResToken
+    where
+        F: Fn() -> ResToken,
+    {
+        match char {
+            Some(c) if char_validator::is_id_domain(c) => {
+                let char_end = self.scanner.locate().end;
+                self.scanner.advance();
+
+                let init_seg = init_seg.to_owned() + c;
+                let token = self.lex_identifier_with_init_seg(&init_seg_begin, &init_seg, &char_end)?;
+                Ok(token)
+            }
+            _ => alt_op(),
+        }
+    }
+
     // TODO: replace locate and advance logic with this, to force marking the previous location.
     fn locate_and_advance(&mut self) -> Range {
         let location = self.scanner.locate();
         self.scanner.advance();
 
         location
-    }
-
-    fn expect_or(char: &'a str) -> Token {
-        todo!()
     }
 
     pub fn lex(&mut self) -> ResTokens {
@@ -62,44 +112,25 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "거" => {
+                    let mut init_seg = String::from(first_char);
+                    let mut init_seg_location = first_location;
+
                     let second_char = self.scanner.read();
-                    if second_char.is_none_or(is_not_id_domain) {
-                        let first_char_end = first_location.end;
-                        let lexeme = String::from(first_char);
-                        let location = Range::new(first_location.begin, first_char_end);
-                        let token = Token::new(TokenKind::Identifier(lexeme), location);
+                    if !is_str(second_char, "짓") {
+                        let token = self.lex_id_chars_or(second_char, &init_seg, &init_seg_location.begin, || {
+                            Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
+                        })?;
                         tokens.push(token);
-
-                        continue;
-                    } else if second_char.is_some_and(|c| is_id_domain_other_than(c, "짓")) {
-                        let second_char_end = self.scanner.locate().end;
-                        self.scanner.advance();
-
-                        let init_seg = String::from(first_char) + second_char.unwrap();
-                        let token =
-                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &second_char_end)?;
-                        tokens.push(token);
-
                         continue;
                     }
 
-                    let second_location = self.locate_and_advance();
+                    init_seg.push_str(second_char.unwrap());
+                    init_seg_location.end = self.locate_and_advance().end;
 
                     let third_char = self.scanner.read();
-                    if third_char.is_some_and(char_validator::is_id_domain) {
-                        let third_char_end = self.scanner.locate().end;
-                        self.scanner.advance();
-
-                        let init_seg = String::from(first_char) + second_char.unwrap() + third_char.unwrap();
-                        let token =
-                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &third_char_end)?;
-                        tokens.push(token);
-
-                        continue;
-                    }
-
-                    let lexeme_location = Range::new(first_location.begin, second_location.end);
-                    let token = Token::new(TokenKind::Bool(false), lexeme_location);
+                    let token = self.lex_id_chars_or(third_char, &init_seg, &init_seg_location.begin, || {
+                        Ok(Token::new(TokenKind::Bool(false), init_seg_location))
+                    })?;
                     tokens.push(token);
                 }
                 "+" => {
@@ -135,84 +166,59 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "그" => {
+                    let mut init_seg = String::from(first_char);
+                    let mut init_seg_location = first_location;
+
                     let second_char = self.scanner.read();
-                    if second_char.is_none_or(is_not_id_domain) {
-                        // if end or non id, stop reading and make a first char to token
-                        // part *1
-                        let first_char_end = first_location.end;
-                        let lexeme = String::from(first_char);
-                        let location = Range::new(first_location.begin, first_char_end);
-                        let token = Token::new(TokenKind::Identifier(lexeme), location);
+                    if !is_str(second_char, "리") {
+                        let token = self.lex_id_chars_or(second_char, &init_seg, &init_seg_location.begin, || {
+                            Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
+                        })?;
                         tokens.push(token);
-
-                        continue;
-                    } else if second_char.is_some_and(|c| is_id_domain_other_than(c, "리")) {
-                        // if id other than expected, consume the char and pass it to id lexer
-                        // part *2
-                        let second_char_end = self.scanner.locate().end;
-                        self.scanner.advance();
-
-                        let init_seg = String::from(first_char) + second_char.unwrap();
-                        let token =
-                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &second_char_end)?;
-                        tokens.push(token);
-
                         continue;
                     }
 
-                    let second_location = self.locate_and_advance();
+                    init_seg.push_str(second_char.unwrap());
+                    init_seg_location.end = self.locate_and_advance().end;
 
                     let third_char = self.scanner.read();
-                    if third_char.is_none_or(is_not_id_domain) {
-                        // if end or non id, stop reading and make first and second char to token
-                        // part *1
-                        let second_char_end = second_location.end;
-                        let lexeme = String::from(first_char) + second_char.unwrap();
-                        let location = Range::new(first_location.begin, second_char_end);
-                        let token = Token::new(TokenKind::Identifier(lexeme), location);
+                    if !is_str(third_char, "고") {
+                        let token = self.lex_id_chars_or(third_char, &init_seg, &init_seg_location.begin, || {
+                            Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
+                        })?;
                         tokens.push(token);
-
-                        continue;
-                    } else if third_char.is_some_and(|c| is_id_domain_other_than(c, "고")) {
-                        // if id other than expected, consume the char and pass it to id lexer
-                        // part *2
-                        let third_char_end = self.scanner.locate().end;
-                        self.scanner.advance();
-
-                        let init_seg = String::from(first_char) + second_char.unwrap() + third_char.unwrap();
-                        let token =
-                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &third_char_end)?;
-                        tokens.push(token);
-
                         continue;
                     }
 
-                    let third_location = self.locate_and_advance();
+                    init_seg.push_str(third_char.unwrap());
+                    init_seg_location.end = self.locate_and_advance().end;
 
                     let fourth_char = self.scanner.read();
-                    if fourth_char.is_some_and(char_validator::is_id_domain) {
-                        // if id still, consume the char and pass it to id lexer
-                        // part *2
-                        let fourth_char_end = self.scanner.locate().end;
-                        self.scanner.advance();
-
-                        let init_seg = String::from(first_char)
-                            + second_char.unwrap()
-                            + third_char.unwrap()
-                            + fourth_char.unwrap();
-                        let token =
-                            self.lex_identifier_with_init_seg(&first_location.begin, &init_seg, &fourth_char_end)?;
-                        tokens.push(token);
-
-                        continue;
-                    }
-
-                    let lexeme_location = Range::new(first_location.begin, third_location.end);
-                    let token = Token::new(TokenKind::Conjunct, lexeme_location);
+                    let token = self.lex_id_chars_or(fourth_char, &init_seg, &init_seg_location.begin, || {
+                        Ok(Token::new(TokenKind::Conjunct, init_seg_location))
+                    })?;
                     tokens.push(token);
                 }
                 "또" => {
-                    let token = self.lex_disjunct_or_identifier(&first_location)?;
+                    let mut init_seg = String::from(first_char);
+                    let mut init_seg_location = first_location;
+
+                    let second_char = self.scanner.read();
+                    if !is_str(second_char, "는") {
+                        let token = self.lex_id_chars_or(second_char, &init_seg, &init_seg_location.begin, || {
+                            Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
+                        })?;
+                        tokens.push(token);
+                        continue;
+                    }
+
+                    init_seg.push_str(second_char.unwrap());
+                    init_seg_location.end = self.locate_and_advance().end;
+
+                    let third_char = self.scanner.read();
+                    let token = self.lex_id_chars_or(third_char, &init_seg, &init_seg_location.begin, || {
+                        Ok(Token::new(TokenKind::Disjunct, init_seg_location))
+                    })?;
                     tokens.push(token);
                 }
                 "#" => {
@@ -548,7 +554,7 @@ mod tests {
     #[case::bang("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)])]
     #[case::conjunct("그리고", vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)])]
     #[case::disjunct("또는", vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)])]
-    fn single_token(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn non_value_token(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
@@ -568,23 +574,25 @@ mod tests {
     #[case::first_three_chars_conjunct_but_fourth_other_id("그리고a", vec![mktoken!(TokenKind::Identifier(String::from("그리고a")), loc 0, 0, 0, 4)])]
     #[case::first_two_chars_false_but_not_third("거짓a", vec![mktoken!(TokenKind::Identifier(String::from("거짓a")), loc 0, 0, 0, 3)])]
     #[case::first_char_disjunct_but_end("또", vec![mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1)])]
-    #[case::first_char_disjunct_but_not_second("또늗", vec![mktoken!(TokenKind::Identifier(String::from("또늗")), loc 0, 0, 0, 2)])]
-    // TODO: add first_two_chars_disjuct_but_not_third
+    #[case::first_char_disjunct_but_second_non_id("또" , vec![mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1)])]
+    #[case::first_char_disjunct_but_second_other_id("또a", vec![mktoken!(TokenKind::Identifier(String::from("또a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_disjunct_but_third_other_id("또는a", vec![mktoken!(TokenKind::Identifier(String::from("또는a")), loc 0, 0, 0, 3)])]
     fn single_identifier(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
     #[rstest]
-    /// Should not fail, since the lexer does not know the syntax.
-    #[case::two_pluses("+ +", vec![
-        mktoken!(TokenKind::Plus, loc 0, 0, 0, "+".len()),
-        mktoken!(TokenKind::Plus, loc 0, "+ ".len(), 0, "+ +".len()),
-    ])]
     #[case::addition_expression("12 + 34.675", vec![
         mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len()),
         mktoken!(TokenKind::Plus, loc 0, "12 ".len(), 0, "12 +".len()),
         mktoken!(TokenKind::Number(34.675), loc 0, "12 + ".len(), 0, "12 + 34.675".len()),
     ])]
+    /// Should not fail in all below cases, since the lexer does not know the syntax.
+    #[case::two_pluses("+ +", vec![
+        mktoken!(TokenKind::Plus, loc 0, 0, 0, "+".len()),
+        mktoken!(TokenKind::Plus, loc 0, "+ ".len(), 0, "+ +".len()),
+    ])]
+    /// Cases below test locations when the first identifier token is lexed from the same lexing function with the second token.
     #[case::false_false("거짓 거짓", vec![
         mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2),
         mktoken!(TokenKind::Bool(false), loc 0, 3, 0, 5),
@@ -593,13 +601,53 @@ mod tests {
         mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1),
         mktoken!(TokenKind::Bool(false), loc 0, 2, 0, 4),
     ])]
-    #[case::id2_false("거짔 거짓", vec![
-        mktoken!(TokenKind::Identifier(String::from("거짔")), loc 0, 0, 0, 2),
+    #[case::id2_false("거a 거짓", vec![
+        mktoken!(TokenKind::Identifier(String::from("거a")), loc 0, 0, 0, 2),
         mktoken!(TokenKind::Bool(false), loc 0, 3, 0, 5),
     ])]
     #[case::id3_false("거짓a 거짓", vec![
         mktoken!(TokenKind::Identifier(String::from("거짓a")), loc 0, 0, 0, 3),
         mktoken!(TokenKind::Bool(false), loc 0, 4, 0, 6),
+    ])]
+    #[case::conjunct_conjunct("그리고 그리고", vec![
+        mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3),
+        mktoken!(TokenKind::Conjunct, loc 0, 4, 0, 7),
+    ])]
+    #[case::id1_conjuct("그 그리고", vec![
+        mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1),
+        mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
+    ])]
+    #[case::id2_conjunct("그a 그리고", vec![
+        mktoken!(TokenKind::Identifier(String::from("그a")), loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Conjunct, loc 0, 3, 0, 6),
+    ])]
+    #[case::id3_conjunct("그리 그리고", vec![
+        mktoken!(TokenKind::Identifier(String::from("그리")), loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Conjunct, loc 0, 3, 0, 6),
+    ])]
+    #[case::id4_conjunct("그리a 그리고", vec![
+        mktoken!(TokenKind::Identifier(String::from("그리a")), loc 0, 0, 0, 3),
+        mktoken!(TokenKind::Conjunct, loc 0, 4, 0, 7),
+    ])]
+    #[case::id4_conjunct("그리고a 그리고", vec![
+        mktoken!(TokenKind::Identifier(String::from("그리고a")), loc 0, 0, 0, 4),
+        mktoken!(TokenKind::Conjunct, loc 0, 5, 0, 8),
+    ])]
+    #[case::disjunct_disjunct("또는 또는", vec![
+        mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Disjunct, loc 0, 3, 0, 5),
+    ])]
+    #[case::id1_disjunct("또 또는", vec![
+        mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1),
+        mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
+    ])]
+    #[case::id2_disjunct("또a 또는", vec![
+        mktoken!(TokenKind::Identifier(String::from("또a")), loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Disjunct, loc 0, 3, 0, 5),
+    ])]
+    #[case::id3_disjunct("또는a 또는", vec![
+        mktoken!(TokenKind::Identifier(String::from("또는a")), loc 0, 0, 0, 3),
+        mktoken!(TokenKind::Disjunct, loc 0, 4, 0, 6),
     ])]
     fn multiple_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
