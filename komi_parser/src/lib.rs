@@ -460,6 +460,76 @@ mod tests {
             ),
         ])
     )]
+    #[case::plus_equals(
+        // Represents `a += 1`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::PlusEquals, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+        ],
+        mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(infix InfixPlusEquals, loc 0, 0, 0, 5,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(num 1.0, loc 0, 4, 0, 5),
+            ),
+        ])
+    )]
+    #[case::minus_equals(
+        // Represents `a -= 1`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::MinusEquals, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+        ],
+        mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(infix InfixMinusEquals, loc 0, 0, 0, 5,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(num 1.0, loc 0, 4, 0, 5),
+            ),
+        ])
+    )]
+    #[case::asterisk_equals(
+        // Represents `a *= 1`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::AsteriskEquals, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+        ],
+        mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(infix InfixAsteriskEquals, loc 0, 0, 0, 5,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(num 1.0, loc 0, 4, 0, 5),
+            ),
+        ])
+    )]
+    #[case::slash_equals(
+        // Represents `a /= 1`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::SlashEquals, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+        ],
+        mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(infix InfixSlashEquals, loc 0, 0, 0, 5,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(num 1.0, loc 0, 4, 0, 5),
+            ),
+        ])
+    )]
+    #[case::percent_equals(
+        // Represents `a %= 1`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::PercentEquals, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+        ],
+        mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(infix InfixPercentEquals, loc 0, 0, 0, 5,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(num 1.0, loc 0, 4, 0, 5),
+            ),
+        ])
+    )]
     fn infix(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
         assert_parse!(&tokens, expected);
     }
@@ -502,6 +572,54 @@ mod tests {
         vec![
             mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 2),
             mktoken!(TokenKind::Bool(true), loc 0, 3, 0, 4),
+        ],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::equals_without_left(
+        // Represents `=1`.
+        vec![
+            mktoken!(TokenKind::Equals, loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+        ],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+    )]
+    #[case::plus_equals_without_left(
+        // Represents `+=1`.
+        vec![
+            mktoken!(TokenKind::PlusEquals, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+        ],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::minus_equals_without_left(
+        // Represents `-=1`.
+        vec![
+            mktoken!(TokenKind::MinusEquals, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+        ],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::asterisk_equals_without_left(
+        // Represents `*=1`.
+        vec![
+            mktoken!(TokenKind::AsteriskEquals, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+        ],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::slash_equals_without_left(
+        // Represents `/=1`.
+        vec![
+            mktoken!(TokenKind::SlashEquals, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+        ],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::percent_equals_without_left(
+        // Represents `%=1`.
+        vec![
+            mktoken!(TokenKind::PercentEquals, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
         ],
         ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
@@ -566,6 +684,54 @@ mod tests {
         ],
         ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 4))
     )]
+    #[case::equals_without_right(
+        // Represents `a=`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Equals, loc 0, 1, 0, 2),
+        ],
+        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::plus_equals_without_right(
+        // Represents `a+=`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::PlusEquals, loc 0, 1, 0, 2),
+        ],
+        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::minus_equals_without_right(
+        // Represents `a-=`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::MinusEquals, loc 0, 2, 0, 3),
+        ],
+        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+    )]
+    #[case::asterisk_equals_without_right(
+        // Represents `a*=`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::AsteriskEquals, loc 0, 2, 0, 3),
+        ],
+        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+    )]
+    #[case::slash_equals_without_right(
+        // Represents `a/=`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::SlashEquals, loc 0, 2, 0, 3),
+        ],
+        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+    )]
+    #[case::percent_equals_without_right(
+        // Represents `a%=`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::PercentEquals, loc 0, 2, 0, 3),
+        ],
+        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+    )]
     fn infix_no_right_operand(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
     }
@@ -609,6 +775,36 @@ mod tests {
     #[case::disjunct(
         // Represents `또는`.
         vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::equals(
+        // Represents `=`.
+        vec![mktoken!(TokenKind::Equals, loc 0, 0, 0, 1)],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+    )]
+    #[case::plus_equals(
+        // Represents `+=`.
+        vec![mktoken!(TokenKind::PlusEquals, loc 0, 0, 0, 2)],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::minus_equals(
+        // Represents `-=`.
+        vec![mktoken!(TokenKind::MinusEquals, loc 0, 0, 0, 2)],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::asterisk_equals(
+        // Represents `*=`.
+        vec![mktoken!(TokenKind::AsteriskEquals, loc 0, 0, 0, 2)],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::slash_equals(
+        // Represents `/=`.
+        vec![mktoken!(TokenKind::SlashEquals, loc 0, 0, 0, 2)],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+    )]
+    #[case::percent_equals(
+        // Represents `%=`.
+        vec![mktoken!(TokenKind::PercentEquals, loc 0, 0, 0, 2)],
         ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     fn single_token(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
@@ -769,6 +965,125 @@ mod tests {
     }
 
     #[rstest]
+    #[case::two_equals(
+        // Represents `a=b=c`, and expects to be parsed into `a=(b=c)`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Equals, loc 0, 1, 0, 2),
+            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Equals, loc 0, 3, 0, 4),
+            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 4, 0, 5),
+        ],
+        mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(infix InfixEquals, loc 0, 0, 0, 5,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(infix InfixEquals, loc 0, 2, 0, 5,
+                    left mkast!(identifier "b", loc 0, 2, 0, 3),
+                    right mkast!(identifier "c", loc 0, 4, 0, 5),
+                ),
+            ),
+        ])
+    )]
+    #[case::two_plus_equals(
+        // Represents `a+=b+= c`, and expects to be parsed into `a+=(b+=c)`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::PlusEquals, loc 0, 1, 0, 3),
+            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 3, 0, 4),
+            mktoken!(TokenKind::PlusEquals, loc 0, 4, 0, 6),
+            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 6, 0, 7),
+        ],
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixPlusEquals, loc 0, 0, 0, 7,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(infix InfixPlusEquals, loc 0, 3, 0, 7,
+                    left mkast!(identifier "b", loc 0, 3, 0, 4),
+                    right mkast!(identifier "c", loc 0, 6, 0, 7),
+                ),
+            ),
+        ])
+    )]
+    #[case::two_minus_equals(
+        // Represents `a-=b-=c`, and expects to be parsed into `a-=(b-=c)`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::MinusEquals, loc 0, 1, 0, 3),
+            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 3, 0, 4),
+            mktoken!(TokenKind::MinusEquals, loc 0, 4, 0, 6),
+            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 6, 0, 7),
+        ],
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixMinusEquals, loc 0, 0, 0, 7,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(infix InfixMinusEquals, loc 0, 3, 0, 7,
+                    left mkast!(identifier "b", loc 0, 3, 0, 4),
+                    right mkast!(identifier "c", loc 0, 6, 0, 7),
+                ),
+            ),
+        ])
+    )]
+    #[case::two_asterisk_equals(
+        // Represents `a*=b*=c`, and expects to be parsed into `a*=(b*=c)`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::AsteriskEquals, loc 0, 1, 0, 3),
+            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 3, 0, 4),
+            mktoken!(TokenKind::AsteriskEquals, loc 0, 4, 0, 6),
+            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 6, 0, 7),
+        ],
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixAsteriskEquals, loc 0, 0, 0, 7,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(infix InfixAsteriskEquals, loc 0, 3, 0, 7,
+                    left mkast!(identifier "b", loc 0, 3, 0, 4),
+                    right mkast!(identifier "c", loc 0, 6, 0, 7),
+                ),
+            ),
+        ])
+    )]
+    #[case::two_slash_equals(
+        // Represents `a/=b/=c`, and expects to be parsed into `a/=(b/=c)`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::SlashEquals, loc 0, 1, 0, 3),
+            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 3, 0, 4),
+            mktoken!(TokenKind::SlashEquals, loc 0, 4, 0, 6),
+            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 6, 0, 7),
+        ],
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixSlashEquals, loc 0, 0, 0, 7,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(infix InfixSlashEquals, loc 0, 3, 0, 7,
+                    left mkast!(identifier "b", loc 0, 3, 0, 4),
+                    right mkast!(identifier "c", loc 0, 6, 0, 7),
+                ),
+            ),
+        ])
+    )]
+    #[case::two_percent_equals(
+        // Represents `a%=b%=c`, and expects to be parsed into `a%=(b%=c)`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::PercentEquals, loc 0, 1, 0, 3),
+            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 3, 0, 4),
+            mktoken!(TokenKind::PercentEquals, loc 0, 4, 0, 6),
+            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 6, 0, 7),
+        ],
+        mkast!(prog loc 0, 0, 0, 7, vec![
+            mkast!(infix InfixPercentEquals, loc 0, 0, 0, 7,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(infix InfixPercentEquals, loc 0, 3, 0, 7,
+                    left mkast!(identifier "b", loc 0, 3, 0, 4),
+                    right mkast!(identifier "c", loc 0, 6, 0, 7),
+                ),
+            ),
+        ])
+    )]
+    fn right_associativity(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
+        assert_parse!(&tokens, expected);
+    }
+
+    #[rstest]
     #[case::asterisk_prioritized_over_plus(
         // Represents `1+2*3`, and expects to be parsed into `1+(2*3)`.
         vec![
@@ -822,6 +1137,25 @@ mod tests {
                 right mkast!(infix InfixPercent, loc 0, 2, 0, 5,
                     left mkast!(num 2.0, loc 0, 2, 0, 3),
                     right mkast!(num 3.0, loc 0, 4, 0, 5),
+                ),
+            ),
+        ])
+    )]
+    #[case::plus_prioritized_over_equals(
+        // Represents `a=1+2`, and expects to be parsed into `a=(1+2)`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Equals, loc 0, 1, 0, 2),
+            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Plus, loc 0, 3, 0, 4),
+            mktoken!(TokenKind::Number(2.0), loc 0, 4, 0, 5),
+        ],
+        mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(infix InfixEquals, loc 0, 0, 0, 5,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(infix InfixPlus, loc 0, 2, 0, 5,
+                    left mkast!(num 1.0, loc 0, 2, 0, 3),
+                    right mkast!(num 2.0, loc 0, 4, 0, 5),
                 ),
             ),
         ])
@@ -969,6 +1303,28 @@ mod tests {
         mkast!(prog loc 0, 0, 0, 3, vec![
             mkast!(num 1.0, loc 0, 0, 0, 1),
             mkast!(num 2.0, loc 0, 2, 0, 3),
+        ])
+    )]
+    #[case::two_bools(
+        // Represents `참 거짓`.
+        vec![
+            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Bool(false), loc 0, 2, 0, 4),
+        ],
+        mkast!(prog loc 0, 0, 0, 4, vec![
+            mkast!(boolean true, loc 0, 0, 0, 1),
+            mkast!(boolean false, loc 0, 2, 0, 4),
+        ])
+    )]
+    #[case::two_identifiers(
+        // Represents `사과 오렌지`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::Identifier(String::from("오렌지")), loc 0, 3, 0, 6),
+        ],
+        mkast!(prog loc 0, 0, 0, 6, vec![
+            mkast!(identifier "사과", loc 0, 0, 0, 2),
+            mkast!(identifier "오렌지", loc 0, 3, 0, 6),
         ])
     )]
     fn multiple_tokens(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
