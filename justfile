@@ -13,5 +13,8 @@ test type="unit":
     echo "Usage: just test [unit|int]"; \
   fi
 
+test-watch:
+  ./bin/test-watch
+
 ci:
   ./bin/ci
