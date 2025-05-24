@@ -5,9 +5,9 @@ use komi_util::{Range, range};
 #[derive(Debug, PartialEq, Clone)]
 pub enum AstKind {
     Program { expressions: Vec<Box<Ast>> },
-    Identifier(String),
     Number(f64),
     Bool(bool),
+    Identifier(String),
     PrefixPlus { operand: Box<Ast> },
     PrefixMinus { operand: Box<Ast> },
     PrefixBang { operand: Box<Ast> },
