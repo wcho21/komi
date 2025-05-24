@@ -795,6 +795,21 @@ mod tests {
         mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
         mktoken!(TokenKind::Bool(false), loc 0, 6, 0, 8),
     ])]
+    #[case::function_expression_with_no_parameters("함수 { 1 }", vec![
+        mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+        mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
+        mktoken!(TokenKind::Number(1.0), loc 0, 5, 0, 6),
+        mktoken!(TokenKind::RBrace, loc 0, 7, 0, 8),
+    ])]
+    #[case::function_expression_with_parameters("함수 사과, 바나나 { 1 }", vec![
+        mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 3, 0, 5),
+        mktoken!(TokenKind::Comma, loc 0, 5, 0, 6),
+        mktoken!(TokenKind::Identifier(String::from("바나나")), loc 0, 7, 0, 10),
+        mktoken!(TokenKind::LBrace, loc 0, 11, 0, 12),
+        mktoken!(TokenKind::Number(1.0), loc 0, 13, 0, 14),
+        mktoken!(TokenKind::RBrace, loc 0, 15, 0, 16),
+    ])]
     fn multiple_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
