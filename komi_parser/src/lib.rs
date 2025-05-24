@@ -137,6 +137,10 @@ impl<'a> Parser<'a> {
                 let get_kind = |left, right| AstKind::InfixDisjunct { left, right };
                 self.read_right_and_make_infix_ast(left, &bp::CONNECTIVE_BP, get_kind)
             }
+            TokenKind::Equals => {
+                let get_kind = |left, right| AstKind::InfixEquals { left, right };
+                self.read_right_and_make_infix_ast(left, &Bp::ASSIGNMENT, get_kind)
+            }
             _ => panic!("todo"), // NOTE: this undetermined cases came from calling of the parse_expression(), and bp says nothing about the token kinds explicitly
         }
     }
@@ -470,6 +474,20 @@ mod tests {
             mkast!(infix InfixDisjunct, loc 0, 0, 0, 7,
                 left mkast!(boolean true, loc 0, 0, 0, 1),
                 right mkast!(boolean false, loc 0, 5, 0, 7),
+            ),
+        ])
+    )]
+    #[case::equals(
+        // Represents `a = 1`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
+            mktoken!(TokenKind::Equals, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+        ],
+        mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(infix InfixEquals, loc 0, 0, 0, 5,
+                left mkast!(identifier "a", loc 0, 0, 0, 1),
+                right mkast!(num 1.0, loc 0, 4, 0, 5),
             ),
         ])
     )]
