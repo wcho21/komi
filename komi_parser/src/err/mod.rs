@@ -13,6 +13,10 @@ pub enum ParseErrorKind {
     NoInfixRightOperand,
     // No prefix operand, such as `+`.
     NoPrefixOperand,
+    // Invalid tokens in function parameters, such as `함수 +`.
+    InvalidFuncParam,
+    // A function body beginning with `{` is not closed, such as `함수 {`
+    FuncBodyNotClosed,
     /// An internal error impossible to occur if parsed as expected.
     Unexpected,
 }
@@ -26,6 +30,8 @@ impl fmt::Display for ParseErrorKind {
             ParseErrorKind::LParenNotClosed => "LParenNotClosed",
             ParseErrorKind::NoInfixRightOperand => "NoInfixRightOperand",
             ParseErrorKind::NoPrefixOperand => "NoPrefixOperand",
+            ParseErrorKind::InvalidFuncParam => "InvalidFuncParam",
+            ParseErrorKind::FuncBodyNotClosed => "FuncBodyNotClosed",
             ParseErrorKind::Unexpected => "Unexpected",
         };
         write!(f, "{}", s)
