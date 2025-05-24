@@ -16,8 +16,6 @@ pub struct Value {
     pub location: Range,
 }
 
-/// Test code as a specification.
-/// Each test case shows which value the function returns for a given location.
 impl Value {
     pub const fn new(kind: ValueKind, location: Range) -> Self {
         Value { kind, location }

@@ -8,7 +8,7 @@ use crate::ast_reducer::combinator_infix as comb;
 use crate::environment::Environment;
 use crate::err::EvalError;
 use assignment_infix_reducer as reducer;
-use komi_syntax::{Ast, Value, ValueKind};
+use komi_syntax::{Ast, Value};
 use komi_util::Range;
 
 type ResVal = Result<Value, EvalError>;

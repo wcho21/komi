@@ -41,7 +41,6 @@ pub fn reduce_ast(ast: &Ast, env: &mut Environment) -> ResVal {
         }
         AstKind::InfixSlashEquals { left: l, right: r } => assignment_infix::reduce_slash_equals(&l, &r, &loc, env),
         AstKind::InfixPercentEquals { left: l, right: r } => assignment_infix::reduce_percent_equals(&l, &r, &loc, env),
-        _ => todo!(),
     }
 }
 

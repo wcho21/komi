@@ -8,7 +8,7 @@ mod token_scanner;
 
 pub use err::{ParseError, ParseErrorKind};
 use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
-use komi_util::{Range, Scanner};
+use komi_util::{Range, Scanner, range};
 use token_scanner::TokenScanner;
 
 type ResAst = Result<Box<Ast>, ParseError>;
@@ -43,7 +43,7 @@ impl<'a> Parser<'a> {
             expressions.push(e);
         }
 
-        return Ok(Box::new(Ast::from_program(expressions)));
+        self.make_program_ast(expressions)
     }
 
     fn parse_expression(&mut self, first_token: &'a Token, threshold_bp: &Bp) -> ResAst {
@@ -170,19 +170,36 @@ impl<'a> Parser<'a> {
         Ok(infix)
     }
 
-    fn make_num_ast(&mut self, num: f64, location: &Range) -> ResAst {
+    fn make_num_ast(&self, num: f64, location: &Range) -> ResAst {
         Ok(Box::new(Ast::new(AstKind::Number(num), *location)))
     }
 
-    fn make_bool_ast(&mut self, boolean: bool, location: &Range) -> ResAst {
+    fn make_bool_ast(&self, boolean: bool, location: &Range) -> ResAst {
         Ok(Box::new(Ast::new(AstKind::Bool(boolean), *location)))
     }
 
-    fn make_identifier_ast(&mut self, identifier: &str, location: &Range) -> ResAst {
+    fn make_identifier_ast(&self, identifier: &str, location: &Range) -> ResAst {
         Ok(Box::new(Ast::new(
             AstKind::Identifier(identifier.to_owned()),
             *location,
         )))
+    }
+
+    fn make_program_ast(&self, expressions: Vec<Box<Ast>>) -> ResAst {
+        let location = self.locate_expressions(&expressions);
+
+        Ok(Box::new(Ast::new(AstKind::Program { expressions }, location)))
+    }
+
+    fn locate_expressions(&self, expressions: &Vec<Box<Ast>>) -> Range {
+        if expressions.len() == 0 {
+            return range::ORIGIN;
+        }
+
+        Range {
+            begin: expressions[0].location.begin,
+            end: expressions[expressions.len() - 1].location.end,
+        }
     }
 }
 
