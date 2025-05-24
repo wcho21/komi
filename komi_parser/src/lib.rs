@@ -7,7 +7,6 @@ mod err;
 mod token_scanner;
 
 pub use err::{ParseError, ParseErrorKind};
-use komi_syntax::bp;
 use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
 use komi_util::{Range, Scanner};
 use token_scanner::TokenScanner;
@@ -32,7 +31,7 @@ impl<'a> Parser<'a> {
         let mut expressions: Vec<Box<Ast>> = vec![];
 
         while let Some(x) = self.scanner.read() {
-            let e = self.parse_expression(x, &bp::LOWEST_BP)?;
+            let e = self.parse_expression(x, &Bp::LOWEST)?;
             expressions.push(e);
         }
 
@@ -108,46 +107,24 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_infix_expression(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
-        match infix.kind {
-            TokenKind::Plus => {
-                let get_kind = |left, right| AstKind::InfixPlus { left, right };
-                self.read_right_and_make_infix_ast(left, &bp::ADDITIVE_BP, get_kind)
-            }
-            TokenKind::Minus => {
-                let get_kind = |left, right| AstKind::InfixMinus { left, right };
-                self.read_right_and_make_infix_ast(left, &bp::ADDITIVE_BP, get_kind)
-            }
-            TokenKind::Asterisk => {
-                let get_kind = |left, right| AstKind::InfixAsterisk { left, right };
-                self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, get_kind)
-            }
-            TokenKind::Slash => {
-                let get_kind = |left, right| AstKind::InfixSlash { left, right };
-                self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, get_kind)
-            }
-            TokenKind::Percent => {
-                let get_kind = |left, right| AstKind::InfixPercent { left, right };
-                self.read_right_and_make_infix_ast(left, &bp::MULTIPLICATIVE_BP, get_kind)
-            }
-            TokenKind::Conjunct => {
-                let get_kind = |left, right| AstKind::InfixConjunct { left, right };
-                self.read_right_and_make_infix_ast(left, &bp::CONNECTIVE_BP, get_kind)
-            }
-            TokenKind::Disjunct => {
-                let get_kind = |left, right| AstKind::InfixDisjunct { left, right };
-                self.read_right_and_make_infix_ast(left, &bp::CONNECTIVE_BP, get_kind)
-            }
-            TokenKind::Equals => {
-                let get_kind = |left, right| AstKind::InfixEquals { left, right };
-                self.read_right_and_make_infix_ast(left, &Bp::ASSIGNMENT, get_kind)
-            }
+        // Determine the AST kind by `get_kind` and the binding power of the infix by `bp`.
+        let (get_kind, bp): (fn(Box<Ast>, Box<Ast>) -> AstKind, &Bp) = match infix.kind {
+            TokenKind::Plus => (|l, r| AstKind::InfixPlus { left: l, right: r }, &Bp::ADDITIVE),
+            TokenKind::Minus => (|l, r| AstKind::InfixMinus { left: l, right: r }, &Bp::ADDITIVE),
+            TokenKind::Asterisk => (|l, r| AstKind::InfixAsterisk { left: l, right: r }, &Bp::MULTIPLICATIVE),
+            TokenKind::Slash => (|l, r| AstKind::InfixSlash { left: l, right: r }, &Bp::MULTIPLICATIVE),
+            TokenKind::Percent => (|l, r| AstKind::InfixPercent { left: l, right: r }, &Bp::MULTIPLICATIVE),
+            TokenKind::Conjunct => (|l, r| AstKind::InfixConjunct { left: l, right: r }, &Bp::CONNECTIVE),
+            TokenKind::Disjunct => (|l, r| AstKind::InfixDisjunct { left: l, right: r }, &Bp::CONNECTIVE),
+            TokenKind::Equals => (|l, r| AstKind::InfixEquals { left: l, right: r }, &Bp::ASSIGNMENT),
             _ => panic!("todo"), // NOTE: this undetermined cases came from calling of the parse_expression(), and bp says nothing about the token kinds explicitly
-        }
+        };
+        self.read_right_and_make_infix_ast(left, bp, get_kind)
     }
 
     fn parse_grouped_expression(&mut self, first_token: &'a Token) -> ResAst {
         let mut grouped_ast = match self.scanner.read() {
-            Some(x) => self.parse_expression(x, &bp::LOWEST_BP),
+            Some(x) => self.parse_expression(x, &Bp::LOWEST),
             None => Err(ParseError::new(ParseErrorKind::LParenNotClosed, first_token.location)),
         }?;
 
@@ -175,7 +152,7 @@ impl<'a> Parser<'a> {
             return Err(ParseError::new(ParseErrorKind::NoPrefixOperand, location));
         };
 
-        let operand = self.parse_expression(x, &bp::PREFIX_BP)?;
+        let operand = self.parse_expression(x, &Bp::PREFIX)?;
 
         let location = Range::new(prefix_location.begin, operand.location.end);
         let kind = get_kind(operand);
