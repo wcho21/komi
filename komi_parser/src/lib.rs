@@ -25,6 +25,8 @@ macro_rules! mkinfix {
 }
 
 impl<'a> Parser<'a> {
+    // Design principle: once you read a token to use, advance the scanner and pass the data of the token as an argument.
+
     pub fn new(tokens: &'a Vec<Token>) -> Self {
         Self { scanner: TokenScanner::new(tokens) }
     }
@@ -36,7 +38,7 @@ impl<'a> Parser<'a> {
     fn parse_program(&mut self) -> ResAst {
         let mut expressions: Vec<Box<Ast>> = vec![];
 
-        while let Some(x) = self.scanner.read() {
+        while let Some(x) = self.scanner.read_and_advance() {
             let e = self.parse_expression(x, &Bp::LOWEST)?;
             expressions.push(e);
         }
@@ -62,34 +64,13 @@ impl<'a> Parser<'a> {
 
     fn parse_expression_start(&mut self, first_token: &'a Token) -> ResAst {
         match &first_token.kind {
-            TokenKind::Number(n) => {
-                self.scanner.advance();
-                self.make_num_ast(*n, &first_token.location)
-            }
-            TokenKind::Bool(b) => {
-                self.scanner.advance();
-                self.make_bool_ast(*b, &first_token.location)
-            }
-            TokenKind::Identifier(i) => {
-                self.scanner.advance();
-                self.make_identifier_ast(i, &first_token.location)
-            }
-            TokenKind::Plus => {
-                self.scanner.advance();
-                self.parse_plus_prefix_expression(&first_token.location)
-            }
-            TokenKind::Minus => {
-                self.scanner.advance();
-                self.parse_minus_prefix_expression(&first_token.location)
-            }
-            TokenKind::Bang => {
-                self.scanner.advance();
-                self.parse_bang_prefix_expression(&first_token.location)
-            }
-            TokenKind::LParen => {
-                self.scanner.advance();
-                self.parse_grouped_expression(first_token)
-            }
+            TokenKind::Number(n) => self.make_num_ast(*n, &first_token.location),
+            TokenKind::Bool(b) => self.make_bool_ast(*b, &first_token.location),
+            TokenKind::Identifier(i) => self.make_identifier_ast(i, &first_token.location),
+            TokenKind::Plus => self.parse_plus_prefix_expression(&first_token.location),
+            TokenKind::Minus => self.parse_minus_prefix_expression(&first_token.location),
+            TokenKind::Bang => self.parse_bang_prefix_expression(&first_token.location),
+            TokenKind::LParen => self.parse_grouped_expression(first_token),
             _ => {
                 let location = first_token.location;
                 Err(ParseError::new(ParseErrorKind::InvalidExprStart, location))
@@ -134,20 +115,20 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_grouped_expression(&mut self, first_token: &'a Token) -> ResAst {
-        let mut grouped_ast = match self.scanner.read() {
+        let mut grouped_ast = match self.scanner.read_and_advance() {
             Some(x) => self.parse_expression(x, &Bp::LOWEST),
             None => Err(ParseError::new(ParseErrorKind::LParenNotClosed, first_token.location)),
         }?;
 
-        match self.scanner.read() {
+        let rparen_location = self.scanner.locate();
+        match self.scanner.read_and_advance() {
             Some(x) if x.kind == TokenKind::RParen => {
-                let location = Range::new(first_token.location.begin, self.scanner.locate().end);
+                let location = Range::new(first_token.location.begin, rparen_location.end);
                 grouped_ast.location = location;
-                self.scanner.advance();
                 Ok(grouped_ast)
             }
             _ => {
-                let location = Range::new(first_token.location.begin, self.scanner.locate().end);
+                let location = Range::new(first_token.location.begin, rparen_location.end);
                 Err(ParseError::new(ParseErrorKind::LParenNotClosed, location))
             }
         }
@@ -158,7 +139,7 @@ impl<'a> Parser<'a> {
         F: Fn(Box<Ast>) -> AstKind,
     {
         // Return an error if end
-        let Some(x) = self.scanner.read() else {
+        let Some(x) = self.scanner.read_and_advance() else {
             let location = Range::new(prefix_location.begin, self.scanner.locate().end);
             return Err(ParseError::new(ParseErrorKind::NoPrefixOperand, location));
         };
@@ -176,7 +157,7 @@ impl<'a> Parser<'a> {
         F: Fn(Box<Ast>, Box<Ast>) -> AstKind,
     {
         // Return an error if end
-        let Some(x) = self.scanner.read() else {
+        let Some(x) = self.scanner.read_and_advance() else {
             let location = Range::new(left.location.begin, self.scanner.locate().end);
             return Err(ParseError::new(ParseErrorKind::NoInfixRightOperand, location));
         };
