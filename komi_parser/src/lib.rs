@@ -71,11 +71,39 @@ impl<'a> Parser<'a> {
             TokenKind::Minus => self.parse_minus_prefix_expression(&first_token.location),
             TokenKind::Bang => self.parse_bang_prefix_expression(&first_token.location),
             TokenKind::LParen => self.parse_grouped_expression(first_token),
+            TokenKind::Function => self.parse_function_expression(&first_token.location),
             _ => {
                 let location = first_token.location;
                 Err(ParseError::new(ParseErrorKind::InvalidExprStart, location))
             }
         }
+    }
+
+    /// Parses characters into a function-expression AST, with the location `keyword_location` of the function keyword.
+    /// Should be called after the scanner has advanced past the function keyword.
+    fn parse_function_expression(&mut self, keyword_location: &'a Range) -> ResAst {
+        let mut parameters: Vec<String> = vec![];
+
+        let token_location = self.scanner.locate();
+        let token = self.scanner.read_and_advance();
+        if let Some(Token { kind: TokenKind::Identifier(id), .. }) = &token {
+            // If an identifier encountered.
+            todo!()
+        } else if token.is_none() || token.unwrap().kind != TokenKind::LBrace {
+            // Should be an rbrace if no identifier appears. Return an error if not.
+            return Err(ParseError::new(ParseErrorKind::InvalidFuncParam, token_location));
+        }
+
+        // Parse the function body
+
+        let token_location = self.scanner.locate();
+        let token = self.scanner.read_and_advance();
+        if token.is_none() || token.unwrap().kind != TokenKind::RBrace {
+            return Err(ParseError::new(ParseErrorKind::FuncBodyNotClosed, token_location));
+        }
+
+        let function_location = Range::new(keyword_location.begin, token_location.end);
+        self.make_function_ast(parameters, vec![], &function_location)
     }
 
     fn parse_plus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
@@ -181,6 +209,13 @@ impl<'a> Parser<'a> {
     fn make_identifier_ast(&self, identifier: &str, location: &Range) -> ResAst {
         Ok(Box::new(Ast::new(
             AstKind::Identifier(identifier.to_owned()),
+            *location,
+        )))
+    }
+
+    fn make_function_ast(&self, parameters: Vec<String>, expressions: Vec<Box<Ast>>, location: &Range) -> ResAst {
+        Ok(Box::new(Ast::new(
+            AstKind::Function { parameters, body: expressions },
             *location,
         )))
     }
@@ -1307,6 +1342,53 @@ mod tests {
         ParseError::new(ParseErrorKind::LParenNotClosed, Range::from_nums(0, 0, 0, 5))
     )]
     fn unmatched_parenthesis(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
+        assert_parse_fail!(&tokens, error);
+    }
+
+    #[rstest]
+    #[case::empty_function(
+        // Represents `함수 {}`.
+        vec![
+            mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
+            mktoken!(TokenKind::RBrace, loc 0, 4, 0, 5),
+        ],
+        mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(func loc 0, 0, 0, 5,
+                param vec![],
+                body vec![],
+            ),
+        ])
+    )]
+    fn function(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
+        assert_parse!(&tokens, expected);
+    }
+
+    #[rstest]
+    #[case::end_with_keyword(
+        // Represents `함수`.
+        vec![
+            mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+        ],
+        ParseError::new(ParseErrorKind::InvalidFuncParam, Range::from_nums(0, 2, 0, 2))
+    )]
+    #[case::invalid_parameters(
+        // Represents `함수 +`.
+        vec![
+            mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::Plus, loc 0, 3, 0, 4),
+        ],
+        ParseError::new(ParseErrorKind::InvalidFuncParam, Range::from_nums(0, 3, 0, 4))
+    )]
+    #[case::body_not_closed(
+        // Represents `함수 {`.
+        vec![
+            mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
+        ],
+        ParseError::new(ParseErrorKind::FuncBodyNotClosed, Range::from_nums(0, 4, 0, 4))
+    )]
+    fn invalid_function(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
     }
 
