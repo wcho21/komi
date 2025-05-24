@@ -262,6 +262,46 @@ mod tests {
                 }
             }
         }
+
+        mod assignment {
+            use super::*;
+
+            #[wasm_bindgen_test]
+            fn assignment() -> Result<(), JsValue> {
+                assert_exec!("사과=1", "1");
+                Ok(())
+            }
+
+            #[wasm_bindgen_test]
+            fn addition_assignment() -> Result<(), JsValue> {
+                assert_exec!("사과=6 사과+=4 사과", "10");
+                Ok(())
+            }
+
+            #[wasm_bindgen_test]
+            fn subtraction_assignment() -> Result<(), JsValue> {
+                assert_exec!("사과=6 사과-=4 사과", "2");
+                Ok(())
+            }
+
+            #[wasm_bindgen_test]
+            fn multiplication_assignment() -> Result<(), JsValue> {
+                assert_exec!("사과=6 사과*=4 사과", "24");
+                Ok(())
+            }
+
+            #[wasm_bindgen_test]
+            fn division_assignment() -> Result<(), JsValue> {
+                assert_exec!("사과=6 사과/=4 사과", "1.5");
+                Ok(())
+            }
+
+            #[wasm_bindgen_test]
+            fn modular_assignment() -> Result<(), JsValue> {
+                assert_exec!("사과=6 사과%=4 사과", "2");
+                Ok(())
+            }
+        }
     }
 
     mod lex_errors {
