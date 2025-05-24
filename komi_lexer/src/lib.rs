@@ -127,7 +127,7 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "함" => {
-                    let token = self.expect_or_lex_identifier("수", TokenKind::Function, char, &char_location)?;
+                    let token = self.expect_or_lex_identifier("수", TokenKind::Closure, char, &char_location)?;
                     tokens.push(token);
                 }
                 "만" => {
@@ -514,7 +514,7 @@ mod tests {
     #[case::rbracket_equals(">=", vec![mktoken!(TokenKind::RBracketEquals, loc 0, 0, 0, 2)])]
     #[case::conjunct("그리고", vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)])]
     #[case::disjunct("또는", vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)])]
-    #[case::function("함수", vec![mktoken!(TokenKind::Function, loc 0, 0, 0, 2)])]
+    #[case::closure("함수", vec![mktoken!(TokenKind::Closure, loc 0, 0, 0, 2)])]
     #[case::if_branch("만약", vec![mktoken!(TokenKind::IfBranch, loc 0, 0, 0, 2)])]
     #[case::else_branch("아니면", vec![mktoken!(TokenKind::ElseBranch, loc 0, 0, 0, 3)])]
     #[case::iteration("반복", vec![mktoken!(TokenKind::Iteration, loc 0, 0, 0, 2)])]
@@ -658,9 +658,9 @@ mod tests {
         mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2),
         mktoken!(TokenKind::Disjunct, loc 0, 3, 0, 5),
     ])]
-    #[case::disjunct_function("함수 함수", vec![
-        mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
-        mktoken!(TokenKind::Function, loc 0, 3, 0, 5),
+    #[case::closure_closure("함수 함수", vec![
+        mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Closure, loc 0, 3, 0, 5),
     ])]
     #[case::if_branch_if_branch("만약 만약", vec![
         mktoken!(TokenKind::IfBranch, loc 0, 0, 0, 2),
@@ -724,17 +724,17 @@ mod tests {
         mktoken!(TokenKind::Identifier(String::from("또는a")), loc 0, 0, 0, 3),
         mktoken!(TokenKind::Disjunct, loc 0, 4, 0, 6),
     ])]
-    #[case::id1_function("함 함수", vec![
+    #[case::id1_closure("함 함수", vec![
         mktoken!(TokenKind::Identifier(String::from("함")), loc 0, 0, 0, 1),
-        mktoken!(TokenKind::Function, loc 0, 2, 0, 4),
+        mktoken!(TokenKind::Closure, loc 0, 2, 0, 4),
     ])]
-    #[case::id2_function("함a 함수", vec![
+    #[case::id2_closure("함a 함수", vec![
         mktoken!(TokenKind::Identifier(String::from("함a")), loc 0, 0, 0, 2),
-        mktoken!(TokenKind::Function, loc 0, 3, 0, 5),
+        mktoken!(TokenKind::Closure, loc 0, 3, 0, 5),
     ])]
-    #[case::id3_function("함수a 함수", vec![
+    #[case::id3_closure("함수a 함수", vec![
         mktoken!(TokenKind::Identifier(String::from("함수a")), loc 0, 0, 0, 3),
-        mktoken!(TokenKind::Function, loc 0, 4, 0, 6),
+        mktoken!(TokenKind::Closure, loc 0, 4, 0, 6),
     ])]
     #[case::id1_if_branch("만 만약", vec![
         mktoken!(TokenKind::Identifier(String::from("만")), loc 0, 0, 0, 1),
@@ -795,14 +795,14 @@ mod tests {
         mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
         mktoken!(TokenKind::Bool(false), loc 0, 6, 0, 8),
     ])]
-    #[case::function_expression_with_no_parameters("함수 { 1 }", vec![
-        mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+    #[case::closure_expression_with_no_parameters("함수 { 1 }", vec![
+        mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
         mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
         mktoken!(TokenKind::Number(1.0), loc 0, 5, 0, 6),
         mktoken!(TokenKind::RBrace, loc 0, 7, 0, 8),
     ])]
-    #[case::function_expression_with_parameters("함수 사과, 바나나 { 1 }", vec![
-        mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+    #[case::closure_expression_with_parameters("함수 사과, 바나나 { 1 }", vec![
+        mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
         mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 3, 0, 5),
         mktoken!(TokenKind::Comma, loc 0, 5, 0, 6),
         mktoken!(TokenKind::Identifier(String::from("바나나")), loc 0, 7, 0, 10),
