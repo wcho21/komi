@@ -34,6 +34,13 @@ pub fn reduce_ast(ast: &Ast, env: &mut Environment) -> ResVal {
         AstKind::InfixConjunct { left: l, right: r } => combinator_infix::reduce_conjunct(&l, &r, &loc, env),
         AstKind::InfixDisjunct { left: l, right: r } => combinator_infix::reduce_disjunct(&l, &r, &loc, env),
         AstKind::InfixEquals { left: l, right: r } => assignment_infix::reduce_equals(&l, &r, &loc, env),
+        AstKind::InfixPlusEquals { left: l, right: r } => assignment_infix::reduce_plus_equals(&l, &r, &loc, env),
+        AstKind::InfixMinusEquals { left: l, right: r } => assignment_infix::reduce_minus_equals(&l, &r, &loc, env),
+        AstKind::InfixAsteriskEquals { left: l, right: r } => {
+            assignment_infix::reduce_asterisk_equals(&l, &r, &loc, env)
+        }
+        AstKind::InfixSlashEquals { left: l, right: r } => assignment_infix::reduce_slash_equals(&l, &r, &loc, env),
+        AstKind::InfixPercentEquals { left: l, right: r } => assignment_infix::reduce_percent_equals(&l, &r, &loc, env),
         _ => todo!(),
     }
 }
@@ -79,7 +86,6 @@ mod tests {
             );
         };
         ($ast:expr, $env:expr, $expected:expr $(,)?) => {
-            let env = Environment::new();
             assert_eq!(
                 reduce_ast($ast, $env),
                 Err($expected),
@@ -607,8 +613,142 @@ mod tests {
             ]),
             Value::from_bool(true, Range::from_nums(0, 0, 0, 6))
         )]
-        fn assignment(#[case] ast: Box<Ast>, #[case] expected: Value) {
+        fn equals(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
+        }
+
+        #[rstest]
+        #[case::id_plus_equals_num(
+            // Represents `사과 += 4`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(infix InfixPlusEquals, loc 0, 0, 0, 7,
+                    left mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    right mkast!(num 4.0, loc 0, 6, 0, 7),
+                ),
+            ]),
+            // Represents a binding for `사과` to `6`.
+            root_env("사과", &Value::from_num(6.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
+            Value::from_num(10.0, Range::from_nums(0, 0, 0, 7))
+        )]
+        #[case::id_minus_equals_num(
+            // Represents `사과 -= 4`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(infix InfixMinusEquals, loc 0, 0, 0, 7,
+                    left mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    right mkast!(num 4.0, loc 0, 6, 0, 7),
+                ),
+            ]),
+            // Represents a binding for `사과` to `6`.
+            root_env("사과", &Value::from_num(6.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
+            Value::from_num(2.0, Range::from_nums(0, 0, 0, 7))
+        )]
+        #[case::id_asterisk_equals_num(
+            // Represents `사과 *= 4`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(infix InfixAsteriskEquals, loc 0, 0, 0, 7,
+                    left mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    right mkast!(num 4.0, loc 0, 6, 0, 7),
+                ),
+            ]),
+            // Represents a binding for `사과` to `6`.
+            root_env("사과", &Value::from_num(6.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
+            Value::from_num(24.0, Range::from_nums(0, 0, 0, 7))
+        )]
+        #[case::id_slash_equals_num(
+            // Represents `사과 /= 4`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(infix InfixSlashEquals, loc 0, 0, 0, 7,
+                    left mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    right mkast!(num 4.0, loc 0, 6, 0, 7),
+                ),
+            ]),
+            // Represents a binding for `사과` to `6`.
+            root_env("사과", &Value::from_num(6.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
+            Value::from_num(1.5, Range::from_nums(0, 0, 0, 7))
+        )]
+        #[case::id_percent_equals_num(
+            // Represents `사과 %= 4`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(infix InfixPercentEquals, loc 0, 0, 0, 7,
+                    left mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    right mkast!(num 4.0, loc 0, 6, 0, 7),
+                ),
+            ]),
+            // Represents a binding for `사과` to `6`.
+            root_env("사과", &Value::from_num(6.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
+            Value::from_num(2.0, Range::from_nums(0, 0, 0, 7))
+        )]
+        fn combinating_equals(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] expected: Value) {
+            assert_eval!(&ast, &mut env, expected);
+        }
+
+        #[rstest]
+        #[case::num_id_plus_equals_bool(
+            // Represents `사과 += 참`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(infix InfixPlusEquals, loc 0, 0, 0, 7,
+                    left mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    right mkast!(boolean true, loc 0, 6, 0, 7),
+                ),
+            ]),
+            // Represents a binding for `사과` to `1`.
+            root_env("사과", &Value::from_num(1.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
+            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
+        )]
+        #[case::num_id_minus_equals_bool(
+            // Represents `사과 += 참`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(infix InfixMinusEquals, loc 0, 0, 0, 7,
+                    left mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    right mkast!(boolean true, loc 0, 6, 0, 7),
+                ),
+            ]),
+            // Represents a binding for `사과` to `1`.
+            root_env("사과", &Value::from_num(1.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
+            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
+        )]
+        #[case::num_id_asterisk_equals_bool(
+            // Represents `사과 += 참`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(infix InfixAsteriskEquals, loc 0, 0, 0, 7,
+                    left mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    right mkast!(boolean true, loc 0, 6, 0, 7),
+                ),
+            ]),
+            // Represents a binding for `사과` to `1`.
+            root_env("사과", &Value::from_num(1.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
+            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
+        )]
+        #[case::num_id_slash_equals_bool(
+            // Represents `사과 += 참`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(infix InfixSlashEquals, loc 0, 0, 0, 7,
+                    left mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    right mkast!(boolean true, loc 0, 6, 0, 7),
+                ),
+            ]),
+            // Represents a binding for `사과` to `1`.
+            root_env("사과", &Value::from_num(1.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
+            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
+        )]
+        #[case::num_id_percent_equals_bool(
+            // Represents `사과 += 참`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(infix InfixPercentEquals, loc 0, 0, 0, 7,
+                    left mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    right mkast!(boolean true, loc 0, 6, 0, 7),
+                ),
+            ]),
+            // Represents a binding for `사과` to `1`.
+            root_env("사과", &Value::from_num(1.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
+            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
+        )]
+        fn combinating_equals_with_wrong_type(
+            #[case] ast: Box<Ast>,
+            #[case] mut env: Environment,
+            #[case] error: EvalError,
+        ) {
+            assert_eval_fail!(&ast, &mut env, error);
         }
     }
 
