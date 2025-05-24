@@ -10,7 +10,8 @@ ARG RUST_VERSION=1.86.0
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain ${RUST_VERSION} -y
 ARG WASM_PACK_VERSION=0.13.1
 ARG JUST_VERSION=1.40.0
-RUN PATH="/root/.cargo/bin:${PATH}" cargo install wasm-pack@${WASM_PACK_VERSION} just@${JUST_VERSION}
+ARG CARGO_WATCH_VERSION=8.5.3
+RUN PATH="/root/.cargo/bin:${PATH}" cargo install wasm-pack@${WASM_PACK_VERSION} just@${JUST_VERSION} cargo-watch@${CARGO_WATCH_VERSION}
 
 # install node, required by integration test
 ARG NVM_VERSION=0.40.3
