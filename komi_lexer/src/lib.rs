@@ -333,6 +333,7 @@ impl<'a> Lexer<'a> {
         let mut init_seg = String::from(first_char);
         let mut init_seg_location = *first_location;
 
+        // Read subsequent characters and match them against the expected characters one by one.
         // Return an identifier token if unexpected character encountered.
         for expected_char in expected.chars().map(|c| String::from(c)) {
             let char = self.scanner.read();
