@@ -19,6 +19,11 @@ pub enum AstKind {
     InfixConjunct { left: Box<Ast>, right: Box<Ast> },
     InfixDisjunct { left: Box<Ast>, right: Box<Ast> },
     InfixEquals { left: Box<Ast>, right: Box<Ast> },
+    InfixPlusEquals { left: Box<Ast>, right: Box<Ast> },
+    InfixMinusEquals { left: Box<Ast>, right: Box<Ast> },
+    InfixAsteriskEquals { left: Box<Ast>, right: Box<Ast> },
+    InfixSlashEquals { left: Box<Ast>, right: Box<Ast> },
+    InfixPercentEquals { left: Box<Ast>, right: Box<Ast> },
 }
 
 /// An abstract syntax tree, or AST produced during parsing.

@@ -34,6 +34,7 @@ pub fn reduce_ast(ast: &Ast, env: &mut Environment) -> ResVal {
         AstKind::InfixConjunct { left: l, right: r } => combinator_infix::reduce_conjunct(&l, &r, &loc, env),
         AstKind::InfixDisjunct { left: l, right: r } => combinator_infix::reduce_disjunct(&l, &r, &loc, env),
         AstKind::InfixEquals { left: l, right: r } => assignment_infix::reduce_equals(&l, &r, &loc, env),
+        _ => todo!(),
     }
 }
 
