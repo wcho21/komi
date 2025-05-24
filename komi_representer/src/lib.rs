@@ -42,7 +42,7 @@ fn represent_closure(parameters: &Vec<String>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use komi_util::Range;
+    use komi_util::{Environment, Range};
 
     const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
 
@@ -93,6 +93,7 @@ mod tests {
                     ValueKind::Closure {
                         parameters: vec![String::from("사과"), String::from("오렌지"), String::from("바나나")],
                         body: vec![],
+                        env: Environment::<Value>::new(),
                     },
                     RANGE_MOCKS[0]
                 ),

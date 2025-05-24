@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct Environment<T> {
     outer: Option<Box<Environment<T>>>,
     table: HashMap<String, T>,
