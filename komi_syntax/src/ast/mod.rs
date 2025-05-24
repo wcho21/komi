@@ -24,7 +24,7 @@ pub enum AstKind {
     InfixAsteriskEquals { left: Box<Ast>, right: Box<Ast> },
     InfixSlashEquals { left: Box<Ast>, right: Box<Ast> },
     InfixPercentEquals { left: Box<Ast>, right: Box<Ast> },
-    Function { parameters: Vec<String>, body: Vec<Box<Ast>> },
+    Closure { parameters: Vec<String>, body: Vec<Box<Ast>> },
 }
 
 /// An abstract syntax tree, or AST produced during parsing.
@@ -68,9 +68,9 @@ macro_rules! mkast {
             Range::from_nums($br, $bc, $er, $ec),
         ))
     };
-    (func loc $br:expr, $bc:expr, $er:expr, $ec: expr, param $param:expr, body $body:expr $(,)?) => {
+    (closure loc $br:expr, $bc:expr, $er:expr, $ec: expr, param $param:expr, body $body:expr $(,)?) => {
         Box::new(Ast::new(
-            AstKind::Function { parameters: $param, body: $body },
+            AstKind::Closure { parameters: $param, body: $body },
             Range::from_nums($br, $bc, $er, $ec),
         ))
     };

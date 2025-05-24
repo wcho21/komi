@@ -67,8 +67,8 @@ pub enum TokenKind {
     Conjunct,
     /// A disjunction `또는`.
     Disjunct,
-    /// A function keyword `함수`.
-    Function,
+    /// A closure keyword `함수`.
+    Closure,
     /// An if-branch keyword `만약`.
     IfBranch,
     /// An else-branch keyword `아니면`.
