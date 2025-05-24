@@ -85,11 +85,13 @@ impl<'a> Parser<'a> {
         let mut parameters: Vec<String> = vec![];
 
         let token_location = self.scanner.locate();
-        let token = self.scanner.read_and_advance();
+        let mut token = self.scanner.read_and_advance();
         if let Some(Token { kind: TokenKind::Identifier(id), .. }) = &token {
-            // If an identifier encountered.
-            todo!()
-        } else if token.is_none() || token.unwrap().kind != TokenKind::LBrace {
+            parameters.push(String::from(id));
+            parameters.append(&mut self.parse_function_expression_parameters()?);
+            token = self.scanner.read_and_advance();
+        }
+        if token.is_none() || token.unwrap().kind != TokenKind::LBrace {
             // Should be an rbrace if no identifier appears. Return an error if not.
             return Err(ParseError::new(ParseErrorKind::InvalidFuncParam, token_location));
         }
@@ -104,6 +106,24 @@ impl<'a> Parser<'a> {
 
         let function_location = Range::new(keyword_location.begin, token_location.end);
         self.make_function_ast(parameters, vec![], &function_location)
+    }
+
+    fn parse_function_expression_parameters(&mut self) -> Result<Vec<String>, ParseError> {
+        let mut parameters: Vec<String> = vec![];
+
+        while let Some(Token { kind: TokenKind::Comma, .. }) = self.scanner.read() {
+            self.scanner.advance();
+
+            let token_location = self.scanner.locate();
+            let token = self.scanner.read_and_advance();
+            if let Some(Token { kind: TokenKind::Identifier(id), .. }) = &token {
+                parameters.push(String::from(id));
+            } else {
+                return Err(ParseError::new(ParseErrorKind::InvalidFuncParam, token_location));
+            }
+        }
+
+        Ok(parameters)
     }
 
     fn parse_plus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
@@ -1346,7 +1366,7 @@ mod tests {
     }
 
     #[rstest]
-    #[case::empty_function(
+    #[case::empty(
         // Represents `함수 {}`.
         vec![
             mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
@@ -1356,6 +1376,40 @@ mod tests {
         mkast!(prog loc 0, 0, 0, 5, vec![
             mkast!(func loc 0, 0, 0, 5,
                 param vec![],
+                body vec![],
+            ),
+        ])
+    )]
+    #[case::single_parameter_and_empty_body(
+        // Represents `함수 사과 {}`.
+        vec![
+            mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 3, 0, 5),
+            mktoken!(TokenKind::LBrace, loc 0, 6, 0, 7),
+            mktoken!(TokenKind::RBrace, loc 0, 7, 0, 8),
+        ],
+        mkast!(prog loc 0, 0, 0, 8, vec![
+            mkast!(func loc 0, 0, 0, 8,
+                param vec![String::from("사과")],
+                body vec![],
+            ),
+        ])
+    )]
+    #[case::multiple_parameters_and_empty_body(
+        // Represents `함수 사과, 오렌지, 바나나 {}`.
+        vec![
+            mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 3, 0, 5),
+            mktoken!(TokenKind::Comma, loc 0, 5, 0, 6),
+            mktoken!(TokenKind::Identifier(String::from("오렌지")), loc 0, 7, 0, 10),
+            mktoken!(TokenKind::Comma, loc 0, 10, 0, 11),
+            mktoken!(TokenKind::Identifier(String::from("바나나")), loc 0, 12, 0, 15),
+            mktoken!(TokenKind::LBrace, loc 0, 16, 0, 17),
+            mktoken!(TokenKind::RBrace, loc 0, 17, 0, 18),
+        ],
+        mkast!(prog loc 0, 0, 0, 18, vec![
+            mkast!(func loc 0, 0, 0, 18,
+                param vec![String::from("사과"), String::from("오렌지"), String::from("바나나")],
                 body vec![],
             ),
         ])
