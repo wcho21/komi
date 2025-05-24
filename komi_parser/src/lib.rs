@@ -170,15 +170,15 @@ impl<'a> Parser<'a> {
         Ok(infix)
     }
 
-    fn make_num_ast(&mut self, num: f64, location: &Range) -> ResAst {
+    fn make_num_ast(&self, num: f64, location: &Range) -> ResAst {
         Ok(Box::new(Ast::new(AstKind::Number(num), *location)))
     }
 
-    fn make_bool_ast(&mut self, boolean: bool, location: &Range) -> ResAst {
+    fn make_bool_ast(&self, boolean: bool, location: &Range) -> ResAst {
         Ok(Box::new(Ast::new(AstKind::Bool(boolean), *location)))
     }
 
-    fn make_identifier_ast(&mut self, identifier: &str, location: &Range) -> ResAst {
+    fn make_identifier_ast(&self, identifier: &str, location: &Range) -> ResAst {
         Ok(Box::new(Ast::new(
             AstKind::Identifier(identifier.to_owned()),
             *location,
