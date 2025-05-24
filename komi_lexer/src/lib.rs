@@ -608,16 +608,6 @@ mod tests {
     }
 
     #[rstest]
-    #[case::addition_expression("12 + 34.675", vec![
-        mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len()),
-        mktoken!(TokenKind::Plus, loc 0, "12 ".len(), 0, "12 +".len()),
-        mktoken!(TokenKind::Number(34.675), loc 0, "12 + ".len(), 0, "12 + 34.675".len()),
-    ])]
-    #[case::conjunction_expression("참 그리고 거짓", vec![
-        mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
-        mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
-        mktoken!(TokenKind::Bool(false), loc 0, 6, 0, 8),
-    ])]
     /// Should not fail in all below cases, since the lexer does not know the syntax.
     /// Tests if the lexer correctly works for tokens that are not determined by the first character.
     #[case::two_pluses("++", vec![
@@ -656,11 +646,40 @@ mod tests {
         mktoken!(TokenKind::DoubleEquals, loc 0, 0, 0, 2),
         mktoken!(TokenKind::Equals, loc 0, 2, 0, 3),
     ])]
-    /// Cases below test locations when the first identifier token is lexed from the same lexing function with the second token.
     #[case::false_false("거짓 거짓", vec![
         mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2),
         mktoken!(TokenKind::Bool(false), loc 0, 3, 0, 5),
     ])]
+    #[case::conjunct_conjunct("그리고 그리고", vec![
+        mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3),
+        mktoken!(TokenKind::Conjunct, loc 0, 4, 0, 7),
+    ])]
+    #[case::disjunct_disjunct("또는 또는", vec![
+        mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Disjunct, loc 0, 3, 0, 5),
+    ])]
+    #[case::disjunct_function("함수 함수", vec![
+        mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Function, loc 0, 3, 0, 5),
+    ])]
+    #[case::if_branch_if_branch("만약 만약", vec![
+        mktoken!(TokenKind::IfBranch, loc 0, 0, 0, 2),
+        mktoken!(TokenKind::IfBranch, loc 0, 3, 0, 5),
+    ])]
+    #[case::else_branch_else_branch("아니면 아니면", vec![
+        mktoken!(TokenKind::ElseBranch, loc 0, 0, 0, 3),
+        mktoken!(TokenKind::ElseBranch, loc 0, 4, 0, 7),
+    ])]
+    #[case::iteration_iteration("반복 반복", vec![
+        mktoken!(TokenKind::Iteration, loc 0, 0, 0, 2),
+        mktoken!(TokenKind::Iteration, loc 0, 3, 0, 5),
+    ])]
+    fn two_same_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
+        assert_lex!(source, expected);
+    }
+
+    #[rstest]
+    /// Cases below test locations when the first identifier token is lexed from the same lexing function with the second token.
     #[case::id1_false("거 거짓", vec![
         mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1),
         mktoken!(TokenKind::Bool(false), loc 0, 2, 0, 4),
@@ -672,10 +691,6 @@ mod tests {
     #[case::id3_false("거짓a 거짓", vec![
         mktoken!(TokenKind::Identifier(String::from("거짓a")), loc 0, 0, 0, 3),
         mktoken!(TokenKind::Bool(false), loc 0, 4, 0, 6),
-    ])]
-    #[case::conjunct_conjunct("그리고 그리고", vec![
-        mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3),
-        mktoken!(TokenKind::Conjunct, loc 0, 4, 0, 7),
     ])]
     #[case::id1_conjuct("그 그리고", vec![
         mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1),
@@ -697,10 +712,6 @@ mod tests {
         mktoken!(TokenKind::Identifier(String::from("그리고a")), loc 0, 0, 0, 4),
         mktoken!(TokenKind::Conjunct, loc 0, 5, 0, 8),
     ])]
-    #[case::disjunct_disjunct("또는 또는", vec![
-        mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2),
-        mktoken!(TokenKind::Disjunct, loc 0, 3, 0, 5),
-    ])]
     #[case::id1_disjunct("또 또는", vec![
         mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1),
         mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
@@ -712,10 +723,6 @@ mod tests {
     #[case::id3_disjunct("또는a 또는", vec![
         mktoken!(TokenKind::Identifier(String::from("또는a")), loc 0, 0, 0, 3),
         mktoken!(TokenKind::Disjunct, loc 0, 4, 0, 6),
-    ])]
-    #[case::disjunct_function("함수 함수", vec![
-        mktoken!(TokenKind::Function, loc 0, 0, 0, 2),
-        mktoken!(TokenKind::Function, loc 0, 3, 0, 5),
     ])]
     #[case::id1_function("함 함수", vec![
         mktoken!(TokenKind::Identifier(String::from("함")), loc 0, 0, 0, 1),
@@ -729,10 +736,6 @@ mod tests {
         mktoken!(TokenKind::Identifier(String::from("함수a")), loc 0, 0, 0, 3),
         mktoken!(TokenKind::Function, loc 0, 4, 0, 6),
     ])]
-    #[case::if_branch_if_branch("만약 만약", vec![
-        mktoken!(TokenKind::IfBranch, loc 0, 0, 0, 2),
-        mktoken!(TokenKind::IfBranch, loc 0, 3, 0, 5),
-    ])]
     #[case::id1_if_branch("만 만약", vec![
         mktoken!(TokenKind::Identifier(String::from("만")), loc 0, 0, 0, 1),
         mktoken!(TokenKind::IfBranch, loc 0, 2, 0, 4),
@@ -744,10 +747,6 @@ mod tests {
     #[case::id3_if_branch("만약a 만약", vec![
         mktoken!(TokenKind::Identifier(String::from("만약a")), loc 0, 0, 0, 3),
         mktoken!(TokenKind::IfBranch, loc 0, 4, 0, 6),
-    ])]
-    #[case::else_branch_else_branch("아니면 아니면", vec![
-        mktoken!(TokenKind::ElseBranch, loc 0, 0, 0, 3),
-        mktoken!(TokenKind::ElseBranch, loc 0, 4, 0, 7),
     ])]
     #[case::id1_else_branch("아 아니면", vec![
         mktoken!(TokenKind::Identifier(String::from("아")), loc 0, 0, 0, 1),
@@ -769,10 +768,6 @@ mod tests {
         mktoken!(TokenKind::Identifier(String::from("아니면a")), loc 0, 0, 0, 4),
         mktoken!(TokenKind::ElseBranch, loc 0, 5, 0, 8),
     ])]
-    #[case::iteration_iteration("반복 반복", vec![
-        mktoken!(TokenKind::Iteration, loc 0, 0, 0, 2),
-        mktoken!(TokenKind::Iteration, loc 0, 3, 0, 5),
-    ])]
     #[case::id1_iteration("반 반복", vec![
         mktoken!(TokenKind::Identifier(String::from("반")), loc 0, 0, 0, 1),
         mktoken!(TokenKind::Iteration, loc 0, 2, 0, 4),
@@ -784,6 +779,21 @@ mod tests {
     #[case::id3_iteration("반복a 반복", vec![
         mktoken!(TokenKind::Identifier(String::from("반복a")), loc 0, 0, 0, 3),
         mktoken!(TokenKind::Iteration, loc 0, 4, 0, 6),
+    ])]
+    fn two_similar_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
+        assert_lex!(source, expected);
+    }
+
+    #[rstest]
+    #[case::addition_expression("12 + 34.675", vec![
+        mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len()),
+        mktoken!(TokenKind::Plus, loc 0, "12 ".len(), 0, "12 +".len()),
+        mktoken!(TokenKind::Number(34.675), loc 0, "12 + ".len(), 0, "12 + 34.675".len()),
+    ])]
+    #[case::conjunction_expression("참 그리고 거짓", vec![
+        mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
+        mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
+        mktoken!(TokenKind::Bool(false), loc 0, 6, 0, 8),
     ])]
     fn multiple_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
