@@ -20,7 +20,7 @@ impl<'a> Scanner for SourceScanner<'a> {
 
     /// Reads next character unit.
     /// Note that if CRLF (`"\r\n"`) encountered, returned as a unit.
-    fn read(&self) -> Option<&'a str> {
+    fn read(&self) -> Self::Item {
         match self.tape.get_current() {
             Some("\r") => match self.tape.peek_next() {
                 Some("\n") => Some("\r\n"),
