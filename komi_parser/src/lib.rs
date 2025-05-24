@@ -985,7 +985,7 @@ mod tests {
         ])
     )]
     #[case::two_plus_equals(
-        // Represents `a+=b+= c`, and expects to be parsed into `a+=(b+=c)`.
+        // Represents `a+=b+=c`, and expects to be parsed into `a+=(b+=c)`.
         vec![
             mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
             mktoken!(TokenKind::PlusEquals, loc 0, 1, 0, 3),
