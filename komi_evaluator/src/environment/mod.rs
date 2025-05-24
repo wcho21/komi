@@ -1,37 +1,7 @@
 use komi_syntax::Value;
-use std::collections::HashMap;
+use komi_util;
 
-pub struct Environment {
-    outer: Option<Box<Environment>>,
-    table: HashMap<String, Value>,
-}
-
-impl Environment {
-    pub fn new() -> Self {
-        Self { outer: None, table: HashMap::new() }
-    }
-
-    pub fn from_outer(outer: Environment) -> Self {
-        Self { outer: Some(Box::new(outer)), table: HashMap::new() }
-    }
-
-    pub fn get(&self, name: &str) -> Option<&Value> {
-        // Return the value if found.
-        if let Some(value) = self.table.get(name) {
-            return Some(value);
-        }
-
-        // Since not found in the current environment, try in the outer environment.
-        match &self.outer {
-            Some(x) => x.get(name),
-            None => None,
-        }
-    }
-
-    pub fn set(&mut self, name: &str, value: &Value) -> () {
-        self.table.insert(name.to_string(), value.clone());
-    }
-}
+pub type Environment = komi_util::Environment<Value>;
 
 #[cfg(test)]
 mod tests {
