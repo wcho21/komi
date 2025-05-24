@@ -56,14 +56,18 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expression_start(&mut self, first_token: &'a Token) -> ResAst {
-        match first_token.kind {
+        match &first_token.kind {
             TokenKind::Number(n) => {
                 self.scanner.advance();
-                self.make_num_ast(n, &first_token.location)
+                self.make_num_ast(*n, &first_token.location)
             }
             TokenKind::Bool(b) => {
                 self.scanner.advance();
-                self.make_bool_ast(b, &first_token.location)
+                self.make_bool_ast(*b, &first_token.location)
+            }
+            TokenKind::Identifier(i) => {
+                self.scanner.advance();
+                self.make_identifier_ast(i, &first_token.location)
             }
             TokenKind::Plus => {
                 self.scanner.advance();
@@ -200,6 +204,13 @@ impl<'a> Parser<'a> {
     fn make_bool_ast(&mut self, boolean: bool, location: &Range) -> ResAst {
         Ok(Box::new(Ast::new(AstKind::Bool(boolean), *location)))
     }
+
+    fn make_identifier_ast(&mut self, identifier: &str, location: &Range) -> ResAst {
+        Ok(Box::new(Ast::new(
+            AstKind::Identifier(identifier.to_owned()),
+            *location,
+        )))
+    }
 }
 
 /// Produces an AST from tokens.
@@ -262,6 +273,15 @@ mod tests {
         ],
         mkast!(prog loc 0, 0, 0, 1, vec![
             mkast!(boolean true, loc 0, 0, 0, 1),
+        ])
+    )]
+    #[case::identifier(
+        // Represents `a`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1)
+        ],
+        mkast!(prog loc 0, 0, 0, 1, vec![
+            mkast!(identifier "a", loc 0, 0, 0, 1),
         ])
     )]
     fn single_literal(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
