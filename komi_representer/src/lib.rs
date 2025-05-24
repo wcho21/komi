@@ -8,12 +8,15 @@ use komi_syntax::{Value, ValueKind};
 pub const EMPTY_REPR: &str = "(EMPTY)";
 pub const TRUE_REPR: &str = "참";
 pub const FALSE_REPR: &str = "거짓";
+pub const CLOSURE_REPR_KEYWORD: &str = "함수";
+pub const CLOSURE_REPR_BODY: &str = "{ ... }";
 
 /// Produces the string representation for a given value.
 pub fn represent(val: &Value) -> String {
-    match val.kind {
+    match &val.kind {
         ValueKind::Number(n) => n.to_string(),
-        ValueKind::Bool(b) => represent_bool(b),
+        ValueKind::Bool(b) => represent_bool(*b),
+        ValueKind::Closure { parameters: p, .. } => represent_closure(p),
         ValueKind::Empty => EMPTY_REPR.to_string(),
     }
 }
@@ -23,6 +26,16 @@ fn represent_bool(boolean: bool) -> String {
         true => TRUE_REPR.to_string(),
         false => FALSE_REPR.to_string(),
     }
+}
+
+fn represent_closure(parameters: &Vec<String>) -> String {
+    let mut parts: Vec<String> = vec![];
+    parts.push(String::from(CLOSURE_REPR_KEYWORD));
+    parts.push(parameters.join(", "));
+    parts.push(String::from(CLOSURE_REPR_BODY));
+
+    let repr = parts.join(" ");
+    repr
 }
 
 /// Note: Use the constant `EMPTY_REPR` to test the representation of the empty value, to avoid depending on the implementation detail.
@@ -70,6 +83,21 @@ mod tests {
         #[test]
         fn test_false_bool() {
             assert_repr!(&Value::new(ValueKind::Bool(false), RANGE_MOCKS[0]), "거짓");
+        }
+
+        /// Represents `함수 사과, 오렌지, 바나나 {}`.
+        #[test]
+        fn test_closure() {
+            assert_repr!(
+                &Value::new(
+                    ValueKind::Closure {
+                        parameters: vec![String::from("사과"), String::from("오렌지"), String::from("바나나")],
+                        body: vec![],
+                    },
+                    RANGE_MOCKS[0]
+                ),
+                "함수 사과, 오렌지, 바나나 { ... }"
+            );
         }
     }
 

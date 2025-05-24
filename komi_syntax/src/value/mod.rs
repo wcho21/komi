@@ -1,3 +1,4 @@
+use crate::Ast;
 use komi_util::Range;
 
 /// Kinds of values produced during evaluation.
@@ -6,6 +7,7 @@ use komi_util::Range;
 pub enum ValueKind {
     Number(f64),
     Bool(bool),
+    Closure { parameters: Vec<String>, body: Vec<Box<Ast>> },
     Empty,
 }
 
