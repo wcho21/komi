@@ -102,14 +102,19 @@ macro_rules! mktoken {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fixtures::*;
     use komi_util::Spot;
-
-    const RANGE_MOCK: Range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
 
     #[test]
     fn new() {
         let token = Token::new(TokenKind::Number(1.0), RANGE_MOCK);
 
         assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
+    }
+
+    mod fixtures {
+        use super::*;
+
+        pub const RANGE_MOCK: Range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
     }
 }
