@@ -21,6 +21,7 @@ pub fn execute(source: &str) -> ExecResult {
 #[cfg(test)]
 mod tests {
     use super::{EMPTY_REPR, ExecError, execute};
+    use komi_evaluator::{EvalError, EvalErrorKind};
     use komi_lexer::{LexError, LexErrorKind};
     use komi_parser::{ParseError, ParseErrorKind};
     use komi_util::Range;
@@ -251,6 +252,66 @@ mod tests {
     #[case::three_kinds("!(참 그리고 거짓)", "참")]
     fn boolean_compount(#[case] source: &str, #[case] expected: String) {
         assert_exec!(source, expected);
+    }
+
+    #[rstest]
+    #[case::assignment("a=1", "1")]
+    #[case::identifier("a=1 a", "1")]
+    #[case::as_arithmetic_operand("a=1 a+1", "2")]
+    #[case::as_boolean_operand("a=참 !a", "거짓")]
+    #[case::as_two_arithmetic_operands("a=1 b=2 a+b", "3")]
+    #[case::addition_assignment("a=6 a+=4", "10")]
+    #[case::subtraction_assignment("a=6 a-=4", "2")]
+    #[case::multiplication_assignment("a=6 a*=4", "24")]
+    #[case::division_assignment("a=6 a/=4", "1.5")]
+    #[case::modular_assignment("a=6 a%=4", "2")]
+    fn assignment_and_identifier(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
+    }
+
+    #[rstest]
+    #[case::addition_assignment_to_bool_id(
+        "a=참 a+=1",
+        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::subtraction_assignment_to_bool_id(
+        "a=참 a-=1",
+        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::multiplication_assignment_to_bool_id(
+        "a=참 a*=1",
+        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::division_assignment_to_bool_id(
+        "a=참 a/=1",
+        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::modular_assignment_to_bool_id(
+        "a=참 a%=1",
+        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+    )]
+    #[case::addition_assignment_with_bool(
+        "a=1 a+=참",
+        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+    )]
+    #[case::subtraction_assignment_with_bool(
+        "a=1 a-=참",
+        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+    )]
+    #[case::multiplication_assignment_with_bool(
+        "a=1 a*=참",
+        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+    )]
+    #[case::division_assignment_with_bool(
+        "a=1 a/=참",
+        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+    )]
+    #[case::modular_assignment_with_bool(
+        "a=1 a%=참",
+        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+    )]
+    fn assignment_with_wrong_type(#[case] source: &str, #[case] error: ExecError) {
+        assert_exec_fail!(source, error);
     }
 
     #[rstest]
