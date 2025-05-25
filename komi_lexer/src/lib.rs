@@ -95,7 +95,7 @@ impl<'a> Lexer<'a> {
         // Return a token if not a dot
         let Some(".") = self.scanner.read() else {
             let end = self.scanner.locate().begin;
-            let token = Self::parse_num_lexeme(&lexeme, Range::new(begin, end));
+            let token = Self::parse_num_lexeme(lexeme, Range::new(begin, end));
 
             return Ok(token);
         };
@@ -120,7 +120,7 @@ impl<'a> Lexer<'a> {
 
         // Parse into a number and return a token
         let end = self.scanner.locate().begin;
-        let token = Self::parse_num_lexeme(&lexeme, Range::new(begin, end));
+        let token = Self::parse_num_lexeme(lexeme, Range::new(begin, end));
 
         Ok(token)
     }
@@ -236,7 +236,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn parse_num_lexeme(lexeme: &String, location: Range) -> Token {
+    fn parse_num_lexeme(lexeme: String, location: Range) -> Token {
         let num = lexeme.parse::<f64>().unwrap();
 
         Token::new(TokenKind::Number(num), location)
