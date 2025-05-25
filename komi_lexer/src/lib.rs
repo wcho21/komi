@@ -168,10 +168,10 @@ impl<'a> Lexer<'a> {
         let mut lexeme = String::new();
         let begin = first_location.begin;
 
-        // Read the whole number part.
+        // Read the whole number part
         lexeme.push_str(&self.read_digits(first_char));
 
-        // Return a token if not a dot.
+        // Return a token if not a dot
         let Some(".") = self.scanner.read() else {
             let end = self.scanner.locate().begin;
             let token = Self::parse_num_lexeme(&lexeme, Range::new(begin, end));
@@ -179,11 +179,11 @@ impl<'a> Lexer<'a> {
             return Ok(token);
         };
 
-        // Read a dot.
+        // Read a dot
         self.scanner.advance();
         lexeme.push_str(".");
 
-        // Return an error if end or not a digit.
+        // Return an error if end or not a digit
         let Some(x) = self.scanner.read() else {
             let location = Range::new(begin, self.scanner.locate().end);
             return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
@@ -194,10 +194,10 @@ impl<'a> Lexer<'a> {
         }
         self.scanner.advance();
 
-        // Read the decimal part.
+        // Read the decimal part
         lexeme.push_str(&self.read_digits(x));
 
-        // Parse into a number and return a token.
+        // Parse into a number and return a token
         let end = self.scanner.locate().begin;
         let token = Self::parse_num_lexeme(&lexeme, Range::new(begin, end));
 
@@ -451,6 +451,7 @@ mod tests {
         };
     }
 
+    // Should lex empty sources.
     #[rstest]
     #[case::empty("")]
     #[case::whitespaces("  ")]
@@ -462,6 +463,7 @@ mod tests {
         assert_lex!(source, vec![]);
     }
 
+    // Should lex number literals.
     #[rstest]
     #[case::without_decimal("12", vec![mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len())])]
     #[case::with_decimal("12.25", vec![mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, "12.25".len())])]
@@ -469,6 +471,7 @@ mod tests {
         assert_lex!(source, expected);
     }
 
+    // Should fail to lex illegal number literals.
     #[rstest]
     #[case::illegal_char("12^", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 2, 0, 3)))]
     #[case::beginning_with_dot(".25", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
@@ -480,86 +483,16 @@ mod tests {
         assert_lex_fail!(source, expected);
     }
 
+    // Should lex boolean literals
     #[rstest]
     #[case::the_true("참", vec![mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)])]
     #[case::the_false("거짓", vec![mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2)])]
-    fn boolean_literal(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn bool_literal(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
 
-    #[rstest]
-    #[case::plus("+", vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)])]
-    #[case::minus("-", vec![mktoken!(TokenKind::Minus, loc 0, 0, 0, 1)])]
-    #[case::asterisk("*", vec![mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1)])]
-    #[case::slash("/", vec![mktoken!(TokenKind::Slash, loc 0, 0, 0, 1)])]
-    #[case::percent("%", vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)])]
-    #[case::lparen("(", vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)])]
-    #[case::rparen(")", vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)])]
-    #[case::lbrace("{", vec![mktoken!(TokenKind::LBrace, loc 0, 0, 0, 1)])]
-    #[case::lbrace("}", vec![mktoken!(TokenKind::RBrace, loc 0, 0, 0, 1)])]
-    #[case::lbracket("<", vec![mktoken!(TokenKind::LBracket, loc 0, 0, 0, 1)])]
-    #[case::rbracket(">", vec![mktoken!(TokenKind::RBracket, loc 0, 0, 0, 1)])]
-    #[case::colon(":", vec![mktoken!(TokenKind::Colon, loc 0, 0, 0, 1)])]
-    #[case::comma(",", vec![mktoken!(TokenKind::Comma, loc 0, 0, 0, 1)])]
-    #[case::bang("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)])]
-    #[case::equals("=", vec![mktoken!(TokenKind::Equals, loc 0, 0, 0, 1)])]
-    #[case::plus_equals("+=", vec![mktoken!(TokenKind::PlusEquals, loc 0, 0, 0, 2)])]
-    #[case::minus_equals("-=", vec![mktoken!(TokenKind::MinusEquals, loc 0, 0, 0, 2)])]
-    #[case::asterisk_equals("*=", vec![mktoken!(TokenKind::AsteriskEquals, loc 0, 0, 0, 2)])]
-    #[case::slash_equals("/=", vec![mktoken!(TokenKind::SlashEquals, loc 0, 0, 0, 2)])]
-    #[case::percent_equals("%=", vec![mktoken!(TokenKind::PercentEquals, loc 0, 0, 0, 2)])]
-    #[case::double_equals("==", vec![mktoken!(TokenKind::DoubleEquals, loc 0, 0, 0, 2)])]
-    #[case::bang_equals("!=", vec![mktoken!(TokenKind::BangEquals, loc 0, 0, 0, 2)])]
-    #[case::lbracket_equals("<=", vec![mktoken!(TokenKind::LBracketEquals, loc 0, 0, 0, 2)])]
-    #[case::rbracket_equals(">=", vec![mktoken!(TokenKind::RBracketEquals, loc 0, 0, 0, 2)])]
-    #[case::conjunct("그리고", vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)])]
-    #[case::disjunct("또는", vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)])]
-    #[case::closure("함수", vec![mktoken!(TokenKind::Closure, loc 0, 0, 0, 2)])]
-    #[case::if_branch("만약", vec![mktoken!(TokenKind::IfBranch, loc 0, 0, 0, 2)])]
-    #[case::else_branch("아니면", vec![mktoken!(TokenKind::ElseBranch, loc 0, 0, 0, 3)])]
-    #[case::iteration("반복", vec![mktoken!(TokenKind::Iteration, loc 0, 0, 0, 2)])]
-    fn non_value_literal(#[case] source: &str, #[case] expected: Vec<Token>) {
-        assert_lex!(source, expected);
-    }
-
-    #[rstest]
-    #[case::single_alphabat_char("a", vec![mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1)])]
-    #[case::single_hangul_char("가", vec![mktoken!(TokenKind::Identifier(String::from("가")), loc 0, 0, 0, 1)])]
-    #[case::mixed_multiple_chars("a가a가", vec![mktoken!(TokenKind::Identifier(String::from("a가a가")), loc 0, 0, 0, 4)])]
-    #[case::first_char_false_but_end("거", vec![mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1)])]
-    #[case::first_char_false_but_second_non_id("거 ", vec![mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1)])]
-    #[case::first_char_false_but_second_other_id("거a", vec![mktoken!(TokenKind::Identifier(String::from("거a")), loc 0, 0, 0, 2)])]
-    #[case::first_two_chars_false_but_third_other_id("거짓a", vec![mktoken!(TokenKind::Identifier(String::from("거짓a")), loc 0, 0, 0, 3)])]
-    #[case::first_char_conjunct_but_end("그", vec![mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1)])]
-    #[case::first_char_conjunct_but_second_non_id("그 ", vec![mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1)])]
-    #[case::first_char_conjunct_but_second_other_id("그a", vec![mktoken!(TokenKind::Identifier(String::from("그a")), loc 0, 0, 0, 2)])]
-    #[case::first_two_chars_conjunct_but_end("그리", vec![mktoken!(TokenKind::Identifier(String::from("그리")), loc 0, 0, 0, 2)])]
-    #[case::first_two_chars_conjunct_but_third_non_id("그리 ", vec![mktoken!(TokenKind::Identifier(String::from("그리")), loc 0, 0, 0, 2)])]
-    #[case::first_two_chars_conjunct_but_third_other_id("그리a", vec![mktoken!(TokenKind::Identifier(String::from("그리a")), loc 0, 0, 0, 3)])]
-    #[case::first_three_chars_conjunct_but_fourth_other_id("그리고a", vec![mktoken!(TokenKind::Identifier(String::from("그리고a")), loc 0, 0, 0, 4)])]
-    #[case::first_char_disjunct_but_end("또", vec![mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1)])]
-    #[case::first_char_disjunct_but_second_non_id("또" , vec![mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1)])]
-    #[case::first_char_disjunct_but_second_other_id("또a", vec![mktoken!(TokenKind::Identifier(String::from("또a")), loc 0, 0, 0, 2)])]
-    #[case::first_two_chars_disjunct_but_third_other_id("또는a", vec![mktoken!(TokenKind::Identifier(String::from("또는a")), loc 0, 0, 0, 3)])]
-    #[case::first_char_if_branch_but_end("만", vec![mktoken!(TokenKind::Identifier(String::from("만")), loc 0, 0, 0, 1)])]
-    #[case::first_char_if_branch_but_second_non_id("만" , vec![mktoken!(TokenKind::Identifier(String::from("만")), loc 0, 0, 0, 1)])]
-    #[case::first_char_if_branch_but_second_other_id("만a", vec![mktoken!(TokenKind::Identifier(String::from("만a")), loc 0, 0, 0, 2)])]
-    #[case::first_two_chars_if_branch_but_third_other_id("만약a", vec![mktoken!(TokenKind::Identifier(String::from("만약a")), loc 0, 0, 0, 3)])]
-    #[case::first_char_else_branch_but_end("아", vec![mktoken!(TokenKind::Identifier(String::from("아")), loc 0, 0, 0, 1)])]
-    #[case::first_char_else_branch_but_second_non_id("아 ", vec![mktoken!(TokenKind::Identifier(String::from("아")), loc 0, 0, 0, 1)])]
-    #[case::first_char_else_branch_but_second_other_id("아a", vec![mktoken!(TokenKind::Identifier(String::from("아a")), loc 0, 0, 0, 2)])]
-    #[case::first_two_chars_else_branch_but_end("아니", vec![mktoken!(TokenKind::Identifier(String::from("아니")), loc 0, 0, 0, 2)])]
-    #[case::first_two_chars_else_branch_but_third_non_id("아니 ", vec![mktoken!(TokenKind::Identifier(String::from("아니")), loc 0, 0, 0, 2)])]
-    #[case::first_two_chars_else_branch_but_third_other_id("아니a", vec![mktoken!(TokenKind::Identifier(String::from("아니a")), loc 0, 0, 0, 3)])]
-    #[case::first_three_chars_else_branch_but_fourth_other_id("아니면a", vec![mktoken!(TokenKind::Identifier(String::from("아니면a")), loc 0, 0, 0, 4)])]
-    #[case::first_char_iteration_but_end("반", vec![mktoken!(TokenKind::Identifier(String::from("반")), loc 0, 0, 0, 1)])]
-    #[case::first_char_iteration_but_second_non_id("반" , vec![mktoken!(TokenKind::Identifier(String::from("반")), loc 0, 0, 0, 1)])]
-    #[case::first_char_iteration_but_second_other_id("반a", vec![mktoken!(TokenKind::Identifier(String::from("반a")), loc 0, 0, 0, 2)])]
-    #[case::first_two_chars_iteration_but_third_other_id("반복a", vec![mktoken!(TokenKind::Identifier(String::from("반복a")), loc 0, 0, 0, 3)])]
-    fn single_identifier(#[case] source: &str, #[case] expected: Vec<Token>) {
-        assert_lex!(source, expected);
-    }
-
+    // TODO: Should lex str literals.
+    // TODO(?): Should fail to lex illegal str literals.
     #[rstest]
     #[case::simple_string("\"사과\"", vec![
         mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
@@ -607,9 +540,85 @@ mod tests {
         assert_lex!(source, expected);
     }
 
+    // Should lex non-value literals.
     #[rstest]
-    /// Should not fail in all below cases, since the lexer does not know the syntax.
-    /// Tests if the lexer correctly works for tokens that are not determined by the first character.
+    #[case::plus("+", vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)])]
+    #[case::minus("-", vec![mktoken!(TokenKind::Minus, loc 0, 0, 0, 1)])]
+    #[case::asterisk("*", vec![mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1)])]
+    #[case::slash("/", vec![mktoken!(TokenKind::Slash, loc 0, 0, 0, 1)])]
+    #[case::percent("%", vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)])]
+    #[case::lparen("(", vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)])]
+    #[case::rparen(")", vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)])]
+    #[case::lbrace("{", vec![mktoken!(TokenKind::LBrace, loc 0, 0, 0, 1)])]
+    #[case::lbrace("}", vec![mktoken!(TokenKind::RBrace, loc 0, 0, 0, 1)])]
+    #[case::lbracket("<", vec![mktoken!(TokenKind::LBracket, loc 0, 0, 0, 1)])]
+    #[case::rbracket(">", vec![mktoken!(TokenKind::RBracket, loc 0, 0, 0, 1)])]
+    #[case::colon(":", vec![mktoken!(TokenKind::Colon, loc 0, 0, 0, 1)])]
+    #[case::comma(",", vec![mktoken!(TokenKind::Comma, loc 0, 0, 0, 1)])]
+    #[case::bang("!", vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)])]
+    #[case::equals("=", vec![mktoken!(TokenKind::Equals, loc 0, 0, 0, 1)])]
+    #[case::plus_equals("+=", vec![mktoken!(TokenKind::PlusEquals, loc 0, 0, 0, 2)])]
+    #[case::minus_equals("-=", vec![mktoken!(TokenKind::MinusEquals, loc 0, 0, 0, 2)])]
+    #[case::asterisk_equals("*=", vec![mktoken!(TokenKind::AsteriskEquals, loc 0, 0, 0, 2)])]
+    #[case::slash_equals("/=", vec![mktoken!(TokenKind::SlashEquals, loc 0, 0, 0, 2)])]
+    #[case::percent_equals("%=", vec![mktoken!(TokenKind::PercentEquals, loc 0, 0, 0, 2)])]
+    #[case::double_equals("==", vec![mktoken!(TokenKind::DoubleEquals, loc 0, 0, 0, 2)])]
+    #[case::bang_equals("!=", vec![mktoken!(TokenKind::BangEquals, loc 0, 0, 0, 2)])]
+    #[case::lbracket_equals("<=", vec![mktoken!(TokenKind::LBracketEquals, loc 0, 0, 0, 2)])]
+    #[case::rbracket_equals(">=", vec![mktoken!(TokenKind::RBracketEquals, loc 0, 0, 0, 2)])]
+    #[case::conjunct("그리고", vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)])]
+    #[case::disjunct("또는", vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)])]
+    #[case::closure("함수", vec![mktoken!(TokenKind::Closure, loc 0, 0, 0, 2)])]
+    #[case::if_branch("만약", vec![mktoken!(TokenKind::IfBranch, loc 0, 0, 0, 2)])]
+    #[case::else_branch("아니면", vec![mktoken!(TokenKind::ElseBranch, loc 0, 0, 0, 3)])]
+    #[case::iteration("반복", vec![mktoken!(TokenKind::Iteration, loc 0, 0, 0, 2)])]
+    fn non_value_literal(#[case] source: &str, #[case] expected: Vec<Token>) {
+        assert_lex!(source, expected);
+    }
+
+    // Should lex identifiers.
+    #[rstest]
+    #[case::single_alphabat_char("a", vec![mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1)])]
+    #[case::single_hangul_char("가", vec![mktoken!(TokenKind::Identifier(String::from("가")), loc 0, 0, 0, 1)])]
+    #[case::mixed_multiple_chars("a가a가", vec![mktoken!(TokenKind::Identifier(String::from("a가a가")), loc 0, 0, 0, 4)])]
+    #[case::first_char_false_but_end("거", vec![mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1)])]
+    #[case::first_char_false_but_second_non_id("거 ", vec![mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1)])]
+    #[case::first_char_false_but_second_other_id("거a", vec![mktoken!(TokenKind::Identifier(String::from("거a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_false_but_third_other_id("거짓a", vec![mktoken!(TokenKind::Identifier(String::from("거짓a")), loc 0, 0, 0, 3)])]
+    #[case::first_char_conjunct_but_end("그", vec![mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1)])]
+    #[case::first_char_conjunct_but_second_non_id("그 ", vec![mktoken!(TokenKind::Identifier(String::from("그")), loc 0, 0, 0, 1)])]
+    #[case::first_char_conjunct_but_second_other_id("그a", vec![mktoken!(TokenKind::Identifier(String::from("그a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_conjunct_but_end("그리", vec![mktoken!(TokenKind::Identifier(String::from("그리")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_conjunct_but_third_non_id("그리 ", vec![mktoken!(TokenKind::Identifier(String::from("그리")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_conjunct_but_third_other_id("그리a", vec![mktoken!(TokenKind::Identifier(String::from("그리a")), loc 0, 0, 0, 3)])]
+    #[case::first_three_chars_conjunct_but_fourth_other_id("그리고a", vec![mktoken!(TokenKind::Identifier(String::from("그리고a")), loc 0, 0, 0, 4)])]
+    #[case::first_char_disjunct_but_end("또", vec![mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1)])]
+    #[case::first_char_disjunct_but_second_non_id("또" , vec![mktoken!(TokenKind::Identifier(String::from("또")), loc 0, 0, 0, 1)])]
+    #[case::first_char_disjunct_but_second_other_id("또a", vec![mktoken!(TokenKind::Identifier(String::from("또a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_disjunct_but_third_other_id("또는a", vec![mktoken!(TokenKind::Identifier(String::from("또는a")), loc 0, 0, 0, 3)])]
+    #[case::first_char_if_branch_but_end("만", vec![mktoken!(TokenKind::Identifier(String::from("만")), loc 0, 0, 0, 1)])]
+    #[case::first_char_if_branch_but_second_non_id("만" , vec![mktoken!(TokenKind::Identifier(String::from("만")), loc 0, 0, 0, 1)])]
+    #[case::first_char_if_branch_but_second_other_id("만a", vec![mktoken!(TokenKind::Identifier(String::from("만a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_if_branch_but_third_other_id("만약a", vec![mktoken!(TokenKind::Identifier(String::from("만약a")), loc 0, 0, 0, 3)])]
+    #[case::first_char_else_branch_but_end("아", vec![mktoken!(TokenKind::Identifier(String::from("아")), loc 0, 0, 0, 1)])]
+    #[case::first_char_else_branch_but_second_non_id("아 ", vec![mktoken!(TokenKind::Identifier(String::from("아")), loc 0, 0, 0, 1)])]
+    #[case::first_char_else_branch_but_second_other_id("아a", vec![mktoken!(TokenKind::Identifier(String::from("아a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_else_branch_but_end("아니", vec![mktoken!(TokenKind::Identifier(String::from("아니")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_else_branch_but_third_non_id("아니 ", vec![mktoken!(TokenKind::Identifier(String::from("아니")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_else_branch_but_third_other_id("아니a", vec![mktoken!(TokenKind::Identifier(String::from("아니a")), loc 0, 0, 0, 3)])]
+    #[case::first_three_chars_else_branch_but_fourth_other_id("아니면a", vec![mktoken!(TokenKind::Identifier(String::from("아니면a")), loc 0, 0, 0, 4)])]
+    #[case::first_char_iteration_but_end("반", vec![mktoken!(TokenKind::Identifier(String::from("반")), loc 0, 0, 0, 1)])]
+    #[case::first_char_iteration_but_second_non_id("반" , vec![mktoken!(TokenKind::Identifier(String::from("반")), loc 0, 0, 0, 1)])]
+    #[case::first_char_iteration_but_second_other_id("반a", vec![mktoken!(TokenKind::Identifier(String::from("반a")), loc 0, 0, 0, 2)])]
+    #[case::first_two_chars_iteration_but_third_other_id("반복a", vec![mktoken!(TokenKind::Identifier(String::from("반복a")), loc 0, 0, 0, 3)])]
+    fn single_identifier(#[case] source: &str, #[case] expected: Vec<Token>) {
+        assert_lex!(source, expected);
+    }
+
+    // Should lex two same literals.
+    // Should not fail in all below cases, since the lexer does not know the syntax.
+    // To test when tokens cannot be early determined by the first character.
+    #[rstest]
     #[case::two_pluses("++", vec![
         mktoken!(TokenKind::Plus, loc 0, 0, 0, 1),
         mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
@@ -678,8 +687,9 @@ mod tests {
         assert_lex!(source, expected);
     }
 
+    // Should lex an identifier and a similar keyword.
+    // To test locations of tokens, when the first identifier is lexed from the same lexing function with the second token.
     #[rstest]
-    /// Cases below test locations when the first identifier token is lexed from the same lexing function with the second token.
     #[case::id1_false("거 거짓", vec![
         mktoken!(TokenKind::Identifier(String::from("거")), loc 0, 0, 0, 1),
         mktoken!(TokenKind::Bool(false), loc 0, 2, 0, 4),
@@ -784,6 +794,7 @@ mod tests {
         assert_lex!(source, expected);
     }
 
+    // Should lex sequences of characters, that may appear in source codes.
     #[rstest]
     #[case::addition_expression("12 + 34.675", vec![
         mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len()),
@@ -814,6 +825,7 @@ mod tests {
         assert_lex!(source, expected);
     }
 
+    // Should fail to lex illegal characters.
     #[rstest]
     #[case::caret("^", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
     #[case::dollar("$", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
