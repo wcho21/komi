@@ -81,7 +81,8 @@ impl<'a> Lexer<'a> {
 
     /// Returns a number literal token if successfully lexed, or error otherwise.
     ///
-    /// Call after advancing the scanner `self.scanner` past the initial character, with its location passed as `first_location`.
+    /// Call this after advancing the scanner `self.scanner` past the initial character, with its location passed as `first_location`.
+    /// The scanner stops at the first non-digit character, after reading a number with or without a decimal part.
     fn lex_num(&mut self, first_location: Range, first_char: &'a str) -> ResToken {
         let mut lexeme = String::new();
         let begin = first_location.begin;
@@ -101,7 +102,7 @@ impl<'a> Lexer<'a> {
         self.scanner.advance();
         lexeme.push_str(".");
 
-        // Return an error if end or not a digit
+        // Return an error if end or not a digit, to prohibit invalid literals such as `12.` or `12.+`
         let Some(x) = self.scanner.read() else {
             let location = Range::new(begin, self.scanner.locate().end);
             return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
@@ -124,7 +125,8 @@ impl<'a> Lexer<'a> {
 
     /// Returns a sequence of tokens in a string literal if successfully lexed, or error otherwise.
     ///
-    /// Call after advancing the scanner `self.scanner` past the left beginning quote, with its location passed as `first_location`.
+    /// Call this after advancing the scanner `self.scanner` past the beginning quote `"`, with its location passed as `first_location`.
+    /// The scanner stops at the ending quote `"`.
     fn lex_str(&mut self, first_location: Range) -> ResToken {
         let mut segments: Vec<StrSegment> = vec![];
         let mut segments_location = first_location;
@@ -231,6 +233,8 @@ impl<'a> Lexer<'a> {
         Ok(token)
     }
 
+    /// Skips characters until newline characters encountered.
+    /// The scanner stops at the first character immediately after the newline.
     fn skip_comment(&mut self) -> () {
         while let Some(x) = self.scanner.read() {
             self.scanner.advance();
@@ -470,7 +474,7 @@ mod tests {
         assert_lex!(source, expected);
     }
 
-    // TODO: Should lex str literals.
+    // Should lex string literals.
     #[rstest]
     #[case::empty_string("\"\"", vec![
         mktoken!(TokenKind::Str(vec![]), loc 0, 0, 0, 2),
