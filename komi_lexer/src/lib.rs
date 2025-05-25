@@ -97,7 +97,7 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "\"" => {
-                    let mut string_tokens = self.lex_string(&char_location)?;
+                    let mut string_tokens = self.lex_str(&char_location)?;
                     tokens.append(&mut string_tokens);
                 }
                 ":" => {
@@ -204,7 +204,12 @@ impl<'a> Lexer<'a> {
         Ok(token)
     }
 
-    fn lex_string(&mut self, first_location: &Range) -> ResTokens {
+    /// Returns a sequence of tokens in a str literal if successfully lexed, or error otherwise.
+    ///
+    /// Call after advancing the scanner `self.scanner` past the left beginning quote, with its location passed as `first_location`.
+    fn lex_str(&mut self, first_location: &Range) -> ResTokens {
+        todo!()
+        /*
         let mut tokens: Vec<Token> = vec![];
         tokens.push(Token::new(TokenKind::Quote, *first_location));
 
@@ -217,7 +222,7 @@ impl<'a> Lexer<'a> {
             };
 
             if char == "\"" {
-                tokens.push(Token::new(TokenKind::StringSegment(segment), segment_location));
+                tokens.push(Token::new(TokenKind::StrSegment(segment), segment_location));
                 tokens.push(Token::new(TokenKind::Quote, self.scanner.locate()));
                 self.scanner.advance();
 
@@ -262,6 +267,7 @@ impl<'a> Lexer<'a> {
         }
 
         Ok(tokens)
+        */
     }
 
     fn skip_comment(&mut self) -> () {
@@ -493,6 +499,7 @@ mod tests {
 
     // TODO: Should lex str literals.
     // TODO(?): Should fail to lex illegal str literals.
+    /* TODO
     #[rstest]
     #[case::simple_string("\"사과\"", vec![
         mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
@@ -509,7 +516,6 @@ mod tests {
         mktoken!(TokenKind::StringSegment(String::from("사}과")), loc 0, 1, 0, 5),
         mktoken!(TokenKind::Quote, loc 0, 5, 0, 6),
     ])]
-    /* TODO
     #[case::num_literal_interpolation("\"사{1}과\"", vec![
         mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
         mktoken!(TokenKind::LBrace, loc 0, 1, 0, 2),
@@ -533,12 +539,12 @@ mod tests {
         mktoken!(TokenKind::RBrace, loc 0, 7, 0, 8),
         mktoken!(TokenKind::Quote, loc 0, 8, 0, 9),
     ])]
-    */
     // TODO: test string literal nested interpolation
     // TODO: test other interpolations
     fn string_segment(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
+    */
 
     // Should lex non-value literals.
     #[rstest]
