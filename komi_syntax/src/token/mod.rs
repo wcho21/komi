@@ -1,5 +1,18 @@
 use komi_util::Range;
 
+/// A token produced during lexing.
+#[derive(Debug, PartialEq, Clone)]
+pub struct Token {
+    pub kind: TokenKind,
+    pub location: Range,
+}
+
+impl Token {
+    pub const fn new(kind: TokenKind, location: Range) -> Self {
+        Token { kind, location }
+    }
+}
+
 /// Kinds of tokens produced during lexing.
 /// Serves as the interface between a lexer and its user.
 #[derive(Debug, PartialEq, Clone)]
@@ -8,8 +21,8 @@ pub enum TokenKind {
     Number(f64),
     /// A boolean `참` or `거짓`.
     Bool(bool),
-    /// A string segment, such as `사과` in `"사과"`, or `오렌지` in `"{사과}오렌지"`.
-    StringSegment(String),
+    /// A string segment with interpolations, such as `사과` in `"사과"`, or `오렌지` in `"{사과}오렌지"`.
+    Str(Vec<StrSegment>),
     /// An identifier, such as `사과` or `오렌지`.
     Identifier(String),
     /// A plus `+`.
@@ -34,9 +47,6 @@ pub enum TokenKind {
     LBracket,
     /// A right bracket `>`.
     RBracket,
-    /// A quote `"`.
-    // TODO(?): or LQuote and RQuote?
-    Quote,
     /// A colon `:`.
     Colon,
     /// A comma `,`.
@@ -77,16 +87,35 @@ pub enum TokenKind {
     Iteration,
 }
 
-/// A token produced during lexing.
+/// A string segment in a string token.
 #[derive(Debug, PartialEq, Clone)]
-pub struct Token {
-    pub kind: TokenKind,
+pub struct StrSegment {
+    pub kind: StrSegmentKind,
     pub location: Range,
 }
 
-impl Token {
-    pub const fn new(kind: TokenKind, location: Range) -> Self {
-        Token { kind, location }
+impl StrSegment {
+    pub fn new(kind: StrSegmentKind, location: Range) -> Self {
+        Self { kind, location }
+    }
+}
+
+/// A kind of string segment in a string token.
+#[derive(Debug, PartialEq, Clone)]
+pub enum StrSegmentKind {
+    /// A string segment, such as `사과` in "`사과{오렌지}`".
+    Str(String),
+    /// An interpolated identifier, such as `오렌지` in "`사과{오렌지}`".
+    Identifier(String),
+}
+
+impl StrSegmentKind {
+    pub fn str(s: impl Into<String>) -> Self {
+        Self::Str(s.into())
+    }
+
+    pub fn identifier(s: impl Into<String>) -> Self {
+        Self::Identifier(s.into())
     }
 }
 
@@ -105,11 +134,50 @@ mod tests {
     use fixtures::*;
     use komi_util::Spot;
 
-    #[test]
-    fn new() {
-        let token = Token::new(TokenKind::Number(1.0), RANGE_MOCK);
+    mod token {
+        use super::*;
 
-        assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
+        #[test]
+        fn new() {
+            let token = Token::new(TokenKind::Number(1.0), RANGE_MOCK);
+
+            assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
+        }
+    }
+
+    mod str_segment {
+        use super::*;
+
+        #[test]
+        fn new() {
+            let seg = StrSegment::new(StrSegmentKind::Str(String::from("사과")), RANGE_MOCK);
+
+            assert_eq!(
+                seg,
+                StrSegment {
+                    kind: StrSegmentKind::Str(String::from("사과")),
+                    location: RANGE_MOCK
+                }
+            )
+        }
+    }
+
+    mod str_segment_kind {
+        use super::*;
+
+        #[test]
+        fn str() {
+            let kind = StrSegmentKind::str("사과");
+
+            assert_eq!(kind, StrSegmentKind::Str(String::from("사과")),)
+        }
+
+        #[test]
+        fn identifier() {
+            let kind = StrSegmentKind::identifier("사과");
+
+            assert_eq!(kind, StrSegmentKind::Identifier(String::from("사과")),)
+        }
     }
 
     mod fixtures {

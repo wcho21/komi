@@ -12,6 +12,7 @@ pub fn is_whitespace(s: &str) -> bool {
 /// Specifically, it includes:
 /// - ASCII alphabets and number characters.
 /// - Hangul, from `U+AC00` (`가`) to `U+D7A3` (`힣`)
+// TODO: include underbar (`_`)
 pub fn is_in_identifier_domain(s: &str) -> bool {
     let ascii = s.len() == 1 && s.chars().next().unwrap().is_ascii_alphanumeric();
     if ascii {
