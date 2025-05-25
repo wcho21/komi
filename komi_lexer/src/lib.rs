@@ -29,133 +29,50 @@ impl<'a> Lexer<'a> {
     pub fn lex(&mut self) -> ResTokens {
         let mut tokens: Vec<Token> = vec![];
 
+        // Lex characters into tokens one by one
         while let Some(char) = self.scanner.read() {
-            let char_location = self.locate_and_advance();
-
-            match char {
-                char if char_validator::is_digit(char) => {
-                    let token = self.lex_num(&char_location, char)?;
-                    tokens.push(token);
-                }
-                "참" => {
-                    let token = Token::new(TokenKind::Bool(true), char_location);
-                    tokens.push(token);
-                }
-                "거" => {
-                    let token = self.expect_or_lex_identifier("짓", TokenKind::Bool(false), char, &char_location)?;
-                    tokens.push(token);
-                }
-                "+" => {
-                    let token =
-                        self.expect_next_or_token("=", TokenKind::PlusEquals, TokenKind::Plus, &char_location)?;
-                    tokens.push(token);
-                }
-                "-" => {
-                    let token =
-                        self.expect_next_or_token("=", TokenKind::MinusEquals, TokenKind::Minus, &char_location)?;
-                    tokens.push(token);
-                }
-                "*" => {
-                    let token =
-                        self.expect_next_or_token("=", TokenKind::AsteriskEquals, TokenKind::Asterisk, &char_location)?;
-                    tokens.push(token);
-                }
-                "/" => {
-                    let token =
-                        self.expect_next_or_token("=", TokenKind::SlashEquals, TokenKind::Slash, &char_location)?;
-                    tokens.push(token);
-                }
-                "%" => {
-                    let token =
-                        self.expect_next_or_token("=", TokenKind::PercentEquals, TokenKind::Percent, &char_location)?;
-                    tokens.push(token);
-                }
-                "(" => {
-                    let token = Token::new(TokenKind::LParen, char_location);
-                    tokens.push(token);
-                }
-                ")" => {
-                    let token = Token::new(TokenKind::RParen, char_location);
-                    tokens.push(token);
-                }
-                "{" => {
-                    let token = Token::new(TokenKind::LBrace, char_location);
-                    tokens.push(token);
-                }
-                "}" => {
-                    let token = Token::new(TokenKind::RBrace, char_location);
-                    tokens.push(token);
-                }
-                "<" => {
-                    let token =
-                        self.expect_next_or_token("=", TokenKind::LBracketEquals, TokenKind::LBracket, &char_location)?;
-                    tokens.push(token);
-                }
-                ">" => {
-                    let token =
-                        self.expect_next_or_token("=", TokenKind::RBracketEquals, TokenKind::RBracket, &char_location)?;
-                    tokens.push(token);
-                }
-                "\"" => {
-                    let token = self.lex_str(&char_location)?;
-                    tokens.push(token);
-                }
-                ":" => {
-                    let token = Token::new(TokenKind::Colon, char_location);
-                    tokens.push(token);
-                }
-                "," => {
-                    let token = Token::new(TokenKind::Comma, char_location);
-                    tokens.push(token);
-                }
-                "!" => {
-                    let token =
-                        self.expect_next_or_token("=", TokenKind::BangEquals, TokenKind::Bang, &char_location)?;
-                    tokens.push(token);
-                }
-                "=" => {
-                    let token =
-                        self.expect_next_or_token("=", TokenKind::DoubleEquals, TokenKind::Equals, &char_location)?;
-                    tokens.push(token);
-                }
-                "그" => {
-                    let token = self.expect_or_lex_identifier("리고", TokenKind::Conjunct, char, &char_location)?;
-                    tokens.push(token);
-                }
-                "또" => {
-                    let token = self.expect_or_lex_identifier("는", TokenKind::Disjunct, char, &char_location)?;
-                    tokens.push(token);
-                }
-                "함" => {
-                    let token = self.expect_or_lex_identifier("수", TokenKind::Closure, char, &char_location)?;
-                    tokens.push(token);
-                }
-                "만" => {
-                    let token = self.expect_or_lex_identifier("약", TokenKind::IfBranch, char, &char_location)?;
-                    tokens.push(token);
-                }
-                "아" => {
-                    let token = self.expect_or_lex_identifier("니면", TokenKind::ElseBranch, char, &char_location)?;
-                    tokens.push(token);
-                }
-                "반" => {
-                    let token = self.expect_or_lex_identifier("복", TokenKind::Iteration, char, &char_location)?;
-                    tokens.push(token);
-                }
+            let location = self.locate_and_advance();
+            let token = match char {
+                char if char_validator::is_digit(char) => self.lex_num(&location, char)?,
+                "참" => Token::new(TokenKind::Bool(true), location),
+                "거" => self.expect_or_lex_identifier("짓", TokenKind::Bool(false), char, &location)?,
+                "+" => self.expect_next_or_token("=", TokenKind::PlusEquals, TokenKind::Plus, &location)?,
+                "-" => self.expect_next_or_token("=", TokenKind::MinusEquals, TokenKind::Minus, &location)?,
+                "*" => self.expect_next_or_token("=", TokenKind::AsteriskEquals, TokenKind::Asterisk, &location)?,
+                "/" => self.expect_next_or_token("=", TokenKind::SlashEquals, TokenKind::Slash, &location)?,
+                "%" => self.expect_next_or_token("=", TokenKind::PercentEquals, TokenKind::Percent, &location)?,
+                "(" => Token::new(TokenKind::LParen, location),
+                ")" => Token::new(TokenKind::RParen, location),
+                "{" => Token::new(TokenKind::LBrace, location),
+                "}" => Token::new(TokenKind::RBrace, location),
+                "<" => self.expect_next_or_token("=", TokenKind::LBracketEquals, TokenKind::LBracket, &location)?,
+                ">" => self.expect_next_or_token("=", TokenKind::RBracketEquals, TokenKind::RBracket, &location)?,
+                "\"" => self.lex_str(&location)?,
+                ":" => Token::new(TokenKind::Colon, location),
+                "," => Token::new(TokenKind::Comma, location),
+                "!" => self.expect_next_or_token("=", TokenKind::BangEquals, TokenKind::Bang, &location)?,
+                "=" => self.expect_next_or_token("=", TokenKind::DoubleEquals, TokenKind::Equals, &location)?,
+                "그" => self.expect_or_lex_identifier("리고", TokenKind::Conjunct, char, &location)?,
+                "또" => self.expect_or_lex_identifier("는", TokenKind::Disjunct, char, &location)?,
+                "함" => self.expect_or_lex_identifier("수", TokenKind::Closure, char, &location)?,
+                "만" => self.expect_or_lex_identifier("약", TokenKind::IfBranch, char, &location)?,
+                "아" => self.expect_or_lex_identifier("니면", TokenKind::ElseBranch, char, &location)?,
+                "반" => self.expect_or_lex_identifier("복", TokenKind::Iteration, char, &location)?,
                 "#" => {
                     self.skip_comment();
+                    continue;
                 }
                 s if char_validator::is_in_identifier_domain(s) => {
-                    let token = self.lex_identifier_with_init_seg(&String::from(s), &char_location)?;
-                    tokens.push(token);
+                    self.lex_identifier_with_init_seg(&String::from(s), &location)?
                 }
                 s if char_validator::is_whitespace(s) => {
                     continue;
                 }
                 _ => {
-                    return Err(LexError::new(LexErrorKind::IllegalChar, char_location));
+                    return Err(LexError::new(LexErrorKind::IllegalChar, location));
                 }
-            }
+            };
+            tokens.push(token);
         }
 
         Ok(tokens)
