@@ -41,8 +41,8 @@ impl<'a> Scanner for SourceScanner<'a> {
             Some("\r\n") => {
                 self.row += 1;
                 self.col = 0;
-                self.tape.advance();
-                self.tape.advance();
+                self.tape.advance(); // Past "\r"
+                self.tape.advance(); // Past "\n"
             }
             None => {}
             _ => {
@@ -57,6 +57,7 @@ impl<'a> Scanner for SourceScanner<'a> {
     fn locate(&self) -> Range {
         match self.read() {
             None => Range::from_nums(self.row, self.col, self.row, self.col),
+            Some("\r") | Some("\n") | Some("\r\n") => Range::from_nums(self.row, self.col, self.row + 1, 0),
             _ => Range::from_nums(self.row, self.col, self.row, self.col + 1),
         }
     }
@@ -166,13 +167,13 @@ mod tests {
         let mut scanner = SourceScanner::new(source);
 
         assert_eq!(scanner.read(), Some("\r\n"));
-        assert_eq!(scanner.locate(), Range::from_nums(0, 0, 0, 1),);
+        assert_eq!(scanner.locate(), Range::from_nums(0, 0, 1, 0),);
         scanner.advance();
         assert_eq!(scanner.read(), Some("\n"));
-        assert_eq!(scanner.locate(), Range::from_nums(1, 0, 1, 1),);
+        assert_eq!(scanner.locate(), Range::from_nums(1, 0, 2, 0),);
         scanner.advance();
         assert_eq!(scanner.read(), Some("\r"));
-        assert_eq!(scanner.locate(), Range::from_nums(2, 0, 2, 1),);
+        assert_eq!(scanner.locate(), Range::from_nums(2, 0, 3, 0),);
         scanner.advance();
         assert_eq!(scanner.read(), None);
         assert_eq!(scanner.locate(), Range::from_nums(3, 0, 3, 0),);
@@ -188,7 +189,7 @@ mod tests {
 
         scanner.advance();
         assert_eq!(scanner.read(), Some("\r\n"));
-        assert_eq!(scanner.locate(), Range::from_nums(0, 1, 0, 2),);
+        assert_eq!(scanner.locate(), Range::from_nums(0, 1, 1, 0),);
         scanner.advance();
         assert_eq!(scanner.read(), Some("b"));
         assert_eq!(scanner.locate(), Range::from_nums(1, 0, 1, 1),);
