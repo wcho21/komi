@@ -33,37 +33,37 @@ impl<'a> Lexer<'a> {
         while let Some(char) = self.scanner.read() {
             let location = self.locate_and_advance();
             let token = match char {
-                char if char_validator::is_digit(char) => self.lex_num(&location, char)?,
+                char if char_validator::is_digit(char) => self.lex_num(location, char)?,
                 "참" => Token::new(TokenKind::Bool(true), location),
-                "거" => self.expect_or_lex_identifier("짓", TokenKind::Bool(false), char, &location)?,
-                "+" => self.expect_next_or_token("=", TokenKind::PlusEquals, TokenKind::Plus, &location)?,
-                "-" => self.expect_next_or_token("=", TokenKind::MinusEquals, TokenKind::Minus, &location)?,
-                "*" => self.expect_next_or_token("=", TokenKind::AsteriskEquals, TokenKind::Asterisk, &location)?,
-                "/" => self.expect_next_or_token("=", TokenKind::SlashEquals, TokenKind::Slash, &location)?,
-                "%" => self.expect_next_or_token("=", TokenKind::PercentEquals, TokenKind::Percent, &location)?,
+                "거" => self.expect_or_lex_identifier("짓", TokenKind::Bool(false), char, location)?,
+                "+" => self.expect_next_or_token("=", TokenKind::PlusEquals, TokenKind::Plus, location)?,
+                "-" => self.expect_next_or_token("=", TokenKind::MinusEquals, TokenKind::Minus, location)?,
+                "*" => self.expect_next_or_token("=", TokenKind::AsteriskEquals, TokenKind::Asterisk, location)?,
+                "/" => self.expect_next_or_token("=", TokenKind::SlashEquals, TokenKind::Slash, location)?,
+                "%" => self.expect_next_or_token("=", TokenKind::PercentEquals, TokenKind::Percent, location)?,
                 "(" => Token::new(TokenKind::LParen, location),
                 ")" => Token::new(TokenKind::RParen, location),
                 "{" => Token::new(TokenKind::LBrace, location),
                 "}" => Token::new(TokenKind::RBrace, location),
-                "<" => self.expect_next_or_token("=", TokenKind::LBracketEquals, TokenKind::LBracket, &location)?,
-                ">" => self.expect_next_or_token("=", TokenKind::RBracketEquals, TokenKind::RBracket, &location)?,
-                "\"" => self.lex_str(&location)?,
+                "<" => self.expect_next_or_token("=", TokenKind::LBracketEquals, TokenKind::LBracket, location)?,
+                ">" => self.expect_next_or_token("=", TokenKind::RBracketEquals, TokenKind::RBracket, location)?,
+                "\"" => self.lex_str(location)?,
                 ":" => Token::new(TokenKind::Colon, location),
                 "," => Token::new(TokenKind::Comma, location),
-                "!" => self.expect_next_or_token("=", TokenKind::BangEquals, TokenKind::Bang, &location)?,
-                "=" => self.expect_next_or_token("=", TokenKind::DoubleEquals, TokenKind::Equals, &location)?,
-                "그" => self.expect_or_lex_identifier("리고", TokenKind::Conjunct, char, &location)?,
-                "또" => self.expect_or_lex_identifier("는", TokenKind::Disjunct, char, &location)?,
-                "함" => self.expect_or_lex_identifier("수", TokenKind::Closure, char, &location)?,
-                "만" => self.expect_or_lex_identifier("약", TokenKind::IfBranch, char, &location)?,
-                "아" => self.expect_or_lex_identifier("니면", TokenKind::ElseBranch, char, &location)?,
-                "반" => self.expect_or_lex_identifier("복", TokenKind::Iteration, char, &location)?,
+                "!" => self.expect_next_or_token("=", TokenKind::BangEquals, TokenKind::Bang, location)?,
+                "=" => self.expect_next_or_token("=", TokenKind::DoubleEquals, TokenKind::Equals, location)?,
+                "그" => self.expect_or_lex_identifier("리고", TokenKind::Conjunct, char, location)?,
+                "또" => self.expect_or_lex_identifier("는", TokenKind::Disjunct, char, location)?,
+                "함" => self.expect_or_lex_identifier("수", TokenKind::Closure, char, location)?,
+                "만" => self.expect_or_lex_identifier("약", TokenKind::IfBranch, char, location)?,
+                "아" => self.expect_or_lex_identifier("니면", TokenKind::ElseBranch, char, location)?,
+                "반" => self.expect_or_lex_identifier("복", TokenKind::Iteration, char, location)?,
                 "#" => {
                     self.skip_comment();
                     continue;
                 }
                 s if char_validator::is_in_identifier_domain(s) => {
-                    self.lex_identifier_with_init_seg(&String::from(s), &location)?
+                    self.lex_identifier_with_init_seg(&String::from(s), location)?
                 }
                 s if char_validator::is_whitespace(s) => {
                     continue;
@@ -81,7 +81,7 @@ impl<'a> Lexer<'a> {
     /// Returns a number literal token if successfully lexed, or error otherwise.
     ///
     /// Call after advancing the scanner `self.scanner` past the initial character, with its location passed as `first_location`.
-    fn lex_num(&mut self, first_location: &Range, first_char: &'a str) -> ResToken {
+    fn lex_num(&mut self, first_location: Range, first_char: &'a str) -> ResToken {
         let mut lexeme = String::new();
         let begin = first_location.begin;
 
@@ -124,9 +124,9 @@ impl<'a> Lexer<'a> {
     /// Returns a sequence of tokens in a string literal if successfully lexed, or error otherwise.
     ///
     /// Call after advancing the scanner `self.scanner` past the left beginning quote, with its location passed as `first_location`.
-    fn lex_str(&mut self, first_location: &Range) -> ResToken {
+    fn lex_str(&mut self, first_location: Range) -> ResToken {
         let mut segments: Vec<StrSegment> = vec![];
-        let mut segments_location = *first_location;
+        let mut segments_location = first_location;
 
         // Read each segment into `seg` and push it to `segments`.
         let mut seg = String::new();
@@ -274,7 +274,7 @@ impl<'a> Lexer<'a> {
         expected: &str,
         expected_kind: TokenKind,
         alt_kind: TokenKind,
-        first_location: &Range,
+        first_location: Range,
     ) -> ResToken {
         match self.scanner.read() {
             Some(char) if char == expected => {
@@ -283,7 +283,7 @@ impl<'a> Lexer<'a> {
 
                 Ok(Token::new(expected_kind, lexeme_location))
             }
-            _ => Ok(Token::new(alt_kind, *first_location)),
+            _ => Ok(Token::new(alt_kind, first_location)),
         }
     }
 
@@ -293,11 +293,11 @@ impl<'a> Lexer<'a> {
         expected: &str,
         expected_kind: TokenKind,
         first_char: &'a str,
-        first_location: &Range,
+        first_location: Range,
     ) -> ResToken {
         // Stores characters to lex an identifier token if an unexpected character encountered.
         let mut init_seg = String::from(first_char);
-        let mut init_seg_location = *first_location;
+        let mut init_seg_location = first_location;
 
         // Read subsequent characters and match them against the expected characters one by one.
         // Return an identifier token if unexpected character encountered.
@@ -347,7 +347,7 @@ impl<'a> Lexer<'a> {
                 let char_end = self.scanner.locate().end;
                 self.scanner.advance();
 
-                let token = self.lex_identifier_with_init_seg(&init_seg, &Range::new(*init_seg_begin, char_end))?;
+                let token = self.lex_identifier_with_init_seg(&init_seg, Range::new(*init_seg_begin, char_end))?;
                 Ok(token)
             }
             _ => alt_op(),
@@ -355,7 +355,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Returns an identifier token with the characters `init_seg` and subsequent characters the scanner read.
-    fn lex_identifier_with_init_seg(&mut self, init_seg: &String, init_seg_location: &Range) -> ResToken {
+    fn lex_identifier_with_init_seg(&mut self, init_seg: &String, init_seg_location: Range) -> ResToken {
         let mut lexeme = init_seg.clone();
         let mut lexeme_location = init_seg_location.clone();
 
