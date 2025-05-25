@@ -7,6 +7,8 @@ mod util;
 
 use crate::environment::Environment;
 use crate::err::EvalError;
+use assignment_infix as assign_infix;
+use combinator_infix as comb_infix;
 use komi_syntax::{Ast, AstKind, Value};
 
 type ResVal = Result<Value, EvalError>;
@@ -26,21 +28,19 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment) -> ResVal {
         AstKind::PrefixPlus { operand: op } => prefix::reduce_plus(&op, &loc, env),
         AstKind::PrefixMinus { operand: op } => prefix::reduce_minus(&op, &loc, env),
         AstKind::PrefixBang { operand: op } => prefix::reduce_bang(&op, &loc, env),
-        AstKind::InfixPlus { left: l, right: r } => combinator_infix::reduce_plus(&l, &r, &loc, env),
-        AstKind::InfixMinus { left: l, right: r } => combinator_infix::reduce_minus(&l, &r, &loc, env),
-        AstKind::InfixAsterisk { left: l, right: r } => combinator_infix::reduce_asterisk(&l, &r, &loc, env),
-        AstKind::InfixSlash { left: l, right: r } => combinator_infix::reduce_slash(&l, &r, &loc, env),
-        AstKind::InfixPercent { left: l, right: r } => combinator_infix::reduce_percent(&l, &r, &loc, env),
-        AstKind::InfixConjunct { left: l, right: r } => combinator_infix::reduce_conjunct(&l, &r, &loc, env),
-        AstKind::InfixDisjunct { left: l, right: r } => combinator_infix::reduce_disjunct(&l, &r, &loc, env),
-        AstKind::InfixEquals { left: l, right: r } => assignment_infix::reduce_equals(&l, &r, &loc, env),
-        AstKind::InfixPlusEquals { left: l, right: r } => assignment_infix::reduce_plus_equals(&l, &r, &loc, env),
-        AstKind::InfixMinusEquals { left: l, right: r } => assignment_infix::reduce_minus_equals(&l, &r, &loc, env),
-        AstKind::InfixAsteriskEquals { left: l, right: r } => {
-            assignment_infix::reduce_asterisk_equals(&l, &r, &loc, env)
-        }
-        AstKind::InfixSlashEquals { left: l, right: r } => assignment_infix::reduce_slash_equals(&l, &r, &loc, env),
-        AstKind::InfixPercentEquals { left: l, right: r } => assignment_infix::reduce_percent_equals(&l, &r, &loc, env),
+        AstKind::InfixPlus { left: l, right: r } => comb_infix::reduce_plus(&l, &r, &loc, env),
+        AstKind::InfixMinus { left: l, right: r } => comb_infix::reduce_minus(&l, &r, &loc, env),
+        AstKind::InfixAsterisk { left: l, right: r } => comb_infix::reduce_asterisk(&l, &r, &loc, env),
+        AstKind::InfixSlash { left: l, right: r } => comb_infix::reduce_slash(&l, &r, &loc, env),
+        AstKind::InfixPercent { left: l, right: r } => comb_infix::reduce_percent(&l, &r, &loc, env),
+        AstKind::InfixConjunct { left: l, right: r } => comb_infix::reduce_conjunct(&l, &r, &loc, env),
+        AstKind::InfixDisjunct { left: l, right: r } => comb_infix::reduce_disjunct(&l, &r, &loc, env),
+        AstKind::InfixEquals { left: l, right: r } => assign_infix::reduce_equals(&l, &r, &loc, env),
+        AstKind::InfixPlusEquals { left: l, right: r } => assign_infix::reduce_plus_equals(&l, &r, &loc, env),
+        AstKind::InfixMinusEquals { left: l, right: r } => assign_infix::reduce_minus_equals(&l, &r, &loc, env),
+        AstKind::InfixAsteriskEquals { left: l, right: r } => assign_infix::reduce_asterisk_equals(&l, &r, &loc, env),
+        AstKind::InfixSlashEquals { left: l, right: r } => assign_infix::reduce_slash_equals(&l, &r, &loc, env),
+        AstKind::InfixPercentEquals { left: l, right: r } => assign_infix::reduce_percent_equals(&l, &r, &loc, env),
         _ => todo!(),
     }
 }
