@@ -13,8 +13,9 @@ use komi_util::char_validator;
 use komi_util::{Range, Scanner, Spot};
 use source_scanner::SourceScanner;
 
-type ResTokens = Result<Vec<Token>, LexError>;
-type ResToken = Result<Token, LexError>;
+type Tokens = Vec<Token>;
+pub type TokenRes = Result<Token, LexError>;
+pub type TokensRes = Result<Tokens, LexError>;
 
 /// Produces tokens from source codes.
 struct Lexer<'a> {
@@ -26,8 +27,8 @@ impl<'a> Lexer<'a> {
         Self { scanner: SourceScanner::new(source) }
     }
 
-    pub fn lex(&mut self) -> ResTokens {
-        let mut tokens: Vec<Token> = vec![];
+    pub fn lex(&mut self) -> TokensRes {
+        let mut tokens: Tokens = vec![];
 
         // Lex characters into tokens one by one
         while let Some(char) = self.scanner.read() {
@@ -83,7 +84,7 @@ impl<'a> Lexer<'a> {
     ///
     /// Call this after advancing the scanner `self.scanner` past the initial character, with its location passed as `first_location`.
     /// The scanner stops at the first non-digit character, after reading a number with or without a decimal part.
-    fn lex_num(&mut self, first_location: Range, first_char: &'a str) -> ResToken {
+    fn lex_num(&mut self, first_location: Range, first_char: &'a str) -> TokenRes {
         let mut lexeme = String::new();
         let begin = first_location.begin;
 
@@ -127,7 +128,7 @@ impl<'a> Lexer<'a> {
     ///
     /// Call this after advancing the scanner `self.scanner` past the beginning quote `"`, with its location passed as `first_location`.
     /// The scanner stops at the ending quote `"`.
-    fn lex_str(&mut self, first_location: Range) -> ResToken {
+    fn lex_str(&mut self, first_location: Range) -> TokenRes {
         let mut segments: Vec<StrSegment> = vec![];
         let mut segments_location = first_location;
 
@@ -280,7 +281,7 @@ impl<'a> Lexer<'a> {
         expected_kind: TokenKind,
         alt_kind: TokenKind,
         first_location: Range,
-    ) -> ResToken {
+    ) -> TokenRes {
         match self.scanner.read() {
             Some(char) if char == expected => {
                 let char_location = self.locate_and_advance();
@@ -299,7 +300,7 @@ impl<'a> Lexer<'a> {
         expected_kind: TokenKind,
         first_char: &'a str,
         first_location: Range,
-    ) -> ResToken {
+    ) -> TokenRes {
         // Stores characters to lex an identifier token if an unexpected character encountered.
         let mut init_seg = String::from(first_char);
         let mut init_seg_location = first_location;
@@ -341,9 +342,9 @@ impl<'a> Lexer<'a> {
         init_seg: &String,
         init_seg_begin: &Spot,
         alt_op: F,
-    ) -> ResToken
+    ) -> TokenRes
     where
-        F: Fn() -> ResToken,
+        F: Fn() -> TokenRes,
     {
         match char_read {
             Some(c) if char_validator::is_in_identifier_domain(c) => {
@@ -360,7 +361,7 @@ impl<'a> Lexer<'a> {
     }
 
     /// Returns an identifier token with the characters `init_seg` and subsequent characters the scanner read.
-    fn lex_identifier_with_init_seg(&mut self, init_seg: &String, init_seg_location: Range) -> ResToken {
+    fn lex_identifier_with_init_seg(&mut self, init_seg: &String, init_seg_location: Range) -> TokenRes {
         let mut lexeme = init_seg.clone();
         let mut lexeme_location = init_seg_location.clone();
 
@@ -398,7 +399,7 @@ impl<'a> Lexer<'a> {
 }
 
 /// Produces tokens from source codes.
-pub fn lex(source: &str) -> ResTokens {
+pub fn lex(source: &str) -> TokensRes {
     Lexer::new(source).lex()
 }
 
@@ -450,7 +451,7 @@ mod tests {
     #[rstest]
     #[case::without_decimal("12", vec![mktoken!(TokenKind::Number(12.0), loc 0, 0, 0, "12".len())])]
     #[case::with_decimal("12.25", vec![mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, "12.25".len())])]
-    fn num_literal(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn num_literal(#[case] source: &str, #[case] expected: Tokens) {
         assert_lex!(source, expected);
     }
 
@@ -470,7 +471,7 @@ mod tests {
     #[rstest]
     #[case::the_true("참", vec![mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)])]
     #[case::the_false("거짓", vec![mktoken!(TokenKind::Bool(false), loc 0, 0, 0, 2)])]
-    fn bool_literal(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn bool_literal(#[case] source: &str, #[case] expected: Tokens) {
         assert_lex!(source, expected);
     }
 
@@ -551,7 +552,7 @@ mod tests {
             StrSegment::new(StrSegmentKind::identifier("바나나"), Range::from_nums(0,11,0,14)),
         ]), loc 0, 0, 0, 16),
     ])]
-    fn string_segment(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn string_segment(#[case] source: &str, #[case] expected: Tokens) {
         assert_lex!(source, expected);
     }
 
@@ -618,7 +619,7 @@ mod tests {
     #[case::if_branch("만약", vec![mktoken!(TokenKind::IfBranch, loc 0, 0, 0, 2)])]
     #[case::else_branch("아니면", vec![mktoken!(TokenKind::ElseBranch, loc 0, 0, 0, 3)])]
     #[case::iteration("반복", vec![mktoken!(TokenKind::Iteration, loc 0, 0, 0, 2)])]
-    fn non_value_literal(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn non_value_literal(#[case] source: &str, #[case] expected: Tokens) {
         assert_lex!(source, expected);
     }
 
@@ -657,7 +658,7 @@ mod tests {
     #[case::first_char_iteration_but_second_non_id("반" , vec![mktoken!(TokenKind::Identifier(String::from("반")), loc 0, 0, 0, 1)])]
     #[case::first_char_iteration_but_second_other_id("반a", vec![mktoken!(TokenKind::Identifier(String::from("반a")), loc 0, 0, 0, 2)])]
     #[case::first_two_chars_iteration_but_third_other_id("반복a", vec![mktoken!(TokenKind::Identifier(String::from("반복a")), loc 0, 0, 0, 3)])]
-    fn single_identifier(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn single_identifier(#[case] source: &str, #[case] expected: Tokens) {
         assert_lex!(source, expected);
     }
 
@@ -729,7 +730,7 @@ mod tests {
         mktoken!(TokenKind::Iteration, loc 0, 0, 0, 2),
         mktoken!(TokenKind::Iteration, loc 0, 3, 0, 5),
     ])]
-    fn two_same_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn two_same_tokens(#[case] source: &str, #[case] expected: Tokens) {
         assert_lex!(source, expected);
     }
 
@@ -836,7 +837,7 @@ mod tests {
         mktoken!(TokenKind::Identifier(String::from("반복a")), loc 0, 0, 0, 3),
         mktoken!(TokenKind::Iteration, loc 0, 4, 0, 6),
     ])]
-    fn two_similar_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn two_similar_tokens(#[case] source: &str, #[case] expected: Tokens) {
         assert_lex!(source, expected);
     }
 
@@ -867,7 +868,7 @@ mod tests {
         mktoken!(TokenKind::Number(1.0), loc 0, 13, 0, 14),
         mktoken!(TokenKind::RBrace, loc 0, 15, 0, 16),
     ])]
-    fn multiple_tokens(#[case] source: &str, #[case] expected: Vec<Token>) {
+    fn multiple_tokens(#[case] source: &str, #[case] expected: Tokens) {
         assert_lex!(source, expected);
     }
 
