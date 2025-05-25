@@ -90,6 +90,16 @@ mod tests {
     mod ok {
         use super::*;
 
+        mod closure {
+            use super::*;
+
+            test_exec!(
+                closure,
+                "함수 사과, 오렌지, 바나나 {}",
+                "함수 사과, 오렌지, 바나나 { ... }"
+            );
+        }
+
         mod num {
             use super::*;
 

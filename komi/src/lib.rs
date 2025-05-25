@@ -66,6 +66,7 @@ mod tests {
     #[case::number_with_decimal("12.25", "12.25")]
     #[case::bool_true("참", "참")]
     #[case::bool_false("거짓", "거짓")]
+    #[case::closure("함수 사과, 오렌지, 바나나 {}", "함수 사과, 오렌지, 바나나 { ... }")]
     fn single_literal(#[case] source: &str, #[case] expected: String) {
         assert_exec!(source, expected);
     }

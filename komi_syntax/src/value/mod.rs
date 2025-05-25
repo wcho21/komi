@@ -1,4 +1,5 @@
-use komi_util::Range;
+use crate::Ast;
+use komi_util::{Environment, Range};
 
 /// Kinds of values produced during evaluation.
 /// Serves as the interface between an evaluator and its user.
@@ -6,6 +7,11 @@ use komi_util::Range;
 pub enum ValueKind {
     Number(f64),
     Bool(bool),
+    Closure {
+        parameters: Vec<String>,
+        body: Vec<Box<Ast>>,
+        env: Environment<Value>,
+    },
     Empty,
 }
 

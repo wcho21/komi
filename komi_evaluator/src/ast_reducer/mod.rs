@@ -7,11 +7,13 @@ mod util;
 
 use crate::environment::Environment;
 use crate::err::EvalError;
+use assignment_infix as assign_infix;
+use combinator_infix as comb_infix;
 use komi_syntax::{Ast, AstKind, Value};
 
 type ResVal = Result<Value, EvalError>;
 
-pub fn reduce_ast(ast: &Ast, env: &mut Environment) -> ResVal {
+pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment) -> ResVal {
     // Design principle: once you read something, pass it as an argument.
     // This avoids unnecessary repeated reading in subfunctions.
     // Moreover, if you delay determining the kind of what you read, the decision is only postponed to subfunctions.
@@ -20,28 +22,26 @@ pub fn reduce_ast(ast: &Ast, env: &mut Environment) -> ResVal {
     let loc = ast.location;
     match &ast.kind {
         AstKind::Program { expressions: e } => expressions::reduce(&e, &loc, env),
-        AstKind::Identifier(x) => leaf::evaluate_identifier(x, &loc, env),
-        AstKind::Number(x) => leaf::evaluate_num(*x, &loc),
-        AstKind::Bool(x) => leaf::evaluate_bool(*x, &loc),
+        AstKind::Identifier(id) => leaf::evaluate_identifier(id, &loc, env),
+        AstKind::Number(n) => leaf::evaluate_num(*n, &loc),
+        AstKind::Bool(b) => leaf::evaluate_bool(*b, &loc),
+        AstKind::Closure { parameters: p, body: b } => leaf::evaluate_closure(p, b, &loc, env),
         AstKind::PrefixPlus { operand: op } => prefix::reduce_plus(&op, &loc, env),
         AstKind::PrefixMinus { operand: op } => prefix::reduce_minus(&op, &loc, env),
         AstKind::PrefixBang { operand: op } => prefix::reduce_bang(&op, &loc, env),
-        AstKind::InfixPlus { left: l, right: r } => combinator_infix::reduce_plus(&l, &r, &loc, env),
-        AstKind::InfixMinus { left: l, right: r } => combinator_infix::reduce_minus(&l, &r, &loc, env),
-        AstKind::InfixAsterisk { left: l, right: r } => combinator_infix::reduce_asterisk(&l, &r, &loc, env),
-        AstKind::InfixSlash { left: l, right: r } => combinator_infix::reduce_slash(&l, &r, &loc, env),
-        AstKind::InfixPercent { left: l, right: r } => combinator_infix::reduce_percent(&l, &r, &loc, env),
-        AstKind::InfixConjunct { left: l, right: r } => combinator_infix::reduce_conjunct(&l, &r, &loc, env),
-        AstKind::InfixDisjunct { left: l, right: r } => combinator_infix::reduce_disjunct(&l, &r, &loc, env),
-        AstKind::InfixEquals { left: l, right: r } => assignment_infix::reduce_equals(&l, &r, &loc, env),
-        AstKind::InfixPlusEquals { left: l, right: r } => assignment_infix::reduce_plus_equals(&l, &r, &loc, env),
-        AstKind::InfixMinusEquals { left: l, right: r } => assignment_infix::reduce_minus_equals(&l, &r, &loc, env),
-        AstKind::InfixAsteriskEquals { left: l, right: r } => {
-            assignment_infix::reduce_asterisk_equals(&l, &r, &loc, env)
-        }
-        AstKind::InfixSlashEquals { left: l, right: r } => assignment_infix::reduce_slash_equals(&l, &r, &loc, env),
-        AstKind::InfixPercentEquals { left: l, right: r } => assignment_infix::reduce_percent_equals(&l, &r, &loc, env),
-        _ => todo!(),
+        AstKind::InfixPlus { left: l, right: r } => comb_infix::reduce_plus(&l, &r, &loc, env),
+        AstKind::InfixMinus { left: l, right: r } => comb_infix::reduce_minus(&l, &r, &loc, env),
+        AstKind::InfixAsterisk { left: l, right: r } => comb_infix::reduce_asterisk(&l, &r, &loc, env),
+        AstKind::InfixSlash { left: l, right: r } => comb_infix::reduce_slash(&l, &r, &loc, env),
+        AstKind::InfixPercent { left: l, right: r } => comb_infix::reduce_percent(&l, &r, &loc, env),
+        AstKind::InfixConjunct { left: l, right: r } => comb_infix::reduce_conjunct(&l, &r, &loc, env),
+        AstKind::InfixDisjunct { left: l, right: r } => comb_infix::reduce_disjunct(&l, &r, &loc, env),
+        AstKind::InfixEquals { left: l, right: r } => assign_infix::reduce_equals(&l, &r, &loc, env),
+        AstKind::InfixPlusEquals { left: l, right: r } => assign_infix::reduce_plus_equals(&l, &r, &loc, env),
+        AstKind::InfixMinusEquals { left: l, right: r } => assign_infix::reduce_minus_equals(&l, &r, &loc, env),
+        AstKind::InfixAsteriskEquals { left: l, right: r } => assign_infix::reduce_asterisk_equals(&l, &r, &loc, env),
+        AstKind::InfixSlashEquals { left: l, right: r } => assign_infix::reduce_slash_equals(&l, &r, &loc, env),
+        AstKind::InfixPercentEquals { left: l, right: r } => assign_infix::reduce_percent_equals(&l, &r, &loc, env),
     }
 }
 
@@ -103,27 +103,8 @@ mod tests {
         );
     }
 
-    mod single_ast {
+    mod identifier {
         use super::*;
-
-        #[rstest]
-        #[case::num(
-            // Represents `1`.
-            mkast!(prog loc 0, 0, 0, 1, vec![
-                mkast!(num 1.0, loc 0, 0, 0, 1),
-            ]),
-            Value::from_num(1.0, Range::from_nums(0, 0, 0, 1))
-        )]
-        #[case::bool(
-            // Represents `참`.
-            mkast!(prog loc 0, 0, 0, 1, vec![
-                mkast!(boolean true, loc 0, 0, 0, 1),
-            ]),
-            Value::from_bool(true, Range::from_nums(0, 0, 0, 1))
-        )]
-        fn single_literal(#[case] ast: Box<Ast>, #[case] expected: Value) {
-            assert_eval!(&ast, expected);
-        }
 
         #[rstest]
         #[case::num(
@@ -158,6 +139,51 @@ mod tests {
         )]
         fn single_undefined_identifier(#[case] ast: Box<Ast>, #[case] error: EvalError) {
             assert_eval_fail!(&ast, error);
+        }
+    }
+
+    mod leaf {
+        use super::*;
+
+        #[rstest]
+        #[case::num(
+            // Represents `1`.
+            mkast!(prog loc 0, 0, 0, 1, vec![
+                mkast!(num 1.0, loc 0, 0, 0, 1),
+            ]),
+            Value::from_num(1.0, Range::from_nums(0, 0, 0, 1))
+        )]
+        #[case::bool(
+            // Represents `참`.
+            mkast!(prog loc 0, 0, 0, 1, vec![
+                mkast!(boolean true, loc 0, 0, 0, 1),
+            ]),
+            Value::from_bool(true, Range::from_nums(0, 0, 0, 1))
+        )]
+        #[case::closure(
+            // Represents `함수 사과, 오렌지, 바나나 { 1 2 3 }`.
+            mkast!(prog loc 0, 0, 0, 25, vec![
+                mkast!(closure loc 0, 0, 0, 25,
+                    param vec![String::from("사과"), String::from("오렌지"), String::from("바나나")],
+                    body vec![
+                        mkast!(num 1.0, loc 0, 18, 0, 19),
+                        mkast!(num 2.0, loc 0, 20, 0, 21),
+                        mkast!(num 3.0, loc 0, 22, 0, 23),
+                    ],
+                ),
+            ]),
+            Value::new(ValueKind::Closure {
+                parameters: vec![String::from("사과"), String::from("오렌지"), String::from("바나나")],
+                body: vec![
+                    mkast!(num 1.0, loc 0, 18, 0, 19),
+                    mkast!(num 2.0, loc 0, 20, 0, 21),
+                    mkast!(num 3.0, loc 0, 22, 0, 23),
+                ],
+                env: Environment::new()
+            }, Range::from_nums(0, 0, 0, 25))
+        )]
+        fn single(#[case] ast: Box<Ast>, #[case] expected: Value) {
+            assert_eval!(&ast, expected);
         }
     }
 

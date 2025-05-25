@@ -9,8 +9,8 @@ type ResVal = Result<Value, EvalError>;
 /// Reduces the operand `operand` of a numeric infix operand to a value.
 /// Its primitive value and kind are determined by `reduce_infix` and `get_kind`, respectively.
 pub fn reduce_num<F, G>(
-    left: &Ast,
-    right: &Ast,
+    left: &Box<Ast>,
+    right: &Box<Ast>,
     location: &Range,
     env: &mut Environment,
     reduce_infix: F,
@@ -26,8 +26,8 @@ where
 /// Reduces the operand `operand` of a boolean infix operand to a value.
 /// Its primitive value and kind are determined by `reduce_infix` and `get_kind`, respectively.
 pub fn reduce_bool<F, G>(
-    left: &Ast,
-    right: &Ast,
+    left: &Box<Ast>,
+    right: &Box<Ast>,
     location: &Range,
     env: &mut Environment,
     reduce_infix: F,
@@ -40,11 +40,11 @@ where
     reduce(left, right, location, env, get_bool_primitive, reduce_infix, get_kind)
 }
 
-fn get_num_primitive(ast: &Ast, env: &mut Environment) -> Result<f64, EvalError> {
+fn get_num_primitive(ast: &Box<Ast>, env: &mut Environment) -> Result<f64, EvalError> {
     util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidNumInfixOperand, env)
 }
 
-fn get_bool_primitive(ast: &Ast, env: &mut Environment) -> Result<bool, EvalError> {
+fn get_bool_primitive(ast: &Box<Ast>, env: &mut Environment) -> Result<bool, EvalError> {
     util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidBoolInfixOperand, env)
 }
 
@@ -56,8 +56,8 @@ fn get_bool_primitive(ast: &Ast, env: &mut Environment) -> Result<bool, EvalErro
 ///
 /// The location is determined by `location`.
 fn reduce<T, F, G, H>(
-    left: &Ast,
-    right: &Ast,
+    left: &Box<Ast>,
+    right: &Box<Ast>,
     location: &Range,
     env: &mut Environment,
     reduce_operand: F,
@@ -65,7 +65,7 @@ fn reduce<T, F, G, H>(
     get_kind: H,
 ) -> ResVal
 where
-    F: Fn(&Ast, &mut Environment) -> Result<T, EvalError>,
+    F: Fn(&Box<Ast>, &mut Environment) -> Result<T, EvalError>,
     G: Fn(T, T) -> T,
     H: Fn(T) -> ValueKind,
 {

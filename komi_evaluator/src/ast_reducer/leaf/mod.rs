@@ -1,6 +1,6 @@
 use crate::environment::Environment;
 use crate::err::{EvalError, EvalErrorKind};
-use komi_syntax::{Value, ValueKind};
+use komi_syntax::{Ast, Value, ValueKind};
 use komi_util::Range;
 
 type ResVal = Result<Value, EvalError>;
@@ -26,6 +26,22 @@ pub fn evaluate_num(num: f64, location: &Range) -> ResVal {
 /// Returns the evaluated boolean result, from boolean `boolean` and its location `location`.
 pub fn evaluate_bool(boolean: bool, location: &Range) -> ResVal {
     Ok(Value::new(ValueKind::Bool(boolean), *location))
+}
+
+pub fn evaluate_closure(
+    parameters: &Vec<String>,
+    body: &Vec<Box<Ast>>,
+    location: &Range,
+    env: &mut Environment,
+) -> ResVal {
+    Ok(Value::new(
+        ValueKind::Closure {
+            parameters: parameters.clone(),
+            body: body.clone(),
+            env: env.clone(),
+        },
+        *location,
+    ))
 }
 
 #[cfg(test)]
