@@ -22,7 +22,7 @@ pub enum TokenKind {
     /// A boolean `참` or `거짓`.
     Bool(bool),
     /// A string segment with interpolations, such as `사과` in `"사과"`, or `오렌지` in `"{사과}오렌지"`.
-    StrSegment(Vec<StrSegment>),
+    Str(Vec<StrSegment>),
     /// An identifier, such as `사과` or `오렌지`.
     Identifier(String),
     /// A plus `+`.
@@ -89,11 +89,34 @@ pub enum TokenKind {
 
 /// A string segment in a string token.
 #[derive(Debug, PartialEq, Clone)]
-pub enum StrSegment {
+pub struct StrSegment {
+    pub kind: StrSegmentKind,
+    pub location: Range,
+}
+
+impl StrSegment {
+    pub fn new(kind: StrSegmentKind, location: Range) -> Self {
+        Self { kind, location }
+    }
+}
+
+/// A kind of string segment in a string token.
+#[derive(Debug, PartialEq, Clone)]
+pub enum StrSegmentKind {
     /// A string segment, such as `사과` in "`사과{오렌지}`".
-    SegmentStr(String),
+    Str(String),
     /// An interpolated identifier, such as `오렌지` in "`사과{오렌지}`".
     Identifier(String),
+}
+
+impl StrSegmentKind {
+    pub fn str(s: impl Into<String>) -> Self {
+        Self::Str(s.into())
+    }
+
+    pub fn identifier(s: impl Into<String>) -> Self {
+        Self::Identifier(s.into())
+    }
 }
 
 /// Makes a token with the kind and the location specified by four numbers.
@@ -111,11 +134,50 @@ mod tests {
     use fixtures::*;
     use komi_util::Spot;
 
-    #[test]
-    fn new() {
-        let token = Token::new(TokenKind::Number(1.0), RANGE_MOCK);
+    mod token {
+        use super::*;
 
-        assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
+        #[test]
+        fn new() {
+            let token = Token::new(TokenKind::Number(1.0), RANGE_MOCK);
+
+            assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
+        }
+    }
+
+    mod str_segment {
+        use super::*;
+
+        #[test]
+        fn new() {
+            let seg = StrSegment::new(StrSegmentKind::Str(String::from("사과")), RANGE_MOCK);
+
+            assert_eq!(
+                seg,
+                StrSegment {
+                    kind: StrSegmentKind::Str(String::from("사과")),
+                    location: RANGE_MOCK
+                }
+            )
+        }
+    }
+
+    mod str_segment_kind {
+        use super::*;
+
+        #[test]
+        fn str() {
+            let kind = StrSegmentKind::str("사과");
+
+            assert_eq!(kind, StrSegmentKind::Str(String::from("사과")),)
+        }
+
+        #[test]
+        fn identifier() {
+            let kind = StrSegmentKind::identifier("사과");
+
+            assert_eq!(kind, StrSegmentKind::Identifier(String::from("사과")),)
+        }
     }
 
     mod fixtures {

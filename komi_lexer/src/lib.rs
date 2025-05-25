@@ -8,7 +8,7 @@ mod source_scanner;
 mod utf8_tape;
 
 pub use err::{LexError, LexErrorKind};
-use komi_syntax::{Token, TokenKind};
+use komi_syntax::{StrSegment, StrSegmentKind, Token, TokenKind};
 use komi_util::char_validator;
 use komi_util::{Range, Scanner, Spot};
 use source_scanner::SourceScanner;
@@ -97,8 +97,8 @@ impl<'a> Lexer<'a> {
                     tokens.push(token);
                 }
                 "\"" => {
-                    let mut string_tokens = self.lex_str(&char_location)?;
-                    tokens.append(&mut string_tokens);
+                    let token = self.lex_str(&char_location)?;
+                    tokens.push(token);
                 }
                 ":" => {
                     let token = Token::new(TokenKind::Colon, char_location);
@@ -204,70 +204,113 @@ impl<'a> Lexer<'a> {
         Ok(token)
     }
 
-    /// Returns a sequence of tokens in a str literal if successfully lexed, or error otherwise.
+    /// Returns a sequence of tokens in a string literal if successfully lexed, or error otherwise.
     ///
     /// Call after advancing the scanner `self.scanner` past the left beginning quote, with its location passed as `first_location`.
-    fn lex_str(&mut self, first_location: &Range) -> ResTokens {
-        todo!()
-        /*
-        let mut tokens: Vec<Token> = vec![];
-        tokens.push(Token::new(TokenKind::Quote, *first_location));
+    fn lex_str(&mut self, first_location: &Range) -> ResToken {
+        let mut segments: Vec<StrSegment> = vec![];
+        let mut segments_location = *first_location;
 
-        let mut segment = String::new();
-        let mut segment_location = self.scanner.locate();
-
+        // Read each segment into `seg` and push it to `segments`.
+        let mut seg = String::new();
+        let mut seg_location = self.scanner.locate();
         loop {
-            let Some(char) = self.scanner.read() else {
-                return Err(LexError::new(LexErrorKind::QuoteNotClosed, segment_location));
+            // Return error if end of source
+            let char_location = self.scanner.locate();
+            let Some(char) = self.scanner.read_and_advance() else {
+                return Err(LexError::new(LexErrorKind::StrQuoteNotClosed, seg_location));
             };
 
+            // Break if end of string literal
             if char == "\"" {
-                tokens.push(Token::new(TokenKind::StrSegment(segment), segment_location));
-                tokens.push(Token::new(TokenKind::Quote, self.scanner.locate()));
-                self.scanner.advance();
+                segments_location.end = char_location.end;
+
+                self.push_segment_str_if_non_empty(&seg, &seg_location, &mut segments);
 
                 break;
             }
 
-            if char == "{" {
-                self.scanner.advance();
-
-                match self.scanner.read() {
-                    // `{{` is an escape for `{`.
-                    Some("{") => {
-                        segment.push_str("{");
-                        self.scanner.advance();
-                        continue;
-                    }
-                    _ => {
-                        todo!()
-                    }
-                }
-            }
-
+            // Expect an escaped right brace "{{" or return error
             if char == "}" {
-                self.scanner.advance();
+                let second_char_location = self.scanner.locate();
+                seg_location.end = second_char_location.end;
+                let Some("}") = self.scanner.read_and_advance() else {
+                    return Err(LexError::new(LexErrorKind::IllegalRBraceInStr, seg_location));
+                };
 
-                match self.scanner.read() {
-                    Some("}") => {
-                        segment.push_str("}");
-                        self.scanner.advance();
-                        continue;
-                    }
-                    _ => {
-                        todo!()
-                    }
-                }
+                seg.push_str(char);
+                continue;
             }
 
-            segment.push_str(char);
-            segment_location.end = self.scanner.locate().end;
+            if char == "{" {
+                let second_char_location = self.scanner.locate();
+                let Some(second_char) = self.scanner.read_and_advance() else {
+                    seg_location.end = second_char_location.end;
+                    return Err(LexError::new(LexErrorKind::InterpolationNotClosed, seg_location));
+                };
+                // Push a single left brace "{" if an escaped left brace "{{" encountered
+                if second_char == "{" {
+                    seg_location.end = second_char_location.end;
+                    seg.push_str(char);
+                    continue;
+                }
+                if second_char == "}" {
+                    seg_location.end = second_char_location.end;
+                    return Err(LexError::new(LexErrorKind::NoInterpolatedIdentifier, seg_location));
+                }
+                if !char_validator::is_in_identifier_domain(second_char) {
+                    return Err(LexError::new(
+                        LexErrorKind::IllegalInterpolationChar,
+                        second_char_location,
+                    ));
+                }
 
-            self.scanner.advance();
+                // Push and reinitialize a segment, if a segment read previously
+                self.push_segment_str_if_non_empty(&seg, &seg_location, &mut segments);
+                seg = String::from(second_char);
+
+                seg_location.begin = second_char_location.begin;
+                // TODO: factor out into a function (as a reading function, not lexing) with common codes in `lex_identifier_with_init_seg`
+                while let Some(x) = self.scanner.read() {
+                    if !char_validator::is_in_identifier_domain(x) {
+                        break;
+                    }
+
+                    // Extend a segment
+                    seg.push_str(x);
+                    seg_location.end = self.scanner.locate().end;
+
+                    self.scanner.advance();
+                }
+
+                let last_char_location = self.scanner.locate();
+                let Some(last_char) = self.scanner.read_and_advance() else {
+                    seg_location.begin = char_location.begin;
+                    seg_location.end = last_char_location.end;
+                    return Err(LexError::new(LexErrorKind::InterpolationNotClosed, seg_location));
+                };
+                if last_char != "}" {
+                    return Err(LexError::new(
+                        LexErrorKind::IllegalInterpolationChar,
+                        last_char_location,
+                    ));
+                }
+
+                // Push and reinitialize a segment
+                segments.push(StrSegment::new(StrSegmentKind::identifier(seg.clone()), seg_location));
+                seg_location.begin = self.scanner.locate().begin;
+                seg = String::new();
+
+                continue;
+            }
+
+            // Push the character if not the cases above
+            seg.push_str(char);
+            seg_location.end = char_location.end;
         }
 
-        Ok(tokens)
-        */
+        let token = Token::new(TokenKind::Str(segments), segments_location);
+        Ok(token)
     }
 
     fn skip_comment(&mut self) -> () {
@@ -417,6 +460,19 @@ impl<'a> Lexer<'a> {
     fn is_equal_str(source: Option<&str>, target: &str) -> bool {
         source.is_some_and(|c| c == target)
     }
+
+    fn push_segment_str_if_non_empty(
+        &self,
+        segment: &String,
+        segment_location: &Range,
+        segments: &mut Vec<StrSegment>,
+    ) -> () {
+        if segment.len() == 0 {
+            return;
+        }
+
+        segments.push(StrSegment::new(StrSegmentKind::str(segment), *segment_location));
+    }
 }
 
 /// Produces tokens from source codes.
@@ -426,8 +482,7 @@ pub fn lex(source: &str) -> ResTokens {
 
 #[cfg(test)]
 mod tests {
-    use super::err::LexErrorKind;
-    use super::{LexError, Range, Token, lex};
+    use super::*;
     use komi_syntax::{TokenKind, mktoken};
     use rstest::rstest;
 
@@ -485,8 +540,8 @@ mod tests {
     #[case::ending_with_two_dots("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
     #[case::ending_with_two_dots("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
     #[case::illegal_decimal("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
-    fn illegal_num_literal(#[case] source: &str, #[case] expected: LexError) {
-        assert_lex_fail!(source, expected);
+    fn illegal_num_literal(#[case] source: &str, #[case] error: LexError) {
+        assert_lex_fail!(source, error);
     }
 
     // Should lex boolean literals
@@ -498,53 +553,116 @@ mod tests {
     }
 
     // TODO: Should lex str literals.
-    // TODO(?): Should fail to lex illegal str literals.
-    /* TODO
     #[rstest]
-    #[case::simple_string("\"사과\"", vec![
-        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
-        mktoken!(TokenKind::StringSegment(String::from("사과")), loc 0, 1, 0, 3),
-        mktoken!(TokenKind::Quote, loc 0, 3, 0, 4),
+    #[case::empty_string("\"\"", vec![
+        mktoken!(TokenKind::Str(vec![]), loc 0, 0, 0, 2),
     ])]
-    #[case::lbrace_escape("\"사{{과\"", vec![
-        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
-        mktoken!(TokenKind::StringSegment(String::from("사{과")), loc 0, 1, 0, 5),
-        mktoken!(TokenKind::Quote, loc 0, 5, 0, 6),
+    #[case::str("\"사과\"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::str("사과"), Range::from_nums(0,1,0,3))]), loc 0, 0, 0, 4),
     ])]
-    #[case::rbrace_escape("\"사}}과\"", vec![
-        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
-        mktoken!(TokenKind::StringSegment(String::from("사}과")), loc 0, 1, 0, 5),
-        mktoken!(TokenKind::Quote, loc 0, 5, 0, 6),
+    #[case::str_with_otherwise_illegal_chars("\"!@# \"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::str("!@# "), Range::from_nums(0,1,0,5))]), loc 0, 0, 0, 6),
     ])]
-    #[case::num_literal_interpolation("\"사{1}과\"", vec![
-        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
-        mktoken!(TokenKind::LBrace, loc 0, 1, 0, 2),
-        mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
-        mktoken!(TokenKind::RBrace, loc 0, 3, 0, 4),
-        mktoken!(TokenKind::Quote, loc 0, 4, 0, 5),
+    #[case::str_with_new_line("\"\r\n\"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::str("\r\n"), Range::from_nums(0,1,1,0))]), loc 0, 0, 1, 1),
     ])]
-    #[case::bool_literal_interpolation("\"사{참}과\"", vec![
-        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
-        mktoken!(TokenKind::LBrace, loc 0, 1, 0, 2),
-        mktoken!(TokenKind::Bool(true), loc 0, 2, 0, 3),
-        mktoken!(TokenKind::RBrace, loc 0, 3, 0, 4),
-        mktoken!(TokenKind::Quote, loc 0, 4, 0, 5),
+    #[case::str_with_new_lines("\"\r\n\r\n\r\n\"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::str("\r\n\r\n\r\n"), Range::from_nums(0,1,3,0))]), loc 0, 0, 3, 1),
     ])]
-    #[case::string_literal_interpolation("\"사{\"오렌지\"}과\"", vec![
-        mktoken!(TokenKind::Quote, loc 0, 0, 0, 1),
-        mktoken!(TokenKind::LBrace, loc 0, 1, 0, 2),
-        mktoken!(TokenKind::Quote, loc 0, 2, 0, 3),
-        mktoken!(TokenKind::StringSegment(String::from("오렌지")), loc 0, 3, 0, 6),
-        mktoken!(TokenKind::Quote, loc 0, 6, 0, 7),
-        mktoken!(TokenKind::RBrace, loc 0, 7, 0, 8),
-        mktoken!(TokenKind::Quote, loc 0, 8, 0, 9),
+    #[case::lbrace_escape("\"{{\"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::str("{"), Range::from_nums(0,1,0,3))]), loc 0, 0, 0, 4),
     ])]
-    // TODO: test string literal nested interpolation
-    // TODO: test other interpolations
+    #[case::rbrace_escape("\"}}\"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::str("}"), Range::from_nums(0,1,0,3))]), loc 0, 0, 0, 4),
+    ])]
+    #[case::two_lbrace_escape("\"{{{{\"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::str("{{"), Range::from_nums(0,1,0,5))]), loc 0, 0, 0, 6),
+    ])]
+    #[case::two_rbrace_escapes("\"}}}}\"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::str("}}"), Range::from_nums(0,1,0,5))]), loc 0, 0, 0, 6),
+    ])]
+    #[case::lbrace_and_rbrace_escapes("\"{{}}\"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::str("{}"), Range::from_nums(0,1,0,5))]), loc 0, 0, 0, 6),
+    ])]
+    #[case::rbrace_and_lbrace_escapes("\"}}{{\"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::str("}{"), Range::from_nums(0,1,0,5))]), loc 0, 0, 0, 6),
+    ])]
+    #[case::id("\"{사과}\"", vec![
+        mktoken!(TokenKind::Str(vec![StrSegment::new(StrSegmentKind::identifier("사과"), Range::from_nums(0,2,0,4))]), loc 0, 0, 0, 6),
+    ])]
+    #[case::str_and_id("\"사과{오렌지}\"", vec![
+        mktoken!(TokenKind::Str(vec![
+            StrSegment::new(StrSegmentKind::str("사과"), Range::from_nums(0,1,0,3)),
+            StrSegment::new(StrSegmentKind::identifier("오렌지"), Range::from_nums(0,4,0,7)),
+        ]), loc 0, 0, 0, 9),
+    ])]
+    #[case::id_and_str("\"{사과}오렌지\"", vec![
+        mktoken!(TokenKind::Str(vec![
+            StrSegment::new(StrSegmentKind::identifier("사과"), Range::from_nums(0,2,0,4)),
+            StrSegment::new(StrSegmentKind::str("오렌지"), Range::from_nums(0,5,0,8)),
+        ]), loc 0, 0, 0, 9),
+    ])]
+    #[case::id_and_id("\"{사과}{오렌지}\"", vec![
+        mktoken!(TokenKind::Str(vec![
+            StrSegment::new(StrSegmentKind::identifier("사과"), Range::from_nums(0,2,0,4)),
+            StrSegment::new(StrSegmentKind::identifier("오렌지"), Range::from_nums(0,6,0,9)),
+        ]), loc 0, 0, 0, 11),
+    ])]
+    #[case::str_id_str("\"사과{오렌지}바나나\"", vec![
+        mktoken!(TokenKind::Str(vec![
+            StrSegment::new(StrSegmentKind::str("사과"), Range::from_nums(0,1,0,3)),
+            StrSegment::new(StrSegmentKind::identifier("오렌지"), Range::from_nums(0,4,0,7)),
+            StrSegment::new(StrSegmentKind::str("바나나"), Range::from_nums(0,8,0,11)),
+        ]), loc 0, 0, 0, 12),
+    ])]
+    #[case::id_str_id("\"{사과}오렌지{바나나}\"", vec![
+        mktoken!(TokenKind::Str(vec![
+            StrSegment::new(StrSegmentKind::identifier("사과"), Range::from_nums(0,2,0,4)),
+            StrSegment::new(StrSegmentKind::str("오렌지"), Range::from_nums(0,5,0,8)),
+            StrSegment::new(StrSegmentKind::identifier("바나나"), Range::from_nums(0,9,0,12)),
+        ]), loc 0, 0, 0, 14),
+    ])]
+    #[case::id_id_id("\"{사과}{오렌지}{바나나}\"", vec![
+        mktoken!(TokenKind::Str(vec![
+            StrSegment::new(StrSegmentKind::identifier("사과"), Range::from_nums(0,2,0,4)),
+            StrSegment::new(StrSegmentKind::identifier("오렌지"), Range::from_nums(0,6,0,9)),
+            StrSegment::new(StrSegmentKind::identifier("바나나"), Range::from_nums(0,11,0,14)),
+        ]), loc 0, 0, 0, 16),
+    ])]
     fn string_segment(#[case] source: &str, #[case] expected: Vec<Token>) {
         assert_lex!(source, expected);
     }
-    */
+
+    // Should fail to lex illegal str literals.
+    #[rstest]
+    #[case::lbrace_not_closed_with_immediate_end(
+        "\"{",
+        LexError::new(LexErrorKind::InterpolationNotClosed, Range::from_nums(0, 1, 0, 2))
+    )]
+    #[case::lbrace_not_closed_with_not_immediate_end(
+        "\"{사과",
+        LexError::new(LexErrorKind::InterpolationNotClosed, Range::from_nums(0, 1, 0, 4))
+    )]
+    #[case::rbrace_in_str("\"}", LexError::new(LexErrorKind::IllegalRBraceInStr, Range::from_nums(0, 1, 0, 2)))]
+    #[case::empty_identifier(
+        "\"{}\"",
+        LexError::new(LexErrorKind::NoInterpolatedIdentifier, Range::from_nums(0, 1, 0, 3))
+    )]
+    #[case::illegal_identifier_char_at_first(
+        "\"{+}\"",
+        LexError::new(LexErrorKind::IllegalInterpolationChar, Range::from_nums(0, 2, 0, 3))
+    )]
+    #[case::illegal_identifier_char_in_middle(
+        "\"{사+}\"",
+        LexError::new(LexErrorKind::IllegalInterpolationChar, Range::from_nums(0, 3, 0, 4))
+    )]
+    #[case::lbrace_not_closed_with_some_chars(
+        "\"{사과",
+        LexError::new(LexErrorKind::InterpolationNotClosed, Range::from_nums(0, 1, 0, 4))
+    )]
+    fn illegal_string_segment(#[case] source: &str, #[case] error: LexError) {
+        assert_lex_fail!(source, error);
+    }
 
     // Should lex non-value literals.
     #[rstest]
@@ -835,7 +953,7 @@ mod tests {
     #[rstest]
     #[case::caret("^", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
     #[case::dollar("$", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
-    fn illegal_char(#[case] source: &str, #[case] expected: LexError) {
-        assert_lex_fail!(source, expected);
+    fn illegal_char(#[case] source: &str, #[case] error: LexError) {
+        assert_lex_fail!(source, error);
     }
 }

@@ -5,12 +5,20 @@ use std::fmt;
 /// Serves as the interface between a lexer and its user.
 #[derive(Debug, PartialEq)]
 pub enum LexErrorKind {
-    /// An illegal char, not in the syntax.
+    /// An illegal character, not in the syntax.
     IllegalChar,
     /// An illegal number literal, such as `12.`.
     IllegalNumLiteral,
     /// Not closed quote, such as `"...`
-    QuoteNotClosed,
+    StrQuoteNotClosed,
+    /// String interpolation has begun with a left brace but not closed with a right brace, such as `"{"`.
+    InterpolationNotClosed,
+    /// String interpolation has no identifier, such as `"{}"`.
+    NoInterpolatedIdentifier,
+    /// An illegal character for an identifier in string interpolation, such as `+` in `"{사+}"`.
+    IllegalInterpolationChar,
+    /// An illegal right brace, such as `}` in `"}"`.
+    IllegalRBraceInStr,
     /// An internal error impossible to occur if lexed as expected.
     Unexpected,
 }
@@ -22,7 +30,11 @@ impl fmt::Display for LexErrorKind {
         let s = match self {
             LexErrorKind::IllegalChar => "IllegalChar",
             LexErrorKind::IllegalNumLiteral => "IllegalNumLiteral",
-            LexErrorKind::QuoteNotClosed => "QuoteNotClosed",
+            LexErrorKind::StrQuoteNotClosed => "StrQuoteNotClosed",
+            LexErrorKind::InterpolationNotClosed => "InterpolationNotClosed",
+            LexErrorKind::NoInterpolatedIdentifier => "NoInterpolatedIdentifier",
+            LexErrorKind::IllegalInterpolationChar => "IllegalInterpolationChar",
+            LexErrorKind::IllegalRBraceInStr => "IllegalRBraceInStr",
             LexErrorKind::Unexpected => "Unexpected",
         };
         write!(f, "{}", s)
