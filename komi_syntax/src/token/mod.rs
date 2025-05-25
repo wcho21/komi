@@ -1,5 +1,18 @@
 use komi_util::Range;
 
+/// A token produced during lexing.
+#[derive(Debug, PartialEq, Clone)]
+pub struct Token {
+    pub kind: TokenKind,
+    pub location: Range,
+}
+
+impl Token {
+    pub const fn new(kind: TokenKind, location: Range) -> Self {
+        Token { kind, location }
+    }
+}
+
 /// Kinds of tokens produced during lexing.
 /// Serves as the interface between a lexer and its user.
 #[derive(Debug, PartialEq, Clone)]
@@ -8,8 +21,8 @@ pub enum TokenKind {
     Number(f64),
     /// A boolean `참` or `거짓`.
     Bool(bool),
-    /// A string segment, such as `사과` in `"사과"`, or `오렌지` in `"{사과}오렌지"`.
-    StringSegment(String),
+    /// A string segment with interpolations, such as `사과` in `"사과"`, or `오렌지` in `"{사과}오렌지"`.
+    StrSegment(Vec<StrSegment>),
     /// An identifier, such as `사과` or `오렌지`.
     Identifier(String),
     /// A plus `+`.
@@ -34,9 +47,6 @@ pub enum TokenKind {
     LBracket,
     /// A right bracket `>`.
     RBracket,
-    /// A quote `"`.
-    // TODO(?): or LQuote and RQuote?
-    Quote,
     /// A colon `:`.
     Colon,
     /// A comma `,`.
@@ -77,17 +87,13 @@ pub enum TokenKind {
     Iteration,
 }
 
-/// A token produced during lexing.
+/// A string segment in a string token.
 #[derive(Debug, PartialEq, Clone)]
-pub struct Token {
-    pub kind: TokenKind,
-    pub location: Range,
-}
-
-impl Token {
-    pub const fn new(kind: TokenKind, location: Range) -> Self {
-        Token { kind, location }
-    }
+pub enum StrSegment {
+    /// A string segment, such as `사과` in "`사과{오렌지}`".
+    SegmentStr(String),
+    /// An interpolated identifier, such as `오렌지` in "`사과{오렌지}`".
+    Identifier(String),
 }
 
 /// Makes a token with the kind and the location specified by four numbers.
