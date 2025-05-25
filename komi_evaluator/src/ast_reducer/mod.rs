@@ -11,7 +11,7 @@ use komi_syntax::{Ast, AstKind, Value};
 
 type ResVal = Result<Value, EvalError>;
 
-pub fn reduce_ast(ast: &Ast, env: &mut Environment) -> ResVal {
+pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment) -> ResVal {
     // Design principle: once you read something, pass it as an argument.
     // This avoids unnecessary repeated reading in subfunctions.
     // Moreover, if you delay determining the kind of what you read, the decision is only postponed to subfunctions.

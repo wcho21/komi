@@ -7,7 +7,7 @@ use komi_util::Range;
 type ResVal = Result<Value, EvalError>;
 
 /// Reduces the operand `operand` of a numeric prefix operand to a value, with its kind determined by `get_kind`.
-pub fn reduce_num<F>(operand: &Ast, prefix_location: &Range, env: &mut Environment, get_kind: F) -> ResVal
+pub fn reduce_num<F>(operand: &Box<Ast>, prefix_location: &Range, env: &mut Environment, get_kind: F) -> ResVal
 where
     F: Fn(f64) -> ValueKind,
 {
@@ -15,18 +15,18 @@ where
 }
 
 /// Reduces the operand `operand` of a boolean prefix operand to a value, with its kind determined by `get_kind`.
-pub fn reduce_bool<F>(operand: &Ast, prefix_location: &Range, env: &mut Environment, get_kind: F) -> ResVal
+pub fn reduce_bool<F>(operand: &Box<Ast>, prefix_location: &Range, env: &mut Environment, get_kind: F) -> ResVal
 where
     F: Fn(bool) -> ValueKind,
 {
     reduce(operand, prefix_location, env, get_bool_primitive, get_kind)
 }
 
-fn get_num_primitive(ast: &Ast, env: &mut Environment) -> Result<f64, EvalError> {
+fn get_num_primitive(ast: &Box<Ast>, env: &mut Environment) -> Result<f64, EvalError> {
     util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidNumPrefixOperand, env)
 }
 
-fn get_bool_primitive(ast: &Ast, env: &mut Environment) -> Result<bool, EvalError> {
+fn get_bool_primitive(ast: &Box<Ast>, env: &mut Environment) -> Result<bool, EvalError> {
     util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidBoolPrefixOperand, env)
 }
 
@@ -37,14 +37,14 @@ fn get_bool_primitive(ast: &Ast, env: &mut Environment) -> Result<bool, EvalErro
 ///
 /// The location in the returned value will span from the prefix to operand.
 fn reduce<T, F, G>(
-    operand: &Ast,
+    operand: &Box<Ast>,
     prefix_location: &Range,
     env: &mut Environment,
     reduce_operand: F,
     get_kind: G,
 ) -> ResVal
 where
-    F: Fn(&Ast, &mut Environment) -> Result<T, EvalError>,
+    F: Fn(&Box<Ast>, &mut Environment) -> Result<T, EvalError>,
     G: Fn(T) -> ValueKind,
 {
     let reduced = reduce_operand(operand, env)?;

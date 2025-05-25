@@ -17,11 +17,11 @@ type ResVal = Result<Value, EvalError>;
 
 /// Produces a value from an AST.
 struct Evaluator<'a> {
-    ast: &'a Ast,
+    ast: &'a Box<Ast>,
 }
 
 impl<'a> Evaluator<'a> {
-    pub fn new(ast: &'a Ast) -> Self {
+    pub fn new(ast: &'a Box<Ast>) -> Self {
         Self { ast }
     }
 
@@ -33,6 +33,6 @@ impl<'a> Evaluator<'a> {
 }
 
 /// Produces a value from an AST.
-pub fn eval(ast: &Ast) -> ResVal {
+pub fn eval(ast: &Box<Ast>) -> ResVal {
     Evaluator::new(ast).eval()
 }
