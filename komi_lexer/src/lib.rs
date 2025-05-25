@@ -11,9 +11,7 @@ mod utf8_tape;
 pub use err::{LexError, LexErrorKind};
 use komi_syntax::{StrSegment, StrSegmentKind, Token, TokenKind as Kind};
 use komi_util::{Range, Scanner, char_validator};
-use lexer_tool::{
-    expect_or, lex_identifier_with_init_seg, lex_identifier_with_init_seg_or, read_identifier_with_init_seg,
-};
+use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, read_identifier_with_init_seg};
 use source_scanner::SourceScanner;
 
 type Tokens = Vec<Token>;
@@ -35,7 +33,9 @@ impl<'a> Lexer<'a> {
 
         // Lex characters into tokens one by one
         while let Some(char) = self.scanner.read() {
-            let location = self.locate_and_advance();
+            let location = self.scanner.locate();
+            self.scanner.advance();
+
             let token = match char {
                 "(" => Token::new(Kind::LParen, location),
                 ")" => Token::new(Kind::RParen, location),
@@ -44,13 +44,13 @@ impl<'a> Lexer<'a> {
                 ":" => Token::new(Kind::Colon, location),
                 "," => Token::new(Kind::Comma, location),
                 "참" => Token::new(Kind::Bool(true), location),
-                "거" => self.expect_or_lex_identifier("짓", Kind::Bool(false), char, location)?,
-                "그" => self.expect_or_lex_identifier("리고", Kind::Conjunct, char, location)?,
-                "또" => self.expect_or_lex_identifier("는", Kind::Disjunct, char, location)?,
-                "함" => self.expect_or_lex_identifier("수", Kind::Closure, char, location)?,
-                "만" => self.expect_or_lex_identifier("약", Kind::IfBranch, char, location)?,
-                "아" => self.expect_or_lex_identifier("니면", Kind::ElseBranch, char, location)?,
-                "반" => self.expect_or_lex_identifier("복", Kind::Iteration, char, location)?,
+                "거" => expect_or_lex_identifier(&mut self.scanner, "짓", Kind::Bool(false), char, location)?,
+                "그" => expect_or_lex_identifier(&mut self.scanner, "리고", Kind::Conjunct, char, location)?,
+                "또" => expect_or_lex_identifier(&mut self.scanner, "는", Kind::Disjunct, char, location)?,
+                "함" => expect_or_lex_identifier(&mut self.scanner, "수", Kind::Closure, char, location)?,
+                "만" => expect_or_lex_identifier(&mut self.scanner, "약", Kind::IfBranch, char, location)?,
+                "아" => expect_or_lex_identifier(&mut self.scanner, "니면", Kind::ElseBranch, char, location)?,
+                "반" => expect_or_lex_identifier(&mut self.scanner, "복", Kind::Iteration, char, location)?,
                 "+" => expect_or(&mut self.scanner, "=", Kind::PlusEquals, Kind::Plus, location)?,
                 "-" => expect_or(&mut self.scanner, "=", Kind::MinusEquals, Kind::Minus, location)?,
                 "*" => expect_or(&mut self.scanner, "=", Kind::AsteriskEquals, Kind::Asterisk, location)?,
@@ -192,63 +192,6 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
-    }
-
-    /// Advances the scanner and returns a location before advancing.
-    fn locate_and_advance(&mut self) -> Range {
-        let location = self.scanner.locate();
-        self.scanner.advance();
-
-        location
-    }
-
-    /// Returns a token with the kind `expected_kind` if the scanner reads the expected characters `expected`; otherwise, returns an identifier token.
-    fn expect_or_lex_identifier(
-        &mut self,
-        expected: &str,
-        expected_kind: Kind,
-        first_char: &'a str,
-        first_location: Range,
-    ) -> TokenRes {
-        // Stores characters to lex an identifier token if an unexpected character encountered.
-        let mut init_seg = String::from(first_char);
-        let mut init_seg_location = first_location;
-
-        // Read subsequent characters and match them against the expected characters one by one.
-        // Return an identifier token if unexpected character encountered.
-        for expected_char in expected.chars().map(|c| String::from(c)) {
-            let char = self.scanner.read();
-
-            if !Self::is_equal_str(char, &expected_char) {
-                let token = lex_identifier_with_init_seg_or(
-                    &mut self.scanner,
-                    char,
-                    init_seg.clone(),
-                    &init_seg_location.begin,
-                    || {
-                        // An identifier with characters read so far.
-                        Ok(Token::new(Kind::Identifier(init_seg.clone()), init_seg_location))
-                    },
-                )?;
-                return Ok(token);
-            }
-
-            init_seg.push_str(char.unwrap());
-            init_seg_location.end = self.locate_and_advance().end;
-        }
-
-        // All expected characters matched; return the token with the expected kind.
-        let char = self.scanner.read();
-        let token =
-            lex_identifier_with_init_seg_or(&mut self.scanner, char, init_seg, &init_seg_location.begin, || {
-                Ok(Token::new(expected_kind.clone(), init_seg_location))
-            })?;
-        return Ok(token);
-    }
-
-    /// Returns true if `source` is `Some` and the value is equal to `target`.
-    fn is_equal_str(source: Option<&str>, target: &str) -> bool {
-        source.is_some_and(|c| c == target)
     }
 
     fn push_segment_str_if_non_empty(
