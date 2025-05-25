@@ -4,6 +4,7 @@
 //! Designed to be loosely coupled, so it does not rely on the implementation details of the parser.
 
 mod err;
+mod lexer_tool;
 mod source_scanner;
 mod utf8_tape;
 
@@ -63,7 +64,7 @@ impl<'a> Lexer<'a> {
                     self.skip_comment();
                     continue;
                 }
-                s if char_validator::is_digit(s) => self.lex_num(location, char)?,
+                s if char_validator::is_digit(s) => lexer_tool::lex_num(&mut self.scanner, location, char)?,
                 // Lexing an identifier must come after attempting to lex a number
                 s if char_validator::is_in_identifier_domain(s) => {
                     self.lex_identifier_with_init_seg(String::from(s), location)?
@@ -79,50 +80,6 @@ impl<'a> Lexer<'a> {
         }
 
         Ok(tokens)
-    }
-
-    /// Returns a number literal token if successfully lexed, or error otherwise.
-    ///
-    /// Call this after advancing the scanner `self.scanner` past the initial character, with its location passed as `first_location`.
-    /// The scanner stops at the first non-digit character, after reading a number with or without a decimal part.
-    fn lex_num(&mut self, first_location: Range, first_char: &'a str) -> TokenRes {
-        let mut lexeme = String::new();
-        let begin = first_location.begin;
-
-        // Read the whole number part
-        lexeme.push_str(&self.read_digits(first_char));
-
-        // Return a token if not a dot
-        let Some(".") = self.scanner.read() else {
-            let end = self.scanner.locate().begin;
-            let token = Self::parse_num_lexeme(lexeme, Range::new(begin, end));
-
-            return Ok(token);
-        };
-
-        // Read a dot
-        self.scanner.advance();
-        lexeme.push_str(".");
-
-        // Return an error if end or not a digit, to prohibit invalid literals such as `12.` or `12.+`
-        let Some(x) = self.scanner.read() else {
-            let location = Range::new(begin, self.scanner.locate().end);
-            return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
-        };
-        if !char_validator::is_digit(x) {
-            let location = Range::new(begin, self.scanner.locate().end);
-            return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
-        }
-        self.scanner.advance();
-
-        // Read the decimal part
-        lexeme.push_str(&self.read_digits(x));
-
-        // Parse into a number and return a token
-        let end = self.scanner.locate().begin;
-        let token = Self::parse_num_lexeme(lexeme, Range::new(begin, end));
-
-        Ok(token)
     }
 
     /// Returns a sequence of tokens in a string literal if successfully lexed, or error otherwise.
@@ -234,27 +191,6 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
-    }
-
-    fn parse_num_lexeme(lexeme: String, location: Range) -> Token {
-        let num = lexeme.parse::<f64>().unwrap();
-
-        Token::new(TokenKind::Number(num), location)
-    }
-
-    fn read_digits(&mut self, first_char: &'a str) -> String {
-        let mut digits = first_char.to_string();
-
-        while let Some(x) = self.scanner.read() {
-            if !char_validator::is_digit(x) {
-                break;
-            }
-
-            digits.push_str(x);
-            self.scanner.advance();
-        }
-
-        digits
     }
 
     /// Advances the scanner and returns a location before advancing.
