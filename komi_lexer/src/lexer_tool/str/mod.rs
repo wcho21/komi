@@ -110,4 +110,42 @@ fn push_segment_str_if_non_empty(segment: &String, segment_location: &Range, seg
     segments.push(StrSegment::new(StrSegmentKind::str(segment), *segment_location));
 }
 
-// TODO: test
+// For more unit tests, see the string lexing tests in the `lib.rs` file of this crate.
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use fixtures::*;
+    use komi_syntax::mktoken;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case::empty("\"\"", mktoken!(Kind::Str(vec![]), loc 0, 0, 0, 2))]
+    #[case::str("\"a\"", mktoken!(Kind::Str(vec![
+        StrSegment::new(StrSegmentKind::str("a"), Range::from_nums(0,1,0,2)),
+    ]), loc 0, 0, 0, 3))]
+    #[case::id("\"{a}\"", mktoken!(Kind::Str(vec![
+        StrSegment::new(StrSegmentKind::identifier("a"), Range::from_nums(0,2,0,3)),
+    ]), loc 0, 0, 0, 5))]
+    #[case::lbrace_escape("\"{{\"", mktoken!(Kind::Str(vec![
+        StrSegment::new(StrSegmentKind::str("{"), Range::from_nums(0,1,0,3)),
+    ]), loc 0, 0, 0, 4))]
+    #[case::lbrace_escape("\"}}\"", mktoken!(Kind::Str(vec![
+        StrSegment::new(StrSegmentKind::str("}"), Range::from_nums(0,1,0,3)),
+    ]), loc 0, 0, 0, 4))]
+    fn ok(#[case] source: &str, #[case] expected: Token) {
+        let mut scanner = SourceScanner::new(source);
+        scanner.advance();
+
+        let token = lex_str(&mut scanner, range());
+
+        assert_eq!(token, Ok(expected));
+    }
+
+    mod fixtures {
+        use super::*;
+
+        pub fn range() -> Range {
+            Range::from_nums(0, 0, 0, 0)
+        }
+    }
+}

@@ -65,8 +65,40 @@ pub fn expect_or_lex_identifier(
 }
 
 /// Returns true if `source` is `Some` and the value is equal to `target`.
-pub fn is_equal_str(source: Option<&str>, target: &str) -> bool {
+fn is_equal_str(source: Option<&str>, target: &str) -> bool {
     source.is_some_and(|c| c == target)
 }
 
-// TODO: test
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use komi_syntax::mktoken;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case::plus("+", mktoken!(Kind::Plus, loc 0, 0, 0, 1))]
+    #[case::plus_equals("+=", mktoken!(Kind::PlusEquals, loc 0, 0, 0, 2))]
+    fn test_expect_or(#[case] source: &str, #[case] expected: Token) {
+        let mut scanner = SourceScanner::new(source);
+        let first_location = scanner.locate();
+        scanner.advance();
+
+        let token = expect_or(&mut scanner, "=", Kind::PlusEquals, Kind::Plus, first_location);
+
+        assert_eq!(token, Ok(expected));
+    }
+
+    #[rstest]
+    #[case::plus("거", mktoken!(Kind::Identifier(String::from("거")), loc 0, 0, 0, 1))]
+    #[case::plus("거짓", mktoken!(Kind::Bool(false), loc 0, 0, 0, 2))]
+    fn test_expect_or_lex_identifier(#[case] source: &str, #[case] expected: Token) {
+        let mut scanner = SourceScanner::new(source);
+        let first_char = scanner.read().unwrap();
+        let first_location = scanner.locate();
+        scanner.advance();
+
+        let token = expect_or_lex_identifier(&mut scanner, "짓", Kind::Bool(false), first_char, first_location);
+
+        assert_eq!(token, Ok(expected));
+    }
+}

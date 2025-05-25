@@ -66,4 +66,60 @@ pub fn read_identifier_with_init_seg(scanner: &mut SourceScanner, init_seg: Stri
     Ok(identifier)
 }
 
-// TODO: test
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use komi_syntax::mktoken;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case::read_end(String::from("사과"), "", mktoken!(Kind::Identifier(String::from("오렌지")), loc 0, 0, 0, 3))]
+    #[case::read_invalid_char(String::from("사과"), "+", mktoken!(Kind::Identifier(String::from("오렌지")), loc 0, 0, 0, 3))]
+    #[case::read_until_end(String::from("사과"), "바나나", mktoken!(Kind::Identifier(String::from("사과바나나")), loc 0, 0, 0, 3))]
+    #[case::read_until_invalid_char(String::from("사과"), "바나나+", mktoken!(Kind::Identifier(String::from("사과바나나")), loc 0, 0, 0, 3))]
+    fn test_lex_identifier_with_init_seg_or(#[case] init_seg: String, #[case] source: &str, #[case] expected: Token) {
+        let mut scanner = SourceScanner::new(source);
+        let first_char = scanner.read();
+
+        let token = lex_identifier_with_init_seg_or(
+            &mut scanner,
+            first_char,
+            init_seg,
+            &Range::from_nums(0, 0, 0, 0).begin,
+            || {
+                Ok(Token::new(
+                    Kind::Identifier(String::from("오렌지")),
+                    Range::from_nums(0, 0, 0, 3),
+                ))
+            },
+        );
+
+        assert_eq!(token, Ok(expected));
+    }
+
+    #[rstest]
+    #[case::read_end(String::from("사과"), "", mktoken!(Kind::Identifier(String::from("사과")), loc 0, 0, 0, 0))]
+    #[case::read_invalid_char(String::from("사과"), "+", mktoken!(Kind::Identifier(String::from("사과")), loc 0, 0, 0, 0))]
+    #[case::read_until_end(String::from("사과"), "오렌지", mktoken!(Kind::Identifier(String::from("사과오렌지")), loc 0, 0, 0, 3))]
+    #[case::read_until_invalid_char(String::from("사과"), "오렌지+", mktoken!(Kind::Identifier(String::from("사과오렌지")), loc 0, 0, 0, 3))]
+    fn test_lex_identifier_with_init_seg(#[case] init_seg: String, #[case] source: &str, #[case] expected: Token) {
+        let mut scanner = SourceScanner::new(source);
+
+        let str = lex_identifier_with_init_seg(&mut scanner, init_seg, Range::from_nums(0, 0, 0, 0));
+
+        assert_eq!(str, Ok(expected));
+    }
+
+    #[rstest]
+    #[case::read_end(String::from("사과"), "", String::from("사과"))]
+    #[case::read_invalid_char(String::from("사과"), "+", String::from("사과"))]
+    #[case::read_until_end(String::from("사과"), "오렌지", String::from("사과오렌지"))]
+    #[case::read_until_invalid_char(String::from("사과"), "오렌지+", String::from("사과오렌지"))]
+    fn test_read_identifier_with_init_seg(#[case] init_seg: String, #[case] source: &str, #[case] expected: String) {
+        let mut scanner = SourceScanner::new(source);
+
+        let str = read_identifier_with_init_seg(&mut scanner, init_seg);
+
+        assert_eq!(str, Ok(expected));
+    }
+}
