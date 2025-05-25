@@ -176,7 +176,7 @@ mod tests {
 
     // Should lex string literals.
     #[rstest]
-    #[case::empty_string("\"\"", vec![
+    #[case::empty("\"\"", vec![
         mktoken!(Kind::Str(vec![]), loc 0, 0, 0, 2),
     ])]
     #[case::str("\"사과\"", vec![
