@@ -9,9 +9,9 @@ mod source_scanner;
 mod utf8_tape;
 
 pub use err::{LexError, LexErrorKind};
-use komi_syntax::{StrSegment, StrSegmentKind, Token, TokenKind as Kind};
-use komi_util::{Range, Scanner, char_validator};
-use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, read_identifier_with_init_seg};
+use komi_syntax::{Token, TokenKind as Kind};
+use komi_util::{Scanner, char_validator};
+use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, lex_str};
 use source_scanner::SourceScanner;
 
 type Tokens = Vec<Token>;
@@ -60,7 +60,7 @@ impl<'a> Lexer<'a> {
                 ">" => expect_or(&mut self.scanner, "=", Kind::RBracketEquals, Kind::RBracket, location)?,
                 "!" => expect_or(&mut self.scanner, "=", Kind::BangEquals, Kind::Bang, location)?,
                 "=" => expect_or(&mut self.scanner, "=", Kind::DoubleEquals, Kind::Equals, location)?,
-                "\"" => self.lex_str(location)?,
+                "\"" => lex_str(&mut self.scanner, location)?,
                 "#" => {
                     self.skip_comment();
                     continue;
@@ -83,105 +83,6 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
-    /// Returns a sequence of tokens in a string literal if successfully lexed, or error otherwise.
-    ///
-    /// Call this after advancing the scanner `self.scanner` past the beginning quote `"`, with its location passed as `first_location`.
-    /// The scanner stops at the ending quote `"`.
-    fn lex_str(&mut self, first_location: Range) -> TokenRes {
-        let mut segments: Vec<StrSegment> = vec![];
-        let mut segments_location = first_location;
-
-        // Read each segment into `seg` and push it to `segments`.
-        let mut seg = String::new();
-        let mut seg_location = self.scanner.locate();
-        loop {
-            // Return error if end of source
-            let first_char_location = self.scanner.locate();
-            let Some(first_char) = self.scanner.read_and_advance() else {
-                return Err(LexError::new(LexErrorKind::StrQuoteNotClosed, seg_location));
-            };
-
-            // Break if end of string literal
-            if first_char == "\"" {
-                segments_location.end = first_char_location.end;
-
-                self.push_segment_str_if_non_empty(&seg, &seg_location, &mut segments);
-
-                break;
-            }
-
-            // Expect an escaped right brace "{{" or return error
-            if first_char == "}" {
-                let second_char_location = self.scanner.locate();
-                seg_location.end = second_char_location.end;
-                let Some("}") = self.scanner.read_and_advance() else {
-                    return Err(LexError::new(LexErrorKind::IllegalRBraceInStr, seg_location));
-                };
-
-                seg.push_str(first_char);
-                continue;
-            }
-
-            // Lex interpolation or an escaped left brace "{{"
-            if first_char == "{" {
-                let second_char_location = self.scanner.locate();
-                let Some(second_char) = self.scanner.read_and_advance() else {
-                    seg_location.end = second_char_location.end;
-                    return Err(LexError::new(LexErrorKind::InterpolationNotClosed, seg_location));
-                };
-                // Push a single left brace "{" if an escaped left brace "{{" encountered
-                if second_char == "{" {
-                    seg_location.end = second_char_location.end;
-                    seg.push_str(first_char);
-                    continue;
-                }
-                if second_char == "}" {
-                    seg_location.end = second_char_location.end;
-                    return Err(LexError::new(LexErrorKind::NoInterpolatedIdentifier, seg_location));
-                }
-                if !char_validator::is_in_identifier_domain(second_char) {
-                    return Err(LexError::new(
-                        LexErrorKind::IllegalInterpolationChar,
-                        second_char_location,
-                    ));
-                }
-
-                // Push and reinitialize a segment, if a segment read previously
-                self.push_segment_str_if_non_empty(&seg, &seg_location, &mut segments);
-
-                seg = read_identifier_with_init_seg(&mut self.scanner, String::from(second_char))?;
-                let seg_location_end = self.scanner.locate().begin; // Current begin is the end of the segment
-                seg_location = Range::new(second_char_location.begin, seg_location_end);
-
-                let last_char_location = self.scanner.locate();
-                let Some(last_char) = self.scanner.read_and_advance() else {
-                    let location = Range::new(first_char_location.begin, last_char_location.end);
-                    return Err(LexError::new(LexErrorKind::InterpolationNotClosed, location));
-                };
-                if last_char != "}" {
-                    return Err(LexError::new(
-                        LexErrorKind::IllegalInterpolationChar,
-                        last_char_location,
-                    ));
-                }
-
-                // Push and reinitialize a segment
-                segments.push(StrSegment::new(StrSegmentKind::identifier(seg.clone()), seg_location));
-                seg_location.begin = self.scanner.locate().begin;
-                seg = String::new();
-
-                continue;
-            }
-
-            // Push the character if not the cases above
-            seg.push_str(first_char);
-            seg_location.end = first_char_location.end;
-        }
-
-        let token = Token::new(Kind::Str(segments), segments_location);
-        Ok(token)
-    }
-
     /// Skips characters until newline characters encountered.
     /// The scanner stops at the first character immediately after the newline.
     fn skip_comment(&mut self) -> () {
@@ -193,19 +94,6 @@ impl<'a> Lexer<'a> {
             }
         }
     }
-
-    fn push_segment_str_if_non_empty(
-        &self,
-        segment: &String,
-        segment_location: &Range,
-        segments: &mut Vec<StrSegment>,
-    ) -> () {
-        if segment.len() == 0 {
-            return;
-        }
-
-        segments.push(StrSegment::new(StrSegmentKind::str(segment), *segment_location));
-    }
 }
 
 /// Produces tokens from source codes.
@@ -216,7 +104,8 @@ pub fn lex(source: &str) -> TokensRes {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use komi_syntax::mktoken;
+    use komi_syntax::{StrSegment, StrSegmentKind, mktoken};
+    use komi_util::Range;
     use rstest::rstest;
 
     /// Asserts a given literal to be lexed into the expected tokens.
