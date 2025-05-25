@@ -22,9 +22,9 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment) -> ResVal {
     let loc = ast.location;
     match &ast.kind {
         AstKind::Program { expressions: e } => expressions::reduce(&e, &loc, env),
-        AstKind::Identifier(x) => leaf::evaluate_identifier(x, &loc, env),
-        AstKind::Number(x) => leaf::evaluate_num(*x, &loc),
-        AstKind::Bool(x) => leaf::evaluate_bool(*x, &loc),
+        AstKind::Identifier(id) => leaf::evaluate_identifier(id, &loc, env),
+        AstKind::Number(n) => leaf::evaluate_num(*n, &loc),
+        AstKind::Bool(b) => leaf::evaluate_bool(*b, &loc),
         AstKind::PrefixPlus { operand: op } => prefix::reduce_plus(&op, &loc, env),
         AstKind::PrefixMinus { operand: op } => prefix::reduce_minus(&op, &loc, env),
         AstKind::PrefixBang { operand: op } => prefix::reduce_bang(&op, &loc, env),
