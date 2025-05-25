@@ -1,5 +1,5 @@
 use crate::{LexError, LexErrorKind, SourceScanner, TokenRes};
-use komi_syntax::{Token, TokenKind};
+use komi_syntax::{Token, TokenKind as Kind};
 use komi_util::{Range, Scanner, char_validator};
 
 /// Returns a number literal token if successfully lexed, or error otherwise.
@@ -64,7 +64,7 @@ fn read_digits(scanner: &mut SourceScanner, first_char: &str) -> String {
 fn lex_num_lexeme(lexeme: String, location: Range) -> Token {
     let num = lexeme.parse::<f64>().unwrap();
 
-    Token::new(TokenKind::Number(num), location)
+    Token::new(Kind::Number(num), location)
 }
 
 #[cfg(test)]
@@ -75,10 +75,10 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
-    #[case::whole_number("123", mktoken!(TokenKind::Number(123.0), loc 0, 0, 0, 3))]
-    #[case::whole_number_and_non_digit("123+", mktoken!(TokenKind::Number(123.0), loc 0, 0, 0, 3))]
-    #[case::with_decimal("12.25", mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, 5))]
-    #[case::with_decimal_and_non_digit("12.25+", mktoken!(TokenKind::Number(12.25), loc 0, 0, 0, 5))]
+    #[case::whole_number("123", mktoken!(Kind::Number(123.0), loc 0, 0, 0, 3))]
+    #[case::whole_number_and_non_digit("123+", mktoken!(Kind::Number(123.0), loc 0, 0, 0, 3))]
+    #[case::with_decimal("12.25", mktoken!(Kind::Number(12.25), loc 0, 0, 0, 5))]
+    #[case::with_decimal_and_non_digit("12.25+", mktoken!(Kind::Number(12.25), loc 0, 0, 0, 5))]
     fn ok(#[case] source: &str, #[case] expected: Token) {
         let mut scanner = SourceScanner::new(source);
         let first_char = scanner.read_and_advance().unwrap();
