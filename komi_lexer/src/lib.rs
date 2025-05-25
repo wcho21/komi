@@ -16,6 +16,7 @@ use source_scanner::SourceScanner;
 type Tokens = Vec<Token>;
 pub type TokenRes = Result<Token, LexError>;
 pub type TokensRes = Result<Tokens, LexError>;
+type StringRes = Result<String, LexError>;
 
 /// Produces tokens from source codes.
 struct Lexer<'a> {
@@ -65,7 +66,7 @@ impl<'a> Lexer<'a> {
                 s if char_validator::is_digit(s) => self.lex_num(location, char)?,
                 // Lexing an identifier must come after attempting to lex a number
                 s if char_validator::is_in_identifier_domain(s) => {
-                    self.lex_identifier_with_init_seg(&String::from(s), location)?
+                    self.lex_identifier_with_init_seg(String::from(s), location)?
                 }
                 s if char_validator::is_whitespace(s) => {
                     continue;
@@ -137,14 +138,14 @@ impl<'a> Lexer<'a> {
         let mut seg_location = self.scanner.locate();
         loop {
             // Return error if end of source
-            let char_location = self.scanner.locate();
-            let Some(char) = self.scanner.read_and_advance() else {
+            let first_char_location = self.scanner.locate();
+            let Some(first_char) = self.scanner.read_and_advance() else {
                 return Err(LexError::new(LexErrorKind::StrQuoteNotClosed, seg_location));
             };
 
             // Break if end of string literal
-            if char == "\"" {
-                segments_location.end = char_location.end;
+            if first_char == "\"" {
+                segments_location.end = first_char_location.end;
 
                 self.push_segment_str_if_non_empty(&seg, &seg_location, &mut segments);
 
@@ -152,18 +153,19 @@ impl<'a> Lexer<'a> {
             }
 
             // Expect an escaped right brace "{{" or return error
-            if char == "}" {
+            if first_char == "}" {
                 let second_char_location = self.scanner.locate();
                 seg_location.end = second_char_location.end;
                 let Some("}") = self.scanner.read_and_advance() else {
                     return Err(LexError::new(LexErrorKind::IllegalRBraceInStr, seg_location));
                 };
 
-                seg.push_str(char);
+                seg.push_str(first_char);
                 continue;
             }
 
-            if char == "{" {
+            // Lex interpolation or an escaped left brace "{{"
+            if first_char == "{" {
                 let second_char_location = self.scanner.locate();
                 let Some(second_char) = self.scanner.read_and_advance() else {
                     seg_location.end = second_char_location.end;
@@ -172,7 +174,7 @@ impl<'a> Lexer<'a> {
                 // Push a single left brace "{" if an escaped left brace "{{" encountered
                 if second_char == "{" {
                     seg_location.end = second_char_location.end;
-                    seg.push_str(char);
+                    seg.push_str(first_char);
                     continue;
                 }
                 if second_char == "}" {
@@ -188,27 +190,15 @@ impl<'a> Lexer<'a> {
 
                 // Push and reinitialize a segment, if a segment read previously
                 self.push_segment_str_if_non_empty(&seg, &seg_location, &mut segments);
-                seg = String::from(second_char);
 
-                seg_location.begin = second_char_location.begin;
-                // TODO: factor out into a function (as a reading function, not lexing) with common codes in `lex_identifier_with_init_seg`
-                while let Some(x) = self.scanner.read() {
-                    if !char_validator::is_in_identifier_domain(x) {
-                        break;
-                    }
-
-                    // Extend a segment
-                    seg.push_str(x);
-                    seg_location.end = self.scanner.locate().end;
-
-                    self.scanner.advance();
-                }
+                seg = self.read_identifier_with_init_seg(String::from(second_char))?;
+                let seg_location_end = self.scanner.locate().begin; // Current begin is the end of the segment
+                seg_location = Range::new(second_char_location.begin, seg_location_end);
 
                 let last_char_location = self.scanner.locate();
                 let Some(last_char) = self.scanner.read_and_advance() else {
-                    seg_location.begin = char_location.begin;
-                    seg_location.end = last_char_location.end;
-                    return Err(LexError::new(LexErrorKind::InterpolationNotClosed, seg_location));
+                    let location = Range::new(first_char_location.begin, last_char_location.end);
+                    return Err(LexError::new(LexErrorKind::InterpolationNotClosed, location));
                 };
                 if last_char != "}" {
                     return Err(LexError::new(
@@ -226,8 +216,8 @@ impl<'a> Lexer<'a> {
             }
 
             // Push the character if not the cases above
-            seg.push_str(char);
-            seg_location.end = char_location.end;
+            seg.push_str(first_char);
+            seg_location.end = first_char_location.end;
         }
 
         let token = Token::new(TokenKind::Str(segments), segments_location);
@@ -311,10 +301,11 @@ impl<'a> Lexer<'a> {
             let char = self.scanner.read();
 
             if !Self::is_equal_str(char, &expected_char) {
-                let token = self.lex_identifier_with_init_seg_or(char, &init_seg, &init_seg_location.begin, || {
-                    // An identifier with characters read so far.
-                    Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
-                })?;
+                let token =
+                    self.lex_identifier_with_init_seg_or(char, init_seg.clone(), &init_seg_location.begin, || {
+                        // An identifier with characters read so far.
+                        Ok(Token::new(TokenKind::Identifier(init_seg.clone()), init_seg_location))
+                    })?;
                 return Ok(token);
             }
 
@@ -324,7 +315,7 @@ impl<'a> Lexer<'a> {
 
         // All expected characters matched; return the token with the expected kind.
         let char = self.scanner.read();
-        let token = self.lex_identifier_with_init_seg_or(char, &init_seg, &init_seg_location.begin, || {
+        let token = self.lex_identifier_with_init_seg_or(char, init_seg, &init_seg_location.begin, || {
             Ok(Token::new(expected_kind.clone(), init_seg_location))
         })?;
         return Ok(token);
@@ -339,7 +330,7 @@ impl<'a> Lexer<'a> {
     fn lex_identifier_with_init_seg_or<F>(
         &mut self,
         char_read: Option<&'a str>,
-        init_seg: &String,
+        init_seg: String,
         init_seg_begin: &Spot,
         alt_op: F,
     ) -> TokenRes
@@ -353,30 +344,39 @@ impl<'a> Lexer<'a> {
                 let char_end = self.scanner.locate().end;
                 self.scanner.advance();
 
-                let token = self.lex_identifier_with_init_seg(&init_seg, Range::new(*init_seg_begin, char_end))?;
+                let token = self.lex_identifier_with_init_seg(init_seg, Range::new(*init_seg_begin, char_end))?;
                 Ok(token)
             }
             _ => alt_op(),
         }
     }
 
-    /// Returns an identifier token with the characters `init_seg` and subsequent characters the scanner read.
-    fn lex_identifier_with_init_seg(&mut self, init_seg: &String, init_seg_location: Range) -> TokenRes {
-        let mut lexeme = init_seg.clone();
-        let mut lexeme_location = init_seg_location.clone();
+    /// Returns an identifier token with the initial segment `init_seg` and subsequent characters the scanner read.
+    /// The scanner stops at the first non-identifier character.
+    fn lex_identifier_with_init_seg(&mut self, init_seg: String, init_seg_location: Range) -> TokenRes {
+        let identifier = self.read_identifier_with_init_seg(init_seg.clone())?;
+        let identifier_location = Range::new(init_seg_location.begin, self.scanner.locate().begin);
 
-        while let Some(x) = self.scanner.read() {
-            if !char_validator::is_in_identifier_domain(x) {
+        Ok(Token::new(TokenKind::Identifier(identifier), identifier_location))
+    }
+
+    /// Returns a string of identifier characters with the initial segment `init_seg` and subsequent characters the scanner read.
+    /// The scanner stops at the first non-identifier character.
+    fn read_identifier_with_init_seg(&mut self, init_seg: String) -> StringRes {
+        let mut identifier = init_seg;
+
+        // Read identifier characters one by one
+        while let Some(char) = self.scanner.read() {
+            if !char_validator::is_in_identifier_domain(char) {
                 break;
             }
 
-            lexeme.push_str(x);
-            lexeme_location.end = self.scanner.locate().end;
+            identifier.push_str(char);
 
             self.scanner.advance();
         }
 
-        Ok(Token::new(TokenKind::Identifier(lexeme), lexeme_location))
+        Ok(identifier)
     }
 
     /// Returns true if `source` is `Some` and the value is equal to `target`.
