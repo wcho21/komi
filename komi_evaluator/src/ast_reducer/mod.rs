@@ -110,33 +110,33 @@ mod tests {
 
         #[rstest]
         #[case::call_closure(
-            // Represents `함수(){1}()`.
-            mkast!(prog loc 0, 0, 0, 9, vec![
-                mkast!(call loc 0, 0, 0, 9,
-                    target mkast!(closure loc 0, 0, 0, 7,
+            // Represents `함수{1}()`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(call loc 0, 0, 0, 7,
+                    target mkast!(closure loc 0, 0, 0, 5,
                         param vec![],
                         body vec![
-                            mkast!(num 1.0, loc 0, 5, 0, 6),
+                            mkast!(num 1.0, loc 0, 3, 0, 4),
                         ],
                     ),
                     args vec![],
                 ),
             ]),
             root_empty_env(),
-            Value::from_num(1.0, Range::from_nums(0, 0, 0, 9)),
+            Value::from_num(1.0, Range::from_nums(0, 0, 0, 7)),
         )]
         #[case::call_call(
-            // Represents `함수(){함수(){1}}()()`.
-            mkast!(prog loc 0, 0, 0, 17, vec![
-                mkast!(call loc 0, 0, 0, 17,
-                    target mkast!(call loc 0, 0, 0, 15,
-                        target mkast!(closure loc 0, 0, 0, 13,
+            // Represents `함수{함수{1}}()()`.
+            mkast!(prog loc 0, 0, 0, 13, vec![
+                mkast!(call loc 0, 0, 0, 13,
+                    target mkast!(call loc 0, 0, 0, 11,
+                        target mkast!(closure loc 0, 0, 0, 9,
                             param vec![],
                             body vec![
-                                mkast!(closure loc 0, 5, 0, 12,
+                                mkast!(closure loc 0, 3, 0, 8,
                                     param vec![],
                                     body vec![
-                                        mkast!(num 1.0, loc 0, 10, 0, 11),
+                                        mkast!(num 1.0, loc 0, 6, 0, 7),
                                     ]
                                 ),
                             ],
@@ -147,7 +147,7 @@ mod tests {
                 ),
             ]),
             root_empty_env(),
-            Value::from_num(1.0, Range::from_nums(0, 0, 0, 17)),
+            Value::from_num(1.0, Range::from_nums(0, 0, 0, 13)),
         )]
         #[case::call_id(
             // Represents `사과()`.
@@ -157,14 +157,14 @@ mod tests {
                     args vec![],
                 ),
             ]),
-            // Represents a binding for `사과` to `함수() {1}`.
+            // Represents a binding for `사과` to `함수 {1}`.
             root_env("사과", &Value::new(ValueKind::Closure {
                 parameters: vec![],
                 body: vec![
-                    mkast!(num 1.0, loc 0, 6, 0, 7),
+                    mkast!(num 1.0, loc 0, 4, 0, 5),
                 ],
                 env: Environment::new(),
-            }, Range::from_nums(0, 0, 0, 8))),
+            }, Range::from_nums(1, 0, 1, 0))),
             Value::from_num(1.0, Range::from_nums(0, 0, 0, 4)),
         )]
         #[case::call_with_args(
@@ -178,7 +178,7 @@ mod tests {
                     ],
                 ),
             ]),
-            // Represents a binding for `사과` to `함수(오렌지, 바나나) {오렌지+바나나}`.
+            // Represents a binding for `사과` to `함수 오렌지, 바나나 {오렌지+바나나}`.
             root_env("사과", &Value::new(ValueKind::Closure {
                 parameters: vec![String::from("오렌지"), String::from("바나나")],
                 body: vec![
