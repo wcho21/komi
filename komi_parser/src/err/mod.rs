@@ -17,9 +17,12 @@ pub enum ParseErrorKind {
     InvalidFuncParam,
     // A function body beginning with `{` is not closed, such as `함수 {`
     FuncBodyNotClosed,
+    // Invalid tokens in call arguments, such as `사과(`.
+    InvalidCallArgs,
     /// An internal error impossible to occur if parsed as expected.
     Unexpected,
 }
+// TODO: rename func to closure
 
 pub type ParseError = EngineError<ParseErrorKind>;
 
@@ -32,6 +35,7 @@ impl fmt::Display for ParseErrorKind {
             ParseErrorKind::NoPrefixOperand => "NoPrefixOperand",
             ParseErrorKind::InvalidFuncParam => "InvalidFuncParam",
             ParseErrorKind::FuncBodyNotClosed => "FuncBodyNotClosed",
+            ParseErrorKind::InvalidCallArgs => "InvalidCallArgs",
             ParseErrorKind::Unexpected => "Unexpected",
         };
         write!(f, "{}", s)

@@ -18,10 +18,11 @@ struct Parser<'a> {
     scanner: TokenScanner<'a>,
 }
 
-macro_rules! mkinfix {
-    ($kind:ident) => {
-        |left, right| AstKind::$kind { left, right }
-    };
+macro_rules! read_right_and_make_infix_ast {
+    ($self:ident, $left:ident, $bp:ident, $kind:ident) => {{
+        let bp = &Bp::$bp;
+        $self.read_right_and_make_infix_ast($left, bp, |left, right| AstKind::$kind { left, right })
+    }};
 }
 
 impl<'a> Parser<'a> {
@@ -56,7 +57,7 @@ impl<'a> Parser<'a> {
             }
 
             self.scanner.advance();
-            top = self.parse_infix_expression(top, token)?;
+            top = self.parse_expression_middle(top, token)?;
         }
 
         Ok(top)
@@ -159,25 +160,25 @@ impl<'a> Parser<'a> {
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_infix_expression(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
+    fn parse_expression_middle(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
         // Determine the AST kind by `get_kind` and the binding power of the infix by `bp`.
-        let (get_kind, bp): (fn(Box<Ast>, Box<Ast>) -> AstKind, &Bp) = match infix.kind {
-            TokenKind::Plus => (mkinfix!(InfixPlus), &Bp::ADDITIVE),
-            TokenKind::Minus => (mkinfix!(InfixMinus), &Bp::ADDITIVE),
-            TokenKind::Asterisk => (mkinfix!(InfixAsterisk), &Bp::MULTIPLICATIVE),
-            TokenKind::Slash => (mkinfix!(InfixSlash), &Bp::MULTIPLICATIVE),
-            TokenKind::Percent => (mkinfix!(InfixPercent), &Bp::MULTIPLICATIVE),
-            TokenKind::Conjunct => (mkinfix!(InfixConjunct), &Bp::CONNECTIVE),
-            TokenKind::Disjunct => (mkinfix!(InfixDisjunct), &Bp::CONNECTIVE),
-            TokenKind::Equals => (mkinfix!(InfixEquals), &Bp::ASSIGNMENT),
-            TokenKind::PlusEquals => (mkinfix!(InfixPlusEquals), &Bp::ASSIGNMENT),
-            TokenKind::MinusEquals => (mkinfix!(InfixMinusEquals), &Bp::ASSIGNMENT),
-            TokenKind::AsteriskEquals => (mkinfix!(InfixAsteriskEquals), &Bp::ASSIGNMENT),
-            TokenKind::SlashEquals => (mkinfix!(InfixSlashEquals), &Bp::ASSIGNMENT),
-            TokenKind::PercentEquals => (mkinfix!(InfixPercentEquals), &Bp::ASSIGNMENT),
+        match infix.kind {
+            TokenKind::Plus => read_right_and_make_infix_ast!(self, left, ADDITIVE, InfixPlus),
+            TokenKind::Minus => read_right_and_make_infix_ast!(self, left, ADDITIVE, InfixMinus),
+            TokenKind::Asterisk => read_right_and_make_infix_ast!(self, left, MULTIPLICATIVE, InfixAsterisk),
+            TokenKind::Slash => read_right_and_make_infix_ast!(self, left, MULTIPLICATIVE, InfixSlash),
+            TokenKind::Percent => read_right_and_make_infix_ast!(self, left, MULTIPLICATIVE, InfixPercent),
+            TokenKind::Conjunct => read_right_and_make_infix_ast!(self, left, CONNECTIVE, InfixConjunct),
+            TokenKind::Disjunct => read_right_and_make_infix_ast!(self, left, CONNECTIVE, InfixDisjunct),
+            TokenKind::Equals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixEquals),
+            TokenKind::PlusEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixPlusEquals),
+            TokenKind::MinusEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixMinusEquals),
+            TokenKind::AsteriskEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixAsteriskEquals),
+            TokenKind::SlashEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixSlashEquals),
+            TokenKind::PercentEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixPercentEquals),
+            TokenKind::LParen => self.read_right_and_make_call_ast(left),
             _ => panic!("todo"), // NOTE: this undetermined cases came from calling of the parse_expression(), and bp says nothing about the token kinds explicitly
-        };
-        self.read_right_and_make_infix_ast(left, bp, get_kind)
+        }
     }
 
     fn parse_grouped_expression(&mut self, first_token: &'a Token) -> ResAst {
@@ -216,6 +217,59 @@ impl<'a> Parser<'a> {
         let kind = get_kind(operand);
         let prefix = Box::new(Ast::new(kind, location));
         Ok(prefix)
+    }
+
+    fn read_right_and_make_call_ast(&mut self, left: Box<Ast>) -> ResAst {
+        // Return an error if end
+        let Some(token) = self.scanner.read_and_advance() else {
+            let location = Range::new(left.location.begin, self.scanner.locate().end);
+            return Err(ParseError::new(ParseErrorKind::InvalidCallArgs, location));
+        };
+
+        let arguments = self.read_call_arguments(token)?;
+
+        let location = Range::new(left.location.begin, self.scanner.locate().begin);
+        let kind = AstKind::Call { target: left, arguments };
+        let call = Box::new(Ast::new(kind, location));
+
+        Ok(call)
+    }
+
+    fn read_call_arguments(&mut self, first_token: &'a Token) -> Result<Vec<Box<Ast>>, ParseError> {
+        // This function will read the pattern `first_arg [, arg]*`
+
+        let mut arguments: Vec<Box<Ast>> = vec![];
+
+        if first_token.kind == TokenKind::RParen {
+            return Ok(arguments);
+        }
+
+        let first_arg = self.parse_expression(first_token, &Bp::LOWEST)?;
+        arguments.push(first_arg);
+
+        while let Some(token) = self.scanner.read_and_advance() {
+            // Successfully break if end of arguments
+            if token.kind == TokenKind::RParen {
+                break;
+            }
+
+            // Return error if invalid syntax due to a missing comma
+            if token.kind != TokenKind::Comma {
+                // TODO: return more specific error like `NoCommaCallArgs`
+                return Err(ParseError::new(ParseErrorKind::InvalidCallArgs, token.location));
+            }
+
+            // Return error if end of source while reading arguments
+            let next_token_location = self.scanner.locate();
+            let Some(next_token) = self.scanner.read_and_advance() else {
+                return Err(ParseError::new(ParseErrorKind::InvalidCallArgs, next_token_location));
+            };
+
+            let arg = self.parse_expression(next_token, &Bp::LOWEST)?;
+            arguments.push(arg);
+        }
+
+        Ok(arguments)
     }
 
     fn read_right_and_make_infix_ast<F>(&mut self, left: Box<Ast>, bp: &Bp, get_kind: F) -> ResAst
@@ -1381,6 +1435,7 @@ mod tests {
         assert_parse_fail!(&tokens, error);
     }
 
+    // TODO: test ending with parameter, comma and double comma in parameter list without body
     #[rstest]
     #[case::no_parameters_and_empty_body(
         // Represents `함수 {}`.
@@ -1532,6 +1587,98 @@ mod tests {
         ParseError::new(ParseErrorKind::FuncBodyNotClosed, Range::from_nums(0, 6, 0, 6))
     )]
     fn invalid_closure(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
+        assert_parse_fail!(&tokens, error);
+    }
+
+    #[rstest]
+    #[case::id_with_no_args(
+        // Represents `사과()`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::RParen, loc 0, 3, 0, 4),
+        ],
+        mkast!(prog loc 0, 0, 0, 4, vec![
+            mkast!(call loc 0, 0, 0, 4,
+                target mkast!(identifier "사과", loc 0, 0, 0, 2),
+                args vec![],
+            ),
+        ])
+    )]
+    #[case::id_with_single_arg(
+        // Represents `사과(1)`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Number(1.0), loc 0, 3, 0, 4),
+            mktoken!(TokenKind::RParen, loc 0, 4, 0, 5),
+        ],
+        mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(call loc 0, 0, 0, 5,
+                target mkast!(identifier "사과", loc 0, 0, 0, 2),
+                args vec![
+                    mkast!(num 1.0, loc 0, 3, 0, 4),
+                ],
+            ),
+        ])
+    )]
+    #[case::id_with_multiple_args(
+        // Represents `사과(1,2,3)`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Number(1.0), loc 0, 3, 0, 4),
+            mktoken!(TokenKind::Comma, loc 0, 4, 0, 5),
+            mktoken!(TokenKind::Number(2.0), loc 0, 5, 0, 6),
+            mktoken!(TokenKind::Comma, loc 0, 6, 0, 7),
+            mktoken!(TokenKind::Number(3.0), loc 0, 7, 0, 8),
+            mktoken!(TokenKind::RParen, loc 0, 8, 0, 9),
+        ],
+        mkast!(prog loc 0, 0, 0, 9, vec![
+            mkast!(call loc 0, 0, 0, 9,
+                target mkast!(identifier "사과", loc 0, 0, 0, 2),
+                args vec![
+                    mkast!(num 1.0, loc 0, 3, 0, 4),
+                    mkast!(num 2.0, loc 0, 5, 0, 6),
+                    mkast!(num 3.0, loc 0, 7, 0, 8),
+                ],
+            ),
+        ])
+    )]
+    fn call(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
+        assert_parse!(&tokens, expected);
+    }
+
+    #[rstest]
+    #[case::end_with_lparen(
+        // Represents `사과(`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
+        ],
+        ParseError::new(ParseErrorKind::InvalidCallArgs, Range::from_nums(0, 0, 0, 3))
+    )]
+    #[case::comma_after_lparen(
+        // Represents `사과(,`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Comma, loc 0, 3, 0, 4),
+        ],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 3, 0, 4))
+    )]
+    #[case::two_comma_after_arg(
+        // Represents `사과(1,,`.
+        vec![
+            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
+            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
+            mktoken!(TokenKind::Number(1.0), loc 0, 3, 0, 4),
+            mktoken!(TokenKind::Comma, loc 0, 4, 0, 5),
+            mktoken!(TokenKind::Comma, loc 0, 5, 0, 6),
+        ],
+        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 5, 0, 6))
+    )]
+    fn invalid_call(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
     }
 
