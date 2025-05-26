@@ -183,6 +183,41 @@ mod tests {
                 env: Environment::new()
             }, Range::from_nums(0, 0, 0, 25))
         )]
+        #[case::closure_with_closure(
+            // Represents `함수 사과 { 함수 오렌지 { 사과 + 오렌지 } }`.
+            mkast!(prog loc 0, 0, 0, 29, vec![
+                mkast!(closure loc 0, 0, 0, 29,
+                    param vec![String::from("사과")],
+                    body vec![
+                        mkast!(closure loc 0, 8, 0, 29,
+                            param vec![String::from("오렌지")],
+                            body vec![
+                                mkast!(infix InfixPlus, loc 0, 18, 0, 27,
+                                    left mkast!(identifier "사과", loc 0, 17, 0, 19),
+                                    right mkast!(identifier "사과", loc 0, 22, 0, 25),
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]),
+            Value::new(ValueKind::Closure {
+                parameters: vec![String::from("사과")],
+                body: vec![
+                    // Should contain the same AST with the closure body
+                    mkast!(closure loc 0, 8, 0, 29,
+                        param vec![String::from("오렌지")],
+                        body vec![
+                            mkast!(infix InfixPlus, loc 0, 18, 0, 27,
+                                left mkast!(identifier "사과", loc 0, 17, 0, 19),
+                                right mkast!(identifier "사과", loc 0, 22, 0, 25),
+                            ),
+                        ],
+                    ),
+                ],
+                env: Environment::new()
+            }, Range::from_nums(0, 0, 0, 29))
+        )]
         fn single(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
         }
