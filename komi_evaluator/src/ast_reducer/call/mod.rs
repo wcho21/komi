@@ -1,5 +1,5 @@
 use crate::environment::Environment;
-use crate::err::EvalError;
+use crate::err::{EvalError, EvalErrorKind};
 use crate::reduce_ast;
 use komi_syntax::{Ast, AstKind, Value, ValueKind};
 use komi_util::Range;
@@ -11,8 +11,7 @@ pub fn evaluate(target: &Box<Ast>, arguments: &Vec<Box<Ast>>, location: &Range, 
     let target_closure = reduce_ast(target, env)?;
 
     let ValueKind::Closure { parameters, body, mut env } = target_closure.kind else {
-        // TODO: return error (invalid call target left)
-        todo!()
+        return Err(EvalError::new(EvalErrorKind::InvalidCallTarget, target.location));
     };
 
     let arg_vals_res: Result<Vec<Value>, EvalError> = arguments.iter().map(|arg| reduce_ast(arg, &mut env)).collect();

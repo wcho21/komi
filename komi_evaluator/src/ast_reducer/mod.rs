@@ -194,6 +194,33 @@ mod tests {
         fn call(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
         }
+
+        #[rstest]
+        #[case::call_num(
+            // Represents `1()`.
+            mkast!(prog loc 0, 0, 0, 3, vec![
+                mkast!(call loc 0, 0, 0, 3,
+                    target mkast!(num 1.0, loc 0, 0, 0, 1),
+                    args vec![],
+                ),
+            ]),
+            root_empty_env(),
+            EvalError::new(EvalErrorKind::InvalidCallTarget, Range::from_nums(0, 0, 0, 1)),
+        )]
+        #[case::call_bool(
+            // Represents `참()`.
+            mkast!(prog loc 0, 0, 0, 3, vec![
+                mkast!(call loc 0, 0, 0, 3,
+                    target mkast!(boolean true, loc 0, 0, 0, 1),
+                    args vec![],
+                ),
+            ]),
+            root_empty_env(),
+            EvalError::new(EvalErrorKind::InvalidCallTarget, Range::from_nums(0, 0, 0, 1)),
+        )]
+        fn invalid_call(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] error: EvalError) {
+            assert_eval_fail!(&ast, &mut env, error);
+        }
     }
 
     mod identifier {

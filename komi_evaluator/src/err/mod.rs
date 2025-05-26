@@ -11,6 +11,7 @@ pub enum EvalErrorKind {
     InvalidBoolInfixOperand,
     InvalidNumPrefixOperand,
     InvalidBoolPrefixOperand,
+    InvalidCallTarget,
     Unexpected,
 }
 
@@ -25,6 +26,7 @@ impl fmt::Display for EvalErrorKind {
             EvalErrorKind::InvalidBoolInfixOperand => "InvalidBoolInfixOperand",
             EvalErrorKind::InvalidNumPrefixOperand => "InvalidNumPrefixOperand",
             EvalErrorKind::InvalidBoolPrefixOperand => "InvalidBoolPrefixOperand",
+            EvalErrorKind::InvalidCallTarget => "InvalidCallTarget",
             EvalErrorKind::Unexpected => "Unexpected",
         };
         write!(f, "{}", s)
