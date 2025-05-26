@@ -10,7 +10,7 @@ pub fn reduce_and_map_kind<T, F>(ast: &Box<Ast>, env: &mut Environment, op: F) -
 where
     F: Fn(&ValueKind) -> Result<T, EvalErrorKind>,
 {
-    let val = reduce_ast(ast, env)?;
+    let val = reduce_ast(ast, env, None)?;
 
     match op(&val.kind) {
         Ok(x) => Ok(x),

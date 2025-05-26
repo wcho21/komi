@@ -14,21 +14,27 @@ pub use err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, Value};
 
 type ResVal = Result<Value, EvalError>;
+type StdoutHandler = fn(&str) -> ();
 
 /// Produces a value from an AST.
 struct Evaluator<'a> {
     ast: &'a Box<Ast>,
+    stdout_handler: Option<StdoutHandler>,
 }
 
 impl<'a> Evaluator<'a> {
     pub fn new(ast: &'a Box<Ast>) -> Self {
-        Self { ast }
+        Self { ast, stdout_handler: None }
+    }
+
+    pub fn add_stdout_handler(&mut self, stdout_handler: StdoutHandler) -> () {
+        self.stdout_handler = Some(stdout_handler);
     }
 
     pub fn eval(&self) -> ResVal {
         let mut env = Environment::new();
 
-        reduce_ast(self.ast, &mut env)
+        reduce_ast(self.ast, &mut env, self.stdout_handler)
     }
 }
 

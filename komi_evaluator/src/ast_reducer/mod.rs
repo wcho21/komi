@@ -13,8 +13,9 @@ use combinator_infix as comb_infix;
 use komi_syntax::{Ast, AstKind, Value};
 
 type ResVal = Result<Value, EvalError>;
+type StdoutHandler = fn(&str) -> ();
 
-pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment) -> ResVal {
+pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment, stdout_handler: Option<StdoutHandler>) -> ResVal {
     // Design principle: once you read something, pass it as an argument.
     // This avoids unnecessary repeated reading in subfunctions.
     // Moreover, if you delay determining the kind of what you read, the decision is only postponed to subfunctions.
@@ -62,14 +63,14 @@ mod tests {
         ($ast:expr, $expected:expr $(,)?) => {
             let mut env = Environment::new();
             assert_eq!(
-                reduce_ast($ast, &mut env),
+                reduce_ast($ast, &mut env, None),
                 Ok($expected),
                 "received a value (left) evaluated from the ast, but expected the different value (right)",
             );
         };
         ($ast:expr, $env:expr, $expected:expr $(,)?) => {
             assert_eq!(
-                reduce_ast($ast, $env),
+                reduce_ast($ast, $env, None),
                 Ok($expected),
                 "received a value (left) evaluated from the ast, but expected the different value (right)",
             );
@@ -82,14 +83,14 @@ mod tests {
         ($ast:expr, $expected:expr $(,)?) => {
             let mut env = Environment::new();
             assert_eq!(
-                reduce_ast($ast, &mut env),
+                reduce_ast($ast, &mut env, None),
                 Err($expected),
                 "received a result (left), but expected an error (right)",
             );
         };
         ($ast:expr, $env:expr, $expected:expr $(,)?) => {
             assert_eq!(
-                reduce_ast($ast, $env),
+                reduce_ast($ast, $env, None),
                 Err($expected),
                 "received a result (left), but expected an error (right)",
             );

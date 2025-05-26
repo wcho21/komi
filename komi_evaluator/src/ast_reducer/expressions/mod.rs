@@ -13,7 +13,7 @@ pub fn reduce(expressions: &Vec<Box<Ast>>, expressions_location: &Range, env: &m
     let mut last_value = Value::from_empty(*expressions_location);
 
     for expression in expressions {
-        last_value = reduce_ast(expression, env)?;
+        last_value = reduce_ast(expression, env, None)?;
     }
     last_value.location = *expressions_location;
     Ok(last_value)

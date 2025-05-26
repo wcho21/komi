@@ -11,7 +11,7 @@ pub fn reduce_equals(left: &Box<Ast>, right: &Box<Ast>, location: &Range, env: &
         return Err(EvalError::new(EvalErrorKind::InvalidAssignmentLeftValue, left.location));
     };
 
-    let right_val = reduce_ast(right, env)?;
+    let right_val = reduce_ast(right, env, None)?;
     env.set(id_name, &right_val);
 
     let assign_val = Value::new(right_val.kind, *location);
