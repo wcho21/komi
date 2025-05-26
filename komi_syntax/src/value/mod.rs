@@ -27,6 +27,7 @@ impl Value {
         Value { kind, location }
     }
 
+    // TODO: change from-function into macro
     pub fn from_num(num: f64, location: Range) -> Self {
         Value::new(ValueKind::Number(num), location)
     }

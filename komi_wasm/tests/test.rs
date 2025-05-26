@@ -83,6 +83,8 @@ macro_rules! test_error {
     };
 }
 
+// TODO: test errors whether it has correct name and message
+
 #[allow(dead_code)] // Suppress warnings from #[wasm_bindgen_test] test codes.
 mod tests {
     use super::*;
@@ -220,5 +222,11 @@ mod tests {
         test_error!(arithmetic_asterisk, "*", "ParseError", "InvalidExprStart", 0, 0, 0, 1);
         test_error!(paren_not_closed, "(12+3", "ParseError", "LParenNotClosed", 0, 0, 0, 5);
         test_error!(no_operand, "1+", "ParseError", "NoInfixRightOperand", 0, 0, 0, 2);
+    }
+
+    mod eval_errors {
+        use super::*;
+
+        test_error!(call_num, "1()", "EvalError", "InvalidCallTarget", 0, 0, 0, 1);
     }
 }

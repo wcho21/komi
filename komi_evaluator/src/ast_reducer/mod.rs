@@ -1,4 +1,5 @@
 mod assignment_infix;
+mod call;
 mod combinator_infix;
 mod expressions;
 mod leaf;
@@ -42,7 +43,7 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment) -> ResVal {
         AstKind::InfixAsteriskEquals { left: l, right: r } => assign_infix::reduce_asterisk_equals(&l, &r, &loc, env),
         AstKind::InfixSlashEquals { left: l, right: r } => assign_infix::reduce_slash_equals(&l, &r, &loc, env),
         AstKind::InfixPercentEquals { left: l, right: r } => assign_infix::reduce_percent_equals(&l, &r, &loc, env),
-        _ => todo!(),
+        AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env),
     }
 }
 
@@ -104,6 +105,124 @@ mod tests {
         );
     }
 
+    mod call {
+        use super::*;
+
+        #[rstest]
+        #[case::call_closure(
+            // Represents `함수{1}()`.
+            mkast!(prog loc 0, 0, 0, 7, vec![
+                mkast!(call loc 0, 0, 0, 7,
+                    target mkast!(closure loc 0, 0, 0, 5,
+                        param vec![],
+                        body vec![
+                            mkast!(num 1.0, loc 0, 3, 0, 4),
+                        ],
+                    ),
+                    args vec![],
+                ),
+            ]),
+            root_empty_env(),
+            Value::from_num(1.0, Range::from_nums(0, 0, 0, 7)),
+        )]
+        #[case::call_call(
+            // Represents `함수{함수{1}}()()`.
+            mkast!(prog loc 0, 0, 0, 13, vec![
+                mkast!(call loc 0, 0, 0, 13,
+                    target mkast!(call loc 0, 0, 0, 11,
+                        target mkast!(closure loc 0, 0, 0, 9,
+                            param vec![],
+                            body vec![
+                                mkast!(closure loc 0, 3, 0, 8,
+                                    param vec![],
+                                    body vec![
+                                        mkast!(num 1.0, loc 0, 6, 0, 7),
+                                    ]
+                                ),
+                            ],
+                        ),
+                        args vec![],
+                    ),
+                    args vec![],
+                ),
+            ]),
+            root_empty_env(),
+            Value::from_num(1.0, Range::from_nums(0, 0, 0, 13)),
+        )]
+        #[case::call_id(
+            // Represents `사과()`.
+            mkast!(prog loc 0, 0, 0, 4, vec![
+                mkast!(call loc 0, 0, 0, 4,
+                    target mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    args vec![],
+                ),
+            ]),
+            // Represents a binding for `사과` to `함수 {1}`.
+            root_env("사과", &Value::new(ValueKind::Closure {
+                parameters: vec![],
+                body: vec![
+                    mkast!(num 1.0, loc 0, 4, 0, 5),
+                ],
+                env: Environment::new(),
+            }, Range::from_nums(1, 0, 1, 0))),
+            Value::from_num(1.0, Range::from_nums(0, 0, 0, 4)),
+        )]
+        #[case::call_with_args(
+            // Represents `사과(1, 2)`.
+            mkast!(prog loc 0, 0, 0, 4, vec![
+                mkast!(call loc 0, 0, 0, 4,
+                    target mkast!(identifier "사과", loc 0, 0, 0, 2),
+                    args vec![
+                        mkast!(num 1.0, loc 0, 3, 0, 4),
+                        mkast!(num 2.0, loc 0, 6, 0, 7),
+                    ],
+                ),
+            ]),
+            // Represents a binding for `사과` to `함수 오렌지, 바나나 {오렌지+바나나}`.
+            root_env("사과", &Value::new(ValueKind::Closure {
+                parameters: vec![String::from("오렌지"), String::from("바나나")],
+                body: vec![
+                    mkast!(infix InfixPlus, loc 1, 0, 1, 0,
+                        left mkast!(identifier "오렌지", loc 1, 0, 1, 0),
+                        right mkast!(identifier "바나나", loc 1, 0, 1, 0),
+                    ),
+                ],
+                env: Environment::new(),
+            }, Range::from_nums(0, 0, 0, 8))),
+            Value::from_num(3.0, Range::from_nums(0, 0, 0, 4)),
+        )]
+        fn call(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] expected: Value) {
+            assert_eval!(&ast, &mut env, expected);
+        }
+
+        #[rstest]
+        #[case::call_num(
+            // Represents `1()`.
+            mkast!(prog loc 0, 0, 0, 3, vec![
+                mkast!(call loc 0, 0, 0, 3,
+                    target mkast!(num 1.0, loc 0, 0, 0, 1),
+                    args vec![],
+                ),
+            ]),
+            root_empty_env(),
+            EvalError::new(EvalErrorKind::InvalidCallTarget, Range::from_nums(0, 0, 0, 1)),
+        )]
+        #[case::call_bool(
+            // Represents `참()`.
+            mkast!(prog loc 0, 0, 0, 3, vec![
+                mkast!(call loc 0, 0, 0, 3,
+                    target mkast!(boolean true, loc 0, 0, 0, 1),
+                    args vec![],
+                ),
+            ]),
+            root_empty_env(),
+            EvalError::new(EvalErrorKind::InvalidCallTarget, Range::from_nums(0, 0, 0, 1)),
+        )]
+        fn invalid_call(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] error: EvalError) {
+            assert_eval_fail!(&ast, &mut env, error);
+        }
+    }
+
     mod identifier {
         use super::*;
 
@@ -125,6 +244,26 @@ mod tests {
             // Represents a binding for `사과` to `참`.
             root_env("사과", &Value::from_bool(true, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
             Value::from_bool(true, Range::from_nums(0, 0, 0, 2)),
+        )]
+        #[case::closure(
+            // Represents `사과`.
+            mkast!(prog loc 0, 0, 0, 2, vec![
+                mkast!(identifier "사과", loc 0, 0, 0, 2),
+            ]),
+            root_env("사과", &Value::new(ValueKind::Closure {
+                parameters: vec![String::from("오렌지")],
+                body: vec![
+                    mkast!(num 1.0, loc 1, 0, 1, 0),
+                ],
+                env: Environment::new()
+            }, Range::from_nums(1, 0, 1, 0))),
+            Value::new(ValueKind::Closure {
+                parameters: vec![String::from("오렌지")],
+                body: vec![
+                    mkast!(num 1.0, loc 1, 0, 1, 0),
+                ],
+                env: Environment::new()
+            }, Range::from_nums(0, 0, 0, 2))
         )]
         fn single_identifier(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
@@ -182,6 +321,41 @@ mod tests {
                 ],
                 env: Environment::new()
             }, Range::from_nums(0, 0, 0, 25))
+        )]
+        #[case::closure_with_closure(
+            // Represents `함수 사과 { 함수 오렌지 { 사과 + 오렌지 } }`.
+            mkast!(prog loc 0, 0, 0, 29, vec![
+                mkast!(closure loc 0, 0, 0, 29,
+                    param vec![String::from("사과")],
+                    body vec![
+                        mkast!(closure loc 0, 8, 0, 29,
+                            param vec![String::from("오렌지")],
+                            body vec![
+                                mkast!(infix InfixPlus, loc 0, 18, 0, 27,
+                                    left mkast!(identifier "사과", loc 0, 17, 0, 19),
+                                    right mkast!(identifier "사과", loc 0, 22, 0, 25),
+                                ),
+                            ],
+                        ),
+                    ],
+                ),
+            ]),
+            Value::new(ValueKind::Closure {
+                parameters: vec![String::from("사과")],
+                body: vec![
+                    // Should contain the same AST with the closure body
+                    mkast!(closure loc 0, 8, 0, 29,
+                        param vec![String::from("오렌지")],
+                        body vec![
+                            mkast!(infix InfixPlus, loc 0, 18, 0, 27,
+                                left mkast!(identifier "사과", loc 0, 17, 0, 19),
+                                right mkast!(identifier "사과", loc 0, 22, 0, 25),
+                            ),
+                        ],
+                    ),
+                ],
+                env: Environment::new()
+            }, Range::from_nums(0, 0, 0, 29))
         )]
         fn single(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
@@ -983,6 +1157,10 @@ mod tests {
 
     mod fixtures {
         use super::*;
+
+        pub fn root_empty_env() -> Environment {
+            Environment::new()
+        }
 
         pub fn root_env(id_name: &str, id_value: &Value) -> Environment {
             let mut env = Environment::new();

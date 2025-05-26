@@ -11,10 +11,18 @@ pub fn evaluate_identifier(name: &String, location: &Range, env: &Environment) -
         return Err(EvalError::new(EvalErrorKind::UndefinedIdentifier, *location));
     };
 
-    match x.kind {
-        ValueKind::Bool(x) => Ok(Value::new(ValueKind::Bool(x), *location)),
-        ValueKind::Number(x) => Ok(Value::new(ValueKind::Number(x), *location)),
-        _ => todo!(),
+    match &x.kind {
+        ValueKind::Bool(x) => Ok(Value::new(ValueKind::Bool(*x), *location)),
+        ValueKind::Number(x) => Ok(Value::new(ValueKind::Number(*x), *location)),
+        ValueKind::Closure { parameters, body, env } => Ok(Value::new(
+            ValueKind::Closure {
+                parameters: parameters.clone(),
+                body: body.clone(),
+                env: env.clone(),
+            },
+            *location,
+        )),
+        _ => todo!(), // TODO: should be an error (unexpected) since expected no binding for other types
     }
 }
 
