@@ -316,6 +316,15 @@ mod tests {
     }
 
     #[rstest]
+    #[case::immediate_closure_call("함수{1}()", "1")]
+    #[case::immediate_closure_call_call("함수{함수{1}}()()", "1")]
+    #[case::id_call("사과 = 함수{1} 사과()", "1")]
+    #[case::curring_call("사과 = 함수 오렌지{함수 바나나{오렌지+바나나}} 사과(1)(2)", "3")]
+    fn calls(#[case] source: &str, #[case] expected: String) {
+        assert_exec!(source, expected);
+    }
+
+    #[rstest]
     #[case::two_numbers("1 2", "2")] // Evaluated as the value of the last expression.
     fn multiple_expressions(#[case] source: &str, #[case] expected: String) {
         assert_exec!(source, expected);
