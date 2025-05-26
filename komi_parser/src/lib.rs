@@ -1437,6 +1437,7 @@ mod tests {
 
     // TODO: test ending with parameter, comma and double comma in parameter list without body
     #[rstest]
+    // TODO: closure cannot have the empty body, should be an error
     #[case::no_parameters_and_empty_body(
         // Represents `함수 {}`.
         vec![
