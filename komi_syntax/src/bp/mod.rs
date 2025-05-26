@@ -13,7 +13,8 @@ impl Bp {
     pub const CONNECTIVE: Self = Self { left: 0o20, right: 0o21 };
     pub const ADDITIVE: Self = Self { left: 0o30, right: 0o31 };
     pub const MULTIPLICATIVE: Self = Self { left: 0o40, right: 0o41 };
-    pub const PREFIX: Self = Self { left: 0o70, right: 0o71 };
+    pub const PREFIX: Self = Self { left: 0o60, right: 0o61 };
+    pub const CALL: Self = Self { left: 0o70, right: 0o71 };
 
     pub fn get_from_token(token: &Token) -> &Self {
         match token.kind {
@@ -26,6 +27,7 @@ impl Bp {
             | TokenKind::PercentEquals => &Self::ASSIGNMENT,
             TokenKind::Asterisk | TokenKind::Slash | TokenKind::Percent => &Self::MULTIPLICATIVE,
             TokenKind::Conjunct | TokenKind::Disjunct => &Self::CONNECTIVE,
+            TokenKind::LParen => &Self::CALL,
             _ => &Self::LOWEST,
         }
     }
