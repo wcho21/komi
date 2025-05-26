@@ -44,7 +44,7 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment, stdout_handler: Option<
         AstKind::InfixAsteriskEquals { left: l, right: r } => assign_infix::reduce_asterisk_equals(&l, &r, &loc, env),
         AstKind::InfixSlashEquals { left: l, right: r } => assign_infix::reduce_slash_equals(&l, &r, &loc, env),
         AstKind::InfixPercentEquals { left: l, right: r } => assign_infix::reduce_percent_equals(&l, &r, &loc, env),
-        AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env),
+        AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env, stdout_handler),
     }
 }
 

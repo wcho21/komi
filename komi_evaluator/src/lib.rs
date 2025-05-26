@@ -5,6 +5,7 @@
 //! Designed to be loosely coupled, so it does not rely on the implementation details of the parser.
 
 mod ast_reducer;
+mod builtins;
 mod environment;
 mod err;
 
@@ -33,6 +34,8 @@ impl<'a> Evaluator<'a> {
 
     pub fn eval(&self) -> ResVal {
         let mut env = Environment::new();
+
+        builtins::bind(&mut env);
 
         reduce_ast(self.ast, &mut env, self.stdout_handler)
     }
