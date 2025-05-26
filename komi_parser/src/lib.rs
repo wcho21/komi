@@ -18,10 +18,11 @@ struct Parser<'a> {
     scanner: TokenScanner<'a>,
 }
 
-macro_rules! mkinfix {
-    ($kind:ident) => {
-        |left, right| AstKind::$kind { left, right }
-    };
+macro_rules! read_right_and_make_infix_ast {
+    ($self:ident, $left:ident, $bp:ident, $kind:ident) => {{
+        let bp = &Bp::$bp;
+        $self.read_right_and_make_infix_ast($left, bp, |left, right| AstKind::$kind { left, right })
+    }};
 }
 
 impl<'a> Parser<'a> {
@@ -56,7 +57,7 @@ impl<'a> Parser<'a> {
             }
 
             self.scanner.advance();
-            top = self.parse_infix_expression(top, token)?;
+            top = self.parse_expression_middle(top, token)?;
         }
 
         Ok(top)
@@ -159,25 +160,24 @@ impl<'a> Parser<'a> {
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_infix_expression(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
+    fn parse_expression_middle(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
         // Determine the AST kind by `get_kind` and the binding power of the infix by `bp`.
-        let (get_kind, bp): (fn(Box<Ast>, Box<Ast>) -> AstKind, &Bp) = match infix.kind {
-            TokenKind::Plus => (mkinfix!(InfixPlus), &Bp::ADDITIVE),
-            TokenKind::Minus => (mkinfix!(InfixMinus), &Bp::ADDITIVE),
-            TokenKind::Asterisk => (mkinfix!(InfixAsterisk), &Bp::MULTIPLICATIVE),
-            TokenKind::Slash => (mkinfix!(InfixSlash), &Bp::MULTIPLICATIVE),
-            TokenKind::Percent => (mkinfix!(InfixPercent), &Bp::MULTIPLICATIVE),
-            TokenKind::Conjunct => (mkinfix!(InfixConjunct), &Bp::CONNECTIVE),
-            TokenKind::Disjunct => (mkinfix!(InfixDisjunct), &Bp::CONNECTIVE),
-            TokenKind::Equals => (mkinfix!(InfixEquals), &Bp::ASSIGNMENT),
-            TokenKind::PlusEquals => (mkinfix!(InfixPlusEquals), &Bp::ASSIGNMENT),
-            TokenKind::MinusEquals => (mkinfix!(InfixMinusEquals), &Bp::ASSIGNMENT),
-            TokenKind::AsteriskEquals => (mkinfix!(InfixAsteriskEquals), &Bp::ASSIGNMENT),
-            TokenKind::SlashEquals => (mkinfix!(InfixSlashEquals), &Bp::ASSIGNMENT),
-            TokenKind::PercentEquals => (mkinfix!(InfixPercentEquals), &Bp::ASSIGNMENT),
+        match infix.kind {
+            TokenKind::Plus => read_right_and_make_infix_ast!(self, left, ADDITIVE, InfixPlus),
+            TokenKind::Minus => read_right_and_make_infix_ast!(self, left, ADDITIVE, InfixMinus),
+            TokenKind::Asterisk => read_right_and_make_infix_ast!(self, left, MULTIPLICATIVE, InfixAsterisk),
+            TokenKind::Slash => read_right_and_make_infix_ast!(self, left, MULTIPLICATIVE, InfixSlash),
+            TokenKind::Percent => read_right_and_make_infix_ast!(self, left, MULTIPLICATIVE, InfixPercent),
+            TokenKind::Conjunct => read_right_and_make_infix_ast!(self, left, CONNECTIVE, InfixConjunct),
+            TokenKind::Disjunct => read_right_and_make_infix_ast!(self, left, CONNECTIVE, InfixDisjunct),
+            TokenKind::Equals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixEquals),
+            TokenKind::PlusEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixPlusEquals),
+            TokenKind::MinusEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixMinusEquals),
+            TokenKind::AsteriskEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixAsteriskEquals),
+            TokenKind::SlashEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixSlashEquals),
+            TokenKind::PercentEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixPercentEquals),
             _ => panic!("todo"), // NOTE: this undetermined cases came from calling of the parse_expression(), and bp says nothing about the token kinds explicitly
-        };
-        self.read_right_and_make_infix_ast(left, bp, get_kind)
+        }
     }
 
     fn parse_grouped_expression(&mut self, first_token: &'a Token) -> ResAst {
