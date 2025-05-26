@@ -203,7 +203,7 @@ dependencies = [
 
 [[package]]
 name = "komi_wasm"
-version = "0.1.0-beta4"
+version = "0.1.0-beta5"
 dependencies = [
  "const_format",
  "js-sys",
