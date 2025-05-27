@@ -4,7 +4,12 @@ use komi_syntax::{Token, TokenKind as Kind};
 use komi_util::{Range, Scanner};
 
 /// Returns a token of the kind `expected_kind` if a `expected` encountered; otherwise, a token of the kind `alt_kind`.
+///
+/// Call this after advancing the scanner past the character just before `expected`.
 /// The scanner stops immediately after the expected character or at the unexpected character.
+///
+/// This function is designed for declarative lexing.
+/// You can specify a success case via `expected` and define what to return for the success case and the fallback case.
 pub fn expect_or(
     scanner: &mut SourceScanner,
     expected: &str,
@@ -26,6 +31,13 @@ pub fn expect_or(
 }
 
 /// Returns a token with the kind `expected_kind` if the scanner reads the expected characters `expected`; otherwise, returns an identifier token.
+///
+/// Call this after advance the scanner past the character just before `expected`.
+/// The scanner stops immediately after the the expected character or at the first invalid identifier character.
+///
+/// This function is designed for declarative lexing.
+/// You can specify a success case via `expected` and define what to return for the success case.
+/// In the fallback case, automatically lexes and returns an identifier.
 pub fn expect_or_lex_identifier(
     scanner: &mut SourceScanner,
     expected: &str,

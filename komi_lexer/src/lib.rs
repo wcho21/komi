@@ -84,6 +84,8 @@ impl<'a> Lexer<'a> {
     }
 
     /// Skips characters until newline characters encountered.
+    ///
+    /// Call this after advance the scanner past the beginning comment character `#`.
     /// The scanner stops at the first character immediately after the newline.
     fn skip_comment(&mut self) -> () {
         while let Some(x) = self.scanner.read() {
