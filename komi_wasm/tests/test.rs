@@ -1,12 +1,12 @@
 use js_sys::{Error, JsString, Number};
-use komi_wasm::get_execution_result_and_stdout;
+use komi_wasm::execute;
 use komi_wasm::util::js_val::get_property;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_test::*;
 
 macro_rules! assert_exec {
     ($src:expr, $expected_repr:expr, $expected_stdout:expr) => {
-        let res = get_execution_result_and_stdout($src)?;
+        let res = execute($src)?;
         let repr = get_property(&res, "representation")?;
         let stdout = get_property(&res, "stdout")?;
         dbg!(res);
@@ -26,7 +26,7 @@ macro_rules! assert_exec {
 
 macro_rules! assert_error {
     ($src:expr, $name:expr, $msg:expr, $br:expr, $bc:expr, $er:expr, $ec:expr) => {
-        let res = get_execution_result_and_stdout($src);
+        let res = execute($src);
 
         assert!(res.is_err(), "expected an error, but it isn't.");
 
