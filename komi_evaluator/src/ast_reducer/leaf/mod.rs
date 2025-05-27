@@ -22,6 +22,7 @@ pub fn evaluate_identifier(name: &String, location: &Range, env: &Environment) -
             },
             *location,
         )),
+        ValueKind::BuiltinFunc(builtin_func) => Ok(Value::new(ValueKind::BuiltinFunc(*builtin_func), *location)),
         _ => todo!(), // TODO: should be an error (unexpected) since expected no binding for other types
     }
 }

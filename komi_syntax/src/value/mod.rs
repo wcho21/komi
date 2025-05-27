@@ -63,8 +63,8 @@ fn represent_closure(parameters: &Vec<String>) -> String {
     repr
 }
 
-type StdoutHandler = fn(&str) -> ();
-pub type BuiltinFunc = fn(&Vec<Value>, Option<StdoutHandler>) -> Value;
+pub type Stdout = Vec<String>;
+pub type BuiltinFunc = fn(&Vec<Value>, &mut Stdout) -> Value;
 
 impl Value {
     pub const fn new(kind: ValueKind, location: Range) -> Self {

@@ -10,12 +10,11 @@ use crate::environment::Environment;
 use crate::err::EvalError;
 use assignment_infix as assign_infix;
 use combinator_infix as comb_infix;
-use komi_syntax::{Ast, AstKind, Value};
+use komi_syntax::{Ast, AstKind, Stdout, Value};
 
 type ResVal = Result<Value, EvalError>;
-type StdoutHandler = fn(&str) -> ();
 
-pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment, stdout_handler: Option<StdoutHandler>) -> ResVal {
+pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment, stdouts: &mut Stdout) -> ResVal {
     // Design principle: once you read something, pass it as an argument.
     // This avoids unnecessary repeated reading in subfunctions.
     // Moreover, if you delay determining the kind of what you read, the decision is only postponed to subfunctions.
@@ -23,28 +22,36 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment, stdout_handler: Option<
 
     let loc = ast.location;
     match &ast.kind {
-        AstKind::Program { expressions: e } => expressions::reduce(&e, &loc, env),
+        AstKind::Program { expressions: e } => expressions::reduce(&e, &loc, env, stdouts),
         AstKind::Identifier(id) => leaf::evaluate_identifier(id, &loc, env),
         AstKind::Number(n) => leaf::evaluate_num(*n, &loc),
         AstKind::Bool(b) => leaf::evaluate_bool(*b, &loc),
         AstKind::Closure { parameters: p, body: b } => leaf::evaluate_closure(p, b, &loc, env),
-        AstKind::PrefixPlus { operand: op } => prefix::reduce_plus(&op, &loc, env),
-        AstKind::PrefixMinus { operand: op } => prefix::reduce_minus(&op, &loc, env),
-        AstKind::PrefixBang { operand: op } => prefix::reduce_bang(&op, &loc, env),
-        AstKind::InfixPlus { left: l, right: r } => comb_infix::reduce_plus(&l, &r, &loc, env),
-        AstKind::InfixMinus { left: l, right: r } => comb_infix::reduce_minus(&l, &r, &loc, env),
-        AstKind::InfixAsterisk { left: l, right: r } => comb_infix::reduce_asterisk(&l, &r, &loc, env),
-        AstKind::InfixSlash { left: l, right: r } => comb_infix::reduce_slash(&l, &r, &loc, env),
-        AstKind::InfixPercent { left: l, right: r } => comb_infix::reduce_percent(&l, &r, &loc, env),
-        AstKind::InfixConjunct { left: l, right: r } => comb_infix::reduce_conjunct(&l, &r, &loc, env),
-        AstKind::InfixDisjunct { left: l, right: r } => comb_infix::reduce_disjunct(&l, &r, &loc, env),
-        AstKind::InfixEquals { left: l, right: r } => assign_infix::reduce_equals(&l, &r, &loc, env),
-        AstKind::InfixPlusEquals { left: l, right: r } => assign_infix::reduce_plus_equals(&l, &r, &loc, env),
-        AstKind::InfixMinusEquals { left: l, right: r } => assign_infix::reduce_minus_equals(&l, &r, &loc, env),
-        AstKind::InfixAsteriskEquals { left: l, right: r } => assign_infix::reduce_asterisk_equals(&l, &r, &loc, env),
-        AstKind::InfixSlashEquals { left: l, right: r } => assign_infix::reduce_slash_equals(&l, &r, &loc, env),
-        AstKind::InfixPercentEquals { left: l, right: r } => assign_infix::reduce_percent_equals(&l, &r, &loc, env),
-        AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env, stdout_handler),
+        AstKind::PrefixPlus { operand: op } => prefix::reduce_plus(&op, &loc, env, stdouts),
+        AstKind::PrefixMinus { operand: op } => prefix::reduce_minus(&op, &loc, env, stdouts),
+        AstKind::PrefixBang { operand: op } => prefix::reduce_bang(&op, &loc, env, stdouts),
+        AstKind::InfixPlus { left: l, right: r } => comb_infix::reduce_plus(&l, &r, &loc, env, stdouts),
+        AstKind::InfixMinus { left: l, right: r } => comb_infix::reduce_minus(&l, &r, &loc, env, stdouts),
+        AstKind::InfixAsterisk { left: l, right: r } => comb_infix::reduce_asterisk(&l, &r, &loc, env, stdouts),
+        AstKind::InfixSlash { left: l, right: r } => comb_infix::reduce_slash(&l, &r, &loc, env, stdouts),
+        AstKind::InfixPercent { left: l, right: r } => comb_infix::reduce_percent(&l, &r, &loc, env, stdouts),
+        AstKind::InfixConjunct { left: l, right: r } => comb_infix::reduce_conjunct(&l, &r, &loc, env, stdouts),
+        AstKind::InfixDisjunct { left: l, right: r } => comb_infix::reduce_disjunct(&l, &r, &loc, env, stdouts),
+        AstKind::InfixEquals { left: l, right: r } => assign_infix::reduce_equals(&l, &r, &loc, env, stdouts),
+        AstKind::InfixPlusEquals { left: l, right: r } => assign_infix::reduce_plus_equals(&l, &r, &loc, env, stdouts),
+        AstKind::InfixMinusEquals { left: l, right: r } => {
+            assign_infix::reduce_minus_equals(&l, &r, &loc, env, stdouts)
+        }
+        AstKind::InfixAsteriskEquals { left: l, right: r } => {
+            assign_infix::reduce_asterisk_equals(&l, &r, &loc, env, stdouts)
+        }
+        AstKind::InfixSlashEquals { left: l, right: r } => {
+            assign_infix::reduce_slash_equals(&l, &r, &loc, env, stdouts)
+        }
+        AstKind::InfixPercentEquals { left: l, right: r } => {
+            assign_infix::reduce_percent_equals(&l, &r, &loc, env, stdouts)
+        }
+        AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env, stdouts),
     }
 }
 
@@ -60,41 +67,45 @@ mod tests {
     /// Asserts a given AST to be evaluated into the expected value.
     /// Helps write a test declaratively.
     macro_rules! assert_eval {
-        ($ast:expr, $expected:expr $(,)?) => {
+        ($ast:expr, $expected:expr $(,)?) => {{
             let mut env = Environment::new();
+            let mut stdouts: Vec<String> = vec![];
             assert_eq!(
-                reduce_ast($ast, &mut env, None),
+                reduce_ast($ast, &mut env, &mut stdouts),
                 Ok($expected),
                 "received a value (left) evaluated from the ast, but expected the different value (right)",
             );
-        };
-        ($ast:expr, $env:expr, $expected:expr $(,)?) => {
+        }};
+        ($ast:expr, $env:expr, $expected:expr $(,)?) => {{
+            let mut stdouts: Vec<String> = vec![];
             assert_eq!(
-                reduce_ast($ast, $env, None),
+                reduce_ast($ast, $env, &mut stdouts),
                 Ok($expected),
                 "received a value (left) evaluated from the ast, but expected the different value (right)",
             );
-        };
+        }};
     }
 
     /// Asserts evaluating a given AST will fail.
     /// Helps write a test declaratively.
     macro_rules! assert_eval_fail {
-        ($ast:expr, $expected:expr $(,)?) => {
+        ($ast:expr, $expected:expr $(,)?) => {{
             let mut env = Environment::new();
+            let mut stdouts: Vec<String> = vec![];
             assert_eq!(
-                reduce_ast($ast, &mut env, None),
+                reduce_ast($ast, &mut env, &mut stdouts),
                 Err($expected),
                 "received a result (left), but expected an error (right)",
             );
-        };
-        ($ast:expr, $env:expr, $expected:expr $(,)?) => {
+        }};
+        ($ast:expr, $env:expr, $expected:expr $(,)?) => {{
+            let mut stdouts: Vec<String> = vec![];
             assert_eq!(
-                reduce_ast($ast, $env, None),
+                reduce_ast($ast, $env, &mut stdouts),
                 Err($expected),
                 "received a result (left), but expected an error (right)",
             );
-        };
+        }};
     }
 
     #[test]

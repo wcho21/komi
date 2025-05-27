@@ -1,8 +1,6 @@
 use crate::Environment;
-use komi_syntax::{Value, ValueKind};
+use komi_syntax::{Stdout, Value, ValueKind};
 use komi_util::Range;
-
-type StdoutHandler = fn(&str) -> ();
 
 pub fn bind(env: &mut Environment) -> () {
     env.set(
@@ -11,13 +9,11 @@ pub fn bind(env: &mut Environment) -> () {
     )
 }
 
-fn stdout_write(args: &Vec<Value>, stdout_handler: Option<StdoutHandler>) -> Value {
+fn stdout_write(args: &Vec<Value>, stdouts: &mut Stdout) -> Value {
     let strs: Vec<String> = args.iter().map(|arg| arg.represent()).collect();
     let joined = strs.join(" ");
 
-    if let Some(handler) = stdout_handler {
-        handler(&joined);
-    }
+    stdouts.push(joined);
 
     Value::new(ValueKind::Number(strs.len() as f64), Range::from_nums(0, 0, 0, 0))
 }
