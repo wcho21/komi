@@ -3,9 +3,9 @@ use crate::{LexError, LexErrorKind, SourceScanner, TokenRes};
 use komi_syntax::{StrSegment, StrSegmentKind, Token, TokenKind as Kind};
 use komi_util::{Range, Scanner, char_validator};
 
-/// Returns a sequence of tokens in a string literal if successfully lexed, or error otherwise.
+/// Returns a sequence of tokens in a string literal if successfully lexed, or an error otherwise.
 ///
-/// Call this after advancing the scanner `self.scanner` past the beginning quote `"`, with its location passed as `first_location`.
+/// Call this after advancing the scanner past the beginning quote `"`, with its location passed as `first_location`.
 /// The scanner stops at the ending quote `"`.
 pub fn lex_str(scanner: &mut SourceScanner, first_location: Range) -> TokenRes {
     let mut segments: Vec<StrSegment> = vec![];

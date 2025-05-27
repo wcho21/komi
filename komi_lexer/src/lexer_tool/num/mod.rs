@@ -4,7 +4,7 @@ use komi_util::{Range, Scanner, char_validator};
 
 /// Returns a number literal token if successfully lexed, or error otherwise.
 ///
-/// Call this after advancing the scanner `self.scanner` past the initial character, with its location passed as `first_location`.
+/// Call this after advancing the scanner past the initial character, with its location passed as `first_location`.
 /// The scanner stops at the first non-digit character, after reading a number with or without a decimal part.
 pub fn lex_num(scanner: &mut SourceScanner, first_location: Range, first_char: &str) -> TokenRes {
     let mut lexeme = String::new();

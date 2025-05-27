@@ -10,6 +10,9 @@ type StringRes = Result<String, LexError>;
 /// - `init_seg`: The initial segment of characters already read by the scanner.
 /// - `init_seg_begin`: The beginning spot of the `init_seg`.
 /// - `alt_op`: A closure to invoke if an identifier cannot be lexed.
+///
+/// Call this after advance the scanner past the character just before `char_read`.
+/// The scanner stops immediately after the first invalid identifier character.
 pub fn lex_identifier_with_init_seg_or<F>(
     scanner: &mut SourceScanner,
     char_read: Option<&str>,
@@ -35,6 +38,8 @@ where
 }
 
 /// Returns an identifier token with the initial segment `init_seg` and subsequent characters the scanner read.
+///
+/// Call this after advance the scanner past the end character of `init_seg`.
 /// The scanner stops at the first non-identifier character.
 pub fn lex_identifier_with_init_seg(
     scanner: &mut SourceScanner,
@@ -48,6 +53,8 @@ pub fn lex_identifier_with_init_seg(
 }
 
 /// Returns a string of identifier characters with the initial segment `init_seg` and subsequent characters the scanner read.
+///
+/// Call this after advance the scanner past the end character of `init_seg`.
 /// The scanner stops at the first non-identifier character.
 pub fn read_identifier_with_init_seg(scanner: &mut SourceScanner, init_seg: String) -> StringRes {
     let mut identifier = init_seg;
