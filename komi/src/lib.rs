@@ -22,7 +22,7 @@ impl ExecOut {
     }
 }
 
-pub fn execute_and_get_stdout(source: &str) -> ExecOutRes {
+pub fn execute(source: &str) -> ExecOutRes {
     let tokens = lex(&source)?;
     let ast = parse(&tokens)?;
 
@@ -48,7 +48,7 @@ mod tests {
     /// Helps write a test declaratively.
     macro_rules! assert_out {
         ($source:expr, $expected_repr:expr, $expected_stdout:expr) => {{
-            let out = execute_and_get_stdout($source).unwrap();
+            let out = execute($source).unwrap();
             let repr = out.representation;
             let stdout = out.stdout;
 
@@ -64,7 +64,7 @@ mod tests {
     /// Helps write a test declaratively.
     macro_rules! assert_fail {
         ($source:expr, $expected:expr) => {{
-            let err = execute_and_get_stdout($source).unwrap_err();
+            let err = execute($source).unwrap_err();
             assert_eq!(err, $expected, "received a result (left), but it isn't (right)",);
         }};
     }

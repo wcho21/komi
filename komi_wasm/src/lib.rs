@@ -5,5 +5,5 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub fn execute(source: &str) -> Result<JsValue, JsValue> {
-    convert(&komi::execute_and_get_stdout(source))
+    convert(&komi::execute(source))
 }
