@@ -1,6 +1,6 @@
 use js_sys::{Error, JsString, Number};
 use komi_wasm::execute;
-use komi_wasm::util::js_val::get_property;
+use komi_wasm::util::js_val::obj::get_property;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_test::*;
 
