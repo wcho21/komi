@@ -98,11 +98,20 @@ mod tests {
     }
 
     #[rstest]
-    #[case::empty("", format!("{EMPTY_REPR}"))]
-    #[case::whitespaces("  \t\t\r\r\n\n\r\n\r\n", format!("{EMPTY_REPR}"))]
-    #[case::comments("# some comment", format!("{EMPTY_REPR}"))]
-    fn empty(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+    #[case::empty(
+        "",
+        ExecError::Lex(LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 0)))
+    )]
+    #[case::whitespaces(
+        "  \t\t\n\n\r\r\r\n\r\n",
+        ExecError::Lex(LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 6, 0)))
+    )]
+    #[case::comments(
+        "# some comment",
+        ExecError::Lex(LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 14)))
+    )]
+    fn empty(#[case] source: &str, #[case] error: ExecError) {
+        assert_exec_fail!(source, error);
     }
 
     #[rstest]

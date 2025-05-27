@@ -1,6 +1,6 @@
 use super::reduce_ast;
 use crate::environment::Environment;
-use crate::err::EvalError;
+use crate::err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, Stdout, Value};
 use komi_util::Range;
 
@@ -15,11 +15,19 @@ pub fn reduce(
     env: &mut Environment,
     stdouts: &mut Stdout,
 ) -> ResVal {
-    let mut last_value = Value::from_empty(*expressions_location);
+    let Some(first_expression) = expressions.get(0) else {
+        return Err(EvalError::new(
+            EvalErrorKind::NoExpressions,
+            Range::from_nums(0, 0, 0, 0),
+        ));
+    };
 
-    for expression in expressions {
+    let mut last_value = reduce_ast(first_expression, env, stdouts)?;
+    for expression in &expressions[1..] {
         last_value = reduce_ast(expression, env, stdouts)?;
     }
+
     last_value.location = *expressions_location;
+
     Ok(last_value)
 }
