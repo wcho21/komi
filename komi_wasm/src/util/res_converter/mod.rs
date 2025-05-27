@@ -1,35 +1,36 @@
-use crate::util::js_val::{convert_range_to_js_object, make_js_err, make_js_out};
-use js_sys::Error;
+use crate::JsRes;
+use crate::util::js_val;
 use komi::{ExecError, ExecOut, ExecOutRes};
-use komi_util::EngineError;
 use komi_util::unpacker::unpack_engine_error;
-use std::fmt::Display;
-use wasm_bindgen::JsValue;
 
-pub fn convert(exec_out: &ExecOutRes) -> Result<JsValue, JsValue> {
+macro_rules! unpack_err {
+    ($name:literal, $exec_err:ident) => {{
+        let (kind, location) = unpack_engine_error($exec_err);
+        ($name, format!("{}", kind), location)
+    }};
+}
+
+pub fn convert(exec_out: &ExecOutRes) -> JsRes {
     match exec_out {
-        Ok(out) => Ok(convert_out(out)),
-        Err(e) => Err(convert_err(&e)),
+        Ok(out) => Ok(convert_out_to_js_val(out)?),
+        Err(e) => Err(convert_err_to_js_val(&e)?),
     }
 }
 
-fn convert_out(out: &ExecOut) -> JsValue {
-    make_js_out(&out.representation, &out.stdout).unwrap()
+fn convert_out_to_js_val(out: &ExecOut) -> JsRes {
+    let repr = &out.representation;
+    let stdout = &out.stdout;
+
+    js_val::convert_repr_and_stdout_to_js_val(&repr, &stdout)
 }
 
-fn convert_err(err: &ExecError) -> JsValue {
-    match err {
-        ExecError::Lex(e) => convert_err_to_js_err(e, "LexError").into(),
-        ExecError::Parse(e) => convert_err_to_js_err(e, "ParseError").into(),
-        ExecError::Eval(e) => convert_err_to_js_err(e, "EvalError").into(),
-    }
-}
+fn convert_err_to_js_val(err: &ExecError) -> JsRes {
+    let (name, kind, location) = match err {
+        ExecError::Lex(e) => unpack_err!("LexError", e),
+        ExecError::Parse(e) => unpack_err!("ParseError", e),
+        ExecError::Eval(e) => unpack_err!("EvalError", e),
+        _ => todo!(),
+    };
 
-fn convert_err_to_js_err<T: Display>(err: &EngineError<T>, name: &str) -> Error {
-    let (kind, location) = unpack_engine_error(&err);
-
-    let message = format!("{}", kind);
-    let cause_location = convert_range_to_js_object(location).unwrap();
-    let js_err = make_js_err(&name, &message, &cause_location);
-    js_err
+    js_val::convert_str_and_location_to_js_val(name, &kind, location)
 }
