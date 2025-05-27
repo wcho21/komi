@@ -1,5 +1,5 @@
 use komi_syntax::Token;
-use komi_util::{Range, Scanner, range};
+use komi_util::{Range, Scanner};
 
 pub struct TokenScanner<'a> {
     tokens: &'a Vec<Token>,
@@ -9,7 +9,7 @@ pub struct TokenScanner<'a> {
 
 impl<'a> TokenScanner<'a> {
     pub fn new(tokens: &'a Vec<Token>) -> Self {
-        Self { tokens, base_index: 0, last_location: range::ORIGIN }
+        Self { tokens, base_index: 0, last_location: Range::ORIGIN }
     }
 
     fn is_end(&self) -> bool {
@@ -115,9 +115,9 @@ mod tests {
 
         let mut scanner = TokenScanner::new(&tokens);
 
-        assert_eq!(scanner.locate(), range::ORIGIN);
+        assert_eq!(scanner.locate(), Range::ORIGIN);
         scanner.advance();
-        assert_eq!(scanner.locate(), range::ORIGIN);
+        assert_eq!(scanner.locate(), Range::ORIGIN);
     }
 
     mod fixtures {

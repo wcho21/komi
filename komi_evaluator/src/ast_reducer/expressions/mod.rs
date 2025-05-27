@@ -16,10 +16,7 @@ pub fn reduce(
     stdouts: &mut Stdout,
 ) -> ResVal {
     let Some(first_expression) = expressions.get(0) else {
-        return Err(EvalError::new(
-            EvalErrorKind::NoExpressions,
-            Range::from_nums(0, 0, 0, 0),
-        ));
+        return Err(EvalError::new(EvalErrorKind::NoExpressions, Range::ORIGIN));
     };
 
     let mut last_value = reduce_ast(first_expression, env, stdouts)?;

@@ -8,7 +8,7 @@ mod token_scanner;
 
 pub use err::{ParseError, ParseErrorKind};
 use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
-use komi_util::{Range, Scanner, range};
+use komi_util::{Range, Scanner};
 use token_scanner::TokenScanner;
 
 type ResAst = Result<Box<Ast>, ParseError>;
@@ -320,7 +320,7 @@ impl<'a> Parser<'a> {
 
     fn locate_expressions(&self, expressions: &Vec<Box<Ast>>) -> Range {
         if expressions.len() == 0 {
-            return range::ORIGIN;
+            return Range::ORIGIN;
         }
 
         Range {

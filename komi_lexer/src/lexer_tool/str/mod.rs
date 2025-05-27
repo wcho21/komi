@@ -145,7 +145,7 @@ mod tests {
         use super::*;
 
         pub fn range() -> Range {
-            Range::from_nums(0, 0, 0, 0)
+            Range::ORIGIN
         }
     }
 }

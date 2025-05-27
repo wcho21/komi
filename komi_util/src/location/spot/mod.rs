@@ -6,12 +6,12 @@ pub struct Spot {
 }
 
 impl Spot {
+    pub const ORIGIN: Spot = Spot::new(0, 0);
+
     pub const fn new(row: u32, col: u32) -> Self {
         Spot { row, col }
     }
 }
-
-pub const ORIGIN: Spot = Spot::new(0, 0);
 
 #[cfg(test)]
 mod tests {
