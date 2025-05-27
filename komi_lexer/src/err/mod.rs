@@ -5,7 +5,9 @@ use std::fmt;
 /// Serves as the interface between a lexer and its user.
 #[derive(Debug, PartialEq)]
 pub enum LexErrorKind {
-    /// An illegal character, not in the syntax.
+    /// No source to lex.
+    NoSource,
+    /// An illegal char, not in the syntax.
     IllegalChar,
     /// An illegal number literal, such as `12.`.
     IllegalNumLiteral,
@@ -28,6 +30,7 @@ pub type LexError = EngineError<LexErrorKind>;
 impl fmt::Display for LexErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self {
+            LexErrorKind::NoSource => "NoSource",
             LexErrorKind::IllegalChar => "IllegalChar",
             LexErrorKind::IllegalNumLiteral => "IllegalNumLiteral",
             LexErrorKind::StrQuoteNotClosed => "StrQuoteNotClosed",
