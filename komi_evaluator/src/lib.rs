@@ -53,11 +53,11 @@ pub fn eval(ast: &Box<Ast>) -> ResVal {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use komi_syntax::{Ast, AstKind, mkast};
+    use komi_syntax::{Ast, AstKind, ValueKind, mkast};
     use komi_util::Range;
 
     #[test]
-    fn test_stdout() {
+    fn test_stdout_num_without_decimal() {
         let ast = mkast!(prog loc 0, 0, 0, 5, vec![
             mkast!(call loc 0, 0, 0, 5,
                 target mkast!(identifier "쓰기", loc 0, 0, 0, 2),
@@ -68,11 +68,36 @@ mod tests {
         ]);
         let mut evaluator = Evaluator::new(&ast);
 
-        let _ = evaluator.eval();
-
+        let repr = evaluator.eval();
         let stdout = evaluator.flush();
 
+        assert_eq!(
+            repr,
+            Ok(Value::new(ValueKind::Number(1.0), Range::from_nums(0, 0, 0, 5))) // TODO: correct location
+        );
         assert_eq!(stdout, "1");
+    }
+
+    #[test]
+    fn test_stdout_num_with_decimal() {
+        let ast = mkast!(prog loc 0, 0, 0, 5, vec![
+            mkast!(call loc 0, 0, 0, 5,
+                target mkast!(identifier "쓰기", loc 0, 0, 0, 2),
+                args vec![
+                    mkast!(num 12.25, loc 0, 3, 0, 4),
+                ],
+            ),
+        ]);
+        let mut evaluator = Evaluator::new(&ast);
+
+        let repr = evaluator.eval();
+        let stdout = evaluator.flush();
+
+        assert_eq!(
+            repr,
+            Ok(Value::new(ValueKind::Number(5.0), Range::from_nums(0, 0, 0, 5))) // TODO: correct location
+        );
+        assert_eq!(stdout, "12.25");
     }
 
     #[test]

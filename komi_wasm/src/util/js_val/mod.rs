@@ -11,6 +11,10 @@ pub fn set_object_property(obj: &Object, key: &str, value: &Object) -> Result<bo
     Reflect::set(obj, &JsString::from(key), value)
 }
 
+pub fn set_string_property(obj: &Object, key: &str, value: &str) -> Result<bool, JsValue> {
+    Reflect::set(obj, &JsString::from(key), &JsString::from(value))
+}
+
 pub fn get_property(obj: &JsValue, key: &str) -> Result<JsValue, JsValue> {
     Reflect::get(obj, &JsString::from(key))
 }
@@ -37,6 +41,7 @@ pub fn convert_range_to_js_object(location: &Range) -> Result<Object, JsValue> {
     Ok(obj)
 }
 
+// TODO: make interface consistent: all js-values or all rust-type values
 pub fn make_js_err(name: &str, message: &str, location: &JsValue) -> Error {
     let js_err = Error::new(message);
 
@@ -47,4 +52,12 @@ pub fn make_js_err(name: &str, message: &str, location: &JsValue) -> Error {
     js_err.set_cause(&cause);
 
     js_err
+}
+
+pub fn make_js_out(representation: &str, stdout: &str) -> Result<JsValue, JsValue> {
+    let obj = Object::new();
+    set_string_property(&obj, "representation", representation)?;
+    set_string_property(&obj, "stdout", stdout)?;
+
+    Ok(obj.into())
 }
