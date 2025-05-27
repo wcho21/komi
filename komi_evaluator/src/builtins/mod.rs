@@ -3,10 +3,7 @@ use komi_syntax::{Stdout, Value, ValueKind};
 use komi_util::Range;
 
 pub fn bind(env: &mut Environment) -> () {
-    env.set(
-        "쓰기",
-        &Value::new(ValueKind::BuiltinFunc(stdout_write), Range::from_nums(0, 0, 0, 0)),
-    )
+    env.set("쓰기", &Value::new(ValueKind::BuiltinFunc(stdout_write), Range::ORIGIN))
 }
 
 fn stdout_write(args: &Vec<Value>, stdouts: &mut Stdout) -> Value {
@@ -18,5 +15,5 @@ fn stdout_write(args: &Vec<Value>, stdouts: &mut Stdout) -> Value {
 
     stdouts.push(joined);
 
-    Value::new(ValueKind::Number(joined_len as f64), Range::from_nums(0, 0, 0, 0))
+    Value::new(ValueKind::Number(joined_len as f64), Range::ORIGIN)
 }
