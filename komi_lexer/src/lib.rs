@@ -10,7 +10,7 @@ mod utf8_tape;
 
 pub use err::{LexError, LexErrorKind};
 use komi_syntax::{Token, TokenKind as Kind};
-use komi_util::{Scanner, char_validator};
+use komi_util::{Range, Scanner, Spot, char_validator};
 use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, lex_str};
 use source_scanner::SourceScanner;
 
@@ -29,6 +29,13 @@ impl<'a> Lexer<'a> {
     }
 
     pub fn lex(&mut self) -> TokensRes {
+        let tokens = self.lex_tokens()?;
+        self.post_validate(&tokens)?;
+
+        Ok(tokens)
+    }
+
+    fn lex_tokens(&mut self) -> TokensRes {
         let mut tokens: Tokens = vec![];
 
         // Lex characters into tokens one by one
@@ -96,6 +103,15 @@ impl<'a> Lexer<'a> {
             }
         }
     }
+
+    fn post_validate(&self, tokens: &Tokens) -> Result<(), LexError> {
+        if tokens.len() == 0 {
+            let location = Range::new(Spot::new(0, 0), self.scanner.locate().end);
+            return Err(LexError::new(LexErrorKind::NoSource, location));
+        }
+
+        Ok(())
+    }
 }
 
 /// Produces tokens from source codes.
@@ -136,16 +152,22 @@ mod tests {
         };
     }
 
-    // Should lex empty sources.
+    // Should fail to lex empty sources.
     #[rstest]
-    #[case::empty("")]
-    #[case::whitespaces("  ")]
-    #[case::tabs("\t\t")]
-    #[case::new_lines("\n\n\r\r\r\n\r\n")]
-    #[case::comment("# foo")]
-    #[case::multi_line_comment("# foo\r\n# bar")]
-    fn empty(#[case] source: &str) {
-        assert_lex!(source, vec![]);
+    #[case::empty("", LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 0)))]
+    #[case::whitespaces("  ", LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 2)))]
+    #[case::tabs("\t\t", LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 2)))]
+    #[case::new_lines(
+        "\n\n\r\r\r\n\r\n",
+        LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 6, 0))
+    )]
+    #[case::comment("# foo", LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 5)))]
+    #[case::multi_line_comment(
+        "# foo\r\n# bar",
+        LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 1, 5))
+    )]
+    fn empty(#[case] source: &str, #[case] error: LexError) {
+        assert_lex_fail!(source, error);
     }
 
     // Should lex number literals.

@@ -250,6 +250,8 @@ mod tests {
         use super::*;
 
         // "^" represents an illegal char.
+        test_error!(empty, "", "LexError", "NoSource", 0, 0, 0, 0);
+        test_error!(only_comment, "# comment", "LexError", "NoSource", 0, 0, 0, 9);
         test_error!(illegal_char, "^", "LexError", "IllegalChar", 0, 0, 0, 1);
         test_error!(arithmetic_plus, "12.", "LexError", "IllegalNumLiteral", 0, 0, 0, 3);
     }
