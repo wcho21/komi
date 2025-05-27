@@ -1,23 +1,10 @@
 use crate::util::js_val::{convert_range_to_js_object, make_js_err, make_js_out};
 use js_sys::Error;
-use komi::{ExecError, ExecOut, ExecOutRes, ExecResult};
+use komi::{ExecError, ExecOut, ExecOutRes};
 use komi_util::EngineError;
 use komi_util::unpacker::unpack_engine_error;
 use std::fmt::Display;
 use wasm_bindgen::JsValue;
-
-#[deprecated]
-pub fn convert(exec_res: &ExecResult) -> Result<JsValue, JsValue> {
-    match exec_res {
-        Ok(s) => Ok(convert_ok(s)),
-        Err(e) => Err(convert_err(&e)),
-    }
-}
-
-#[deprecated]
-fn convert_ok(ok_str: &str) -> JsValue {
-    JsValue::from_str(ok_str)
-}
 
 fn convert_err(err: &ExecError) -> JsValue {
     match err {
