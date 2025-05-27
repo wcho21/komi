@@ -1,20 +1,12 @@
 use js_sys::{Error, JsString, Number};
+use komi_wasm::execute;
 use komi_wasm::util::js_val::get_property;
-use komi_wasm::{get_execution_result, get_execution_result_and_stdout};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_test::*;
 
 macro_rules! assert_exec {
-    ($src:expr, $expected:expr) => {
-        let res = get_execution_result($src)?;
-
-        assert_eq!(JsString::from(res), JsString::from($expected));
-    };
-}
-
-macro_rules! assert_exec2 {
     ($src:expr, $expected_repr:expr, $expected_stdout:expr) => {
-        let res = get_execution_result_and_stdout($src)?;
+        let res = execute($src)?;
         let repr = get_property(&res, "representation")?;
         let stdout = get_property(&res, "stdout")?;
         dbg!(res);
@@ -34,7 +26,7 @@ macro_rules! assert_exec2 {
 
 macro_rules! assert_error {
     ($src:expr, $name:expr, $msg:expr, $br:expr, $bc:expr, $er:expr, $ec:expr) => {
-        let res = get_execution_result($src);
+        let res = execute($src);
 
         assert!(res.is_err(), "expected an error, but it isn't.");
 
@@ -83,22 +75,11 @@ macro_rules! assert_error {
     };
 }
 
-#[deprecated]
 macro_rules! test_exec {
-    ($name:ident, $src:expr, $expected:expr) => {
-        #[wasm_bindgen_test]
-        fn $name() -> Result<(), JsValue> {
-            assert_exec!($src, $expected);
-            Ok(())
-        }
-    };
-}
-
-macro_rules! test_exec2 {
     ($name:ident, $src:expr, $expected_repr:expr, $expected_stdout:expr $(,)?) => {
         #[wasm_bindgen_test]
         fn $name() -> Result<(), JsValue> {
-            assert_exec2!($src, $expected_repr, $expected_stdout);
+            assert_exec!($src, $expected_repr, $expected_stdout);
             Ok(())
         }
     };
@@ -116,6 +97,7 @@ macro_rules! test_error {
 
 // TODO: test errors whether it has correct name and message
 
+// TODO: rearrange tests and cover all errors
 #[allow(dead_code)] // Suppress warnings from #[wasm_bindgen_test] test codes.
 mod tests {
     use super::*;
@@ -126,7 +108,7 @@ mod tests {
         mod closure {
             use super::*;
 
-            test_exec2!(
+            test_exec!(
                 closure,
                 "함수 사과, 오렌지, 바나나 {}",
                 "함수 사과, 오렌지, 바나나 { ... }",
@@ -140,33 +122,34 @@ mod tests {
             mod literals {
                 use super::*;
 
-                test_exec!(num, "12.25", "12.25");
+                test_exec!(num, "12.25", "12.25", "");
             }
 
             mod prefixes {
                 use super::*;
 
-                test_exec!(plus, "+12.25", "12.25");
-                test_exec!(minus, "-12.25", "-12.25");
-                test_exec!(consecutive, "++--12.25", "12.25");
+                test_exec!(plus, "+12.25", "12.25", "");
+                test_exec!(minus, "-12.25", "-12.25", "");
+                test_exec!(bang, "!참", "거짓", "");
+                test_exec!(consecutive, "++--12.25", "12.25", "");
             }
 
             mod infixes {
                 use super::*;
 
-                test_exec!(addition, "6+4", "10");
-                test_exec!(subtraction, "6-4", "2");
-                test_exec!(multiplication, "6*4", "24");
-                test_exec!(division, "6/4", "1.5");
-                test_exec!(modular, "6%4", "2");
+                test_exec!(addition, "6+4", "10", "");
+                test_exec!(subtraction, "6-4", "2", "");
+                test_exec!(multiplication, "6*4", "24", "");
+                test_exec!(division, "6/4", "1.5", "");
+                test_exec!(modular, "6%4", "2", "");
             }
 
             mod compound {
                 use super::*;
 
-                test_exec!(expression, "(1.5 - 2.5) * 3 / 4 + 5 % 6", "4.25");
+                test_exec!(expression, "(1.5 - 2.5) * 3 / 4 + 5 % 6", "4.25", "");
                 // Note that the expression will be parsed into `(((8 - 4) - 2) - 1)` if without grouping.
-                test_exec!(nested_grouping, "8 - (4 - (2 - 1))", "5");
+                test_exec!(nested_grouping, "8 - (4 - (2 - 1))", "5", "");
             }
         }
 
@@ -176,15 +159,15 @@ mod tests {
             mod literals {
                 use super::*;
 
-                test_exec!(the_true, "참", "참");
-                test_exec!(the_false, "거짓", "거짓");
+                test_exec!(the_true, "참", "참", "");
+                test_exec!(the_false, "거짓", "거짓", "");
             }
 
             mod prefixes {
                 use super::*;
 
-                test_exec!(negation, "!거짓", "참");
-                test_exec!(consecutive, "!!!거짓", "참");
+                test_exec!(negation, "!거짓", "참", "");
+                test_exec!(consecutive, "!!!거짓", "참", "");
             }
 
             mod infixes {
@@ -193,25 +176,25 @@ mod tests {
                 mod conjunction {
                     use super::*;
 
-                    test_exec!(true_and_true, "참 그리고 참", "참");
-                    test_exec!(true_and_false, "참 그리고 거짓", "거짓");
-                    test_exec!(false_and_true, "거짓 그리고 참", "거짓");
-                    test_exec!(false_and_false, "거짓 그리고 거짓", "거짓");
+                    test_exec!(true_and_true, "참 그리고 참", "참", "");
+                    test_exec!(true_and_false, "참 그리고 거짓", "거짓", "");
+                    test_exec!(false_and_true, "거짓 그리고 참", "거짓", "");
+                    test_exec!(false_and_false, "거짓 그리고 거짓", "거짓", "");
                 }
 
                 mod disjunction {
                     use super::*;
 
-                    test_exec!(true_or_true, "참 또는 참", "참");
-                    test_exec!(true_or_false, "참 또는 거짓", "참");
-                    test_exec!(false_or_true, "거짓 또는 참", "참");
-                    test_exec!(false_or_false, "거짓 또는 거짓", "거짓");
+                    test_exec!(true_or_true, "참 또는 참", "참", "");
+                    test_exec!(true_or_false, "참 또는 거짓", "참", "");
+                    test_exec!(false_or_true, "거짓 또는 참", "참", "");
+                    test_exec!(false_or_false, "거짓 또는 거짓", "거짓", "");
                 }
 
                 mod compound {
                     use super::*;
 
-                    test_exec!(negation_on_conjunction, "!(참 또는 참)", "거짓");
+                    test_exec!(negation_on_conjunction, "!(참 또는 참)", "거짓", "");
                 }
             }
         }
@@ -219,12 +202,12 @@ mod tests {
         mod assignment {
             use super::*;
 
-            test_exec!(assignment, "사과=1", "1");
-            test_exec!(addition_assignment, "사과=6 사과+=4 사과", "10");
-            test_exec!(subtraction_assignment, "사과=6 사과-=4 사과", "2");
-            test_exec!(multiplication_assignment, "사과=6 사과*=4 사과", "24");
-            test_exec!(division_assignment, "사과=6 사과/=4 사과", "1.5");
-            test_exec!(modular_assignment, "사과=6 사과%=4 사과", "2");
+            test_exec!(assignment, "사과=1", "1", "");
+            test_exec!(addition_assignment, "사과=6 사과+=4 사과", "10", "");
+            test_exec!(subtraction_assignment, "사과=6 사과-=4 사과", "2", "");
+            test_exec!(multiplication_assignment, "사과=6 사과*=4 사과", "24", "");
+            test_exec!(division_assignment, "사과=6 사과/=4 사과", "1.5", "");
+            test_exec!(modular_assignment, "사과=6 사과%=4 사과", "2", "");
 
             test_error!(
                 mixed_type,
@@ -242,8 +225,8 @@ mod tests {
     mod stdout {
         use super::*;
 
-        test_exec2!(write_num_without_decimal, "쓰기(1)", "1", "1");
-        test_exec2!(write_num_with_decimal, "쓰기(12.25)", "5", "12.25");
+        test_exec!(write_num_without_decimal, "쓰기(1)", "1", "1");
+        test_exec!(write_num_with_decimal, "쓰기(12.25)", "5", "12.25");
     }
 
     mod lex_errors {

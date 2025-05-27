@@ -2,7 +2,6 @@ mod err;
 
 pub use err::ExecError;
 use komi_evaluator::Evaluator;
-use komi_evaluator::eval;
 use komi_lexer::lex;
 use komi_parser::parse;
 pub use komi_representer::EMPTY_REPR;
@@ -11,6 +10,7 @@ use komi_representer::represent;
 pub type ExecResult = Result<String, ExecError>;
 pub type ExecOutRes = Result<ExecOut, ExecError>;
 
+#[derive(Debug)]
 pub struct ExecOut {
     pub representation: String,
     pub stdout: String,
@@ -22,17 +22,7 @@ impl ExecOut {
     }
 }
 
-#[deprecated]
-pub fn execute(source: &str) -> ExecResult {
-    let tokens = lex(&source)?;
-    let ast = parse(&tokens)?;
-    let value = eval(&ast)?;
-    let representation = represent(&value);
-
-    Ok(representation)
-}
-
-pub fn execute_and_get_stdout(source: &str) -> ExecOutRes {
+pub fn execute(source: &str) -> ExecOutRes {
     let tokens = lex(&source)?;
     let ast = parse(&tokens)?;
 
@@ -54,25 +44,11 @@ mod tests {
     use komi_util::Range;
     use rstest::rstest;
 
-    /// Asserts a given source to be interpreted into the expected result.
-    /// Helps write a test declaratively.
-    #[deprecated]
-    macro_rules! assert_exec {
-        ($source:expr, $expected:expr) => {
-            assert_eq!(
-                execute($source),
-                Ok($expected),
-                "received a value (left) interpreted from the source '{}', but expected the different result (right)",
-                $source,
-            );
-        };
-    }
-
     /// Asserts a given source to be interpreted into the expected result with stdout.
     /// Helps write a test declaratively.
     macro_rules! assert_out {
         ($source:expr, $expected_repr:expr, $expected_stdout:expr) => {{
-            let out = execute_and_get_stdout($source).unwrap();
+            let out = execute($source).unwrap();
             let repr = out.representation;
             let stdout = out.stdout;
 
@@ -86,15 +62,11 @@ mod tests {
 
     /// Asserts executing a given source will fail.
     /// Helps write a test declaratively.
-    macro_rules! assert_exec_fail {
-        ($source:expr, $expected:expr) => {
-            assert_eq!(
-                execute($source),
-                Err($expected),
-                "received a result (left), but expected executing the source '{}' to fail (right)",
-                $source,
-            );
-        };
+    macro_rules! assert_fail {
+        ($source:expr, $expected:expr) => {{
+            let err = execute($source).unwrap_err();
+            assert_eq!(err, $expected, "received a result (left), but it isn't (right)",);
+        }};
     }
 
     #[rstest]
@@ -111,7 +83,7 @@ mod tests {
         ExecError::Lex(LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 14)))
     )]
     fn empty(#[case] source: &str, #[case] error: ExecError) {
-        assert_exec_fail!(source, error);
+        assert_fail!(source, error);
     }
 
     #[rstest]
@@ -121,7 +93,7 @@ mod tests {
     #[case::bool_false("거짓", "거짓")]
     #[case::closure("함수 사과, 오렌지, 바나나 {}", "함수 사과, 오렌지, 바나나 { ... }")]
     fn single_literal(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
@@ -134,7 +106,7 @@ mod tests {
         ExecError::Lex(LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 3)))
     )]
     fn bad_literal(#[case] source: &str, #[case] error: ExecError) {
-        assert_exec_fail!(source, error);
+        assert_fail!(source, error);
     }
 
     #[rstest]
@@ -143,14 +115,14 @@ mod tests {
     #[case::negative_num("-12", "-12")]
     #[case::doubly_negative_num("--12", "12")]
     fn arithmetic_prefix(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
     #[case::negation("!참", "거짓")]
     #[case::doubly_negation("!!참", "참")]
     fn boolean_prefix(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
@@ -191,7 +163,7 @@ mod tests {
         ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))
     )]
     fn single(#[case] source: &str, #[case] error: ExecError) {
-        assert_exec_fail!(source, error);
+        assert_fail!(source, error);
     }
 
     #[rstest]
@@ -212,7 +184,7 @@ mod tests {
         ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))
     )]
     fn double(#[case] source: &str, #[case] error: ExecError) {
-        assert_exec_fail!(source, error);
+        assert_fail!(source, error);
     }
 
     #[rstest]
@@ -222,14 +194,14 @@ mod tests {
     #[case::division("6 / 4", "1.5")]
     #[case::modular("6 % 4", "2")]
     fn arithmetic_infix(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
     #[case::five_kinds("9 * 8 % 7 - 6 + 5 / 4", "-2.75")]
     #[case::grouping("16 - (8 - (4 - 2))", "10")]
     fn arithmetic_infix_compound(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
@@ -244,7 +216,7 @@ mod tests {
     #[case::percent_plus("6 % + 4", "2")] // Evaluated as `6 % (+4)`.
     #[case::percent_minus("6 % - 4", "2")] // Evaluated as `6 % (-4)`.
     fn legal_two_arithmetic_infixes(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
@@ -285,27 +257,27 @@ mod tests {
         ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 4, 0, 5)))
     )]
     fn illegal_two_arithmetic_infixes(#[case] source: &str, #[case] error: ExecError) {
-        assert_exec_fail!(source, error);
+        assert_fail!(source, error);
     }
 
     #[rstest]
     #[case::conjunction("참 그리고 거짓", "거짓")]
     #[case::disjunction("참 또는 거짓", "참")]
     fn connective_infix(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
     #[case::two_kinds("참 그리고 거짓 또는 참", "참")]
     #[case::grouping("(참 그리고 거짓) 또는 (참 그리고 (참 그리고 참))", "참")]
     fn connective_infix_compound(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
     #[case::three_kinds("!(참 그리고 거짓)", "참")]
     fn boolean_compount(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
@@ -320,7 +292,7 @@ mod tests {
     #[case::division_assignment("a=6 a/=4", "1.5")]
     #[case::modular_assignment("a=6 a%=4", "2")]
     fn assignment_and_identifier(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
@@ -365,7 +337,7 @@ mod tests {
         ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
     )]
     fn assignment_with_wrong_type(#[case] source: &str, #[case] error: ExecError) {
-        assert_exec_fail!(source, error);
+        assert_fail!(source, error);
     }
 
     #[rstest]
@@ -374,13 +346,13 @@ mod tests {
     #[case::id_call("사과 = 함수{1} 사과()", "1")]
     #[case::curring_call("사과 = 함수 오렌지{함수 바나나{오렌지+바나나}} 사과(1)(2)", "3")]
     fn calls(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
     #[case::two_numbers("1 2", "2")] // Evaluated as the value of the last expression.
     fn multiple_expressions(#[case] source: &str, #[case] expected: String) {
-        assert_exec!(source, expected);
+        assert_out!(source, expected, "");
     }
 
     #[rstest]
