@@ -19,7 +19,6 @@ pub fn represent(val: &Value) -> String {
         ValueKind::Bool(b) => represent_bool(*b),
         ValueKind::Closure { parameters: p, .. } => represent_closure(p),
         ValueKind::BuiltinFunc(_) => BUILTIN_FUNC_REPR.to_string(),
-        ValueKind::Empty => EMPTY_REPR.to_string(),
     }
 }
 
@@ -101,16 +100,6 @@ mod tests {
                 ),
                 "함수 사과, 오렌지, 바나나 { ... }"
             );
-        }
-    }
-
-    mod programs {
-        use super::*;
-
-        /// Represents ``.
-        #[test]
-        fn test_empty() {
-            assert_repr!(&Value::new(ValueKind::Empty, RANGE_MOCKS[0]), EMPTY_REPR);
         }
     }
 }

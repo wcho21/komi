@@ -111,9 +111,9 @@ mod tests {
     #[test]
     fn empty() {
         // Represents ``.
-        assert_eval!(
+        assert_eval_fail!(
             &mkast!(prog loc 0, 0, 0, 0, vec![]),
-            Value::new(ValueKind::Empty, Range::from_nums(0, 0, 0, 0))
+            EvalError::new(EvalErrorKind::NoExpressions, Range::from_nums(0, 0, 0, 0)),
         );
     }
 

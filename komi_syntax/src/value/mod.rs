@@ -13,7 +13,6 @@ pub enum ValueKind {
         env: Environment<Value>,
     },
     BuiltinFunc(BuiltinFunc),
-    Empty,
 }
 
 /// A representation of the value produced during evaluation.
@@ -24,7 +23,6 @@ pub struct Value {
 }
 
 /// Predefined representations
-pub const EMPTY_REPR: &str = "(EMPTY)";
 pub const TRUE_REPR: &str = "참";
 pub const FALSE_REPR: &str = "거짓";
 pub const CLOSURE_REPR_KEYWORD: &str = "함수";
@@ -39,7 +37,6 @@ impl Value {
             ValueKind::Bool(b) => represent_bool(*b),
             ValueKind::Closure { parameters: p, .. } => represent_closure(p),
             ValueKind::BuiltinFunc(_) => BUILTIN_FUNC_REPR.to_string(),
-            ValueKind::Empty => EMPTY_REPR.to_string(),
         }
     }
 }
@@ -78,10 +75,5 @@ impl Value {
 
     pub fn from_bool(boolean: bool, location: Range) -> Self {
         Value::new(ValueKind::Bool(boolean), location)
-    }
-
-    // TODO: remove empty value, replace it with lex error instead
-    pub fn from_empty(location: Range) -> Self {
-        Value::new(ValueKind::Empty, location)
     }
 }
