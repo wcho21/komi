@@ -7,12 +7,12 @@ use std::fmt;
 pub enum ParseErrorKind {
     // An invalid token at the start of an expression, such as `*2` and `/3.
     InvalidExprStart,
-    // A left parenthesis `(` not closed, such as `(1+2`.
-    LParenNotClosed,
-    // No infix right operand, such as `1+`.
-    NoInfixRightOperand,
     // No prefix operand, such as `+`.
     NoPrefixOperand,
+    // No infix right operand, such as `1+`.
+    NoInfixRightOperand,
+    // A left parenthesis `(` not closed, such as `(1+2`.
+    LParenNotClosed,
     // Invalid tokens in function parameters, such as `함수 +`.
     InvalidFuncParam,
     // A function body beginning with `{` is not closed, such as `함수 {`

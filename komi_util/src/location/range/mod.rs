@@ -38,3 +38,8 @@ mod tests {
         assert_eq!(range, expected)
     }
 }
+
+#[macro_export]
+macro_rules! str_between {
+    ($left:literal, $right:literal) => {{ Range::from_nums(0, $left.chars().count() as u32, 0, $right.chars().count() as u32) }};
+}

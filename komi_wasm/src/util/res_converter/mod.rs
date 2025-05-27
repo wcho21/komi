@@ -29,7 +29,6 @@ fn convert_err_to_js_val(err: &ExecError) -> JsRes {
         ExecError::Lex(e) => unpack_err!("LexError", e),
         ExecError::Parse(e) => unpack_err!("ParseError", e),
         ExecError::Eval(e) => unpack_err!("EvalError", e),
-        _ => todo!(),
     };
 
     js_val::convert_str_and_location_to_js_val(name, &kind, location)
