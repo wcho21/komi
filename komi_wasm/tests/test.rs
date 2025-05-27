@@ -1,6 +1,6 @@
 use js_sys::{Error, JsString, Number};
-use komi_wasm::get_execution_result;
 use komi_wasm::util::js_val::get_property;
+use komi_wasm::{get_execution_result, get_execution_result_and_stdout};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_test::*;
 
@@ -9,6 +9,26 @@ macro_rules! assert_exec {
         let res = get_execution_result($src)?;
 
         assert_eq!(JsString::from(res), JsString::from($expected));
+    };
+}
+
+macro_rules! assert_exec2 {
+    ($src:expr, $expected_repr:expr, $expected_stdout:expr) => {
+        let res = get_execution_result_and_stdout($src)?;
+        let repr = get_property(&res, "representation")?;
+        let stdout = get_property(&res, "stdout")?;
+        dbg!(res);
+
+        assert_eq!(
+            JsString::from(repr),
+            JsString::from($expected_repr),
+            "expected the representation (left), but it isn't (right)"
+        );
+        assert_eq!(
+            JsString::from(stdout),
+            JsString::from($expected_stdout),
+            "expected the stdout (left), but it isn't (right)"
+        );
     };
 }
 
@@ -63,6 +83,7 @@ macro_rules! assert_error {
     };
 }
 
+#[deprecated]
 macro_rules! test_exec {
     ($name:ident, $src:expr, $expected:expr) => {
         #[wasm_bindgen_test]
@@ -73,8 +94,18 @@ macro_rules! test_exec {
     };
 }
 
+macro_rules! test_exec2 {
+    ($name:ident, $src:expr, $expected_repr:expr, $expected_stdout:expr $(,)?) => {
+        #[wasm_bindgen_test]
+        fn $name() -> Result<(), JsValue> {
+            assert_exec2!($src, $expected_repr, $expected_stdout);
+            Ok(())
+        }
+    };
+}
+
 macro_rules! test_error {
-    ($name:ident, $src:expr, $err_name:literal, $err_msg:literal, $br:expr, $bc:expr, $er:expr, $ec:expr) => {
+    ($name:ident, $src:expr, $err_name:literal, $err_msg:literal, $br:expr, $bc:expr, $er:expr, $ec:expr $(,)?) => {
         #[wasm_bindgen_test]
         fn $name() -> Result<(), JsValue> {
             assert_error!($src, $err_name, $err_msg, $br, $bc, $er, $ec);
@@ -95,10 +126,11 @@ mod tests {
         mod closure {
             use super::*;
 
-            test_exec!(
+            test_exec2!(
                 closure,
                 "함수 사과, 오렌지, 바나나 {}",
-                "함수 사과, 오렌지, 바나나 { ... }"
+                "함수 사과, 오렌지, 바나나 { ... }",
+                "",
             );
         }
 
@@ -205,6 +237,13 @@ mod tests {
                 7
             );
         }
+    }
+
+    mod stdout {
+        use super::*;
+
+        test_exec2!(write_num_without_decimal, "쓰기(1)", "1", "1");
+        test_exec2!(write_num_with_decimal, "쓰기(12.25)", "5", "12.25");
     }
 
     mod lex_errors {

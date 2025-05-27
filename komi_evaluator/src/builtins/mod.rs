@@ -1,0 +1,22 @@
+use crate::Environment;
+use komi_syntax::{Stdout, Value, ValueKind};
+use komi_util::Range;
+
+pub fn bind(env: &mut Environment) -> () {
+    env.set(
+        "쓰기",
+        &Value::new(ValueKind::BuiltinFunc(stdout_write), Range::from_nums(0, 0, 0, 0)),
+    )
+}
+
+fn stdout_write(args: &Vec<Value>, stdouts: &mut Stdout) -> Value {
+    let strs: Vec<String> = args.iter().map(|arg| arg.represent()).collect();
+    let joined = strs.join(" ");
+    let joined_len = joined.len();
+
+    dbg!(&joined, joined_len);
+
+    stdouts.push(joined);
+
+    Value::new(ValueKind::Number(joined_len as f64), Range::from_nums(0, 0, 0, 0))
+}

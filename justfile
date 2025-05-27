@@ -4,11 +4,13 @@ build:
 clean:
   ./bin/build clean
 
-test type="unit":
+test type="all":
   @if [ "{{type}}" = "unit" ]; then \
     cargo test; \
   elif [ "{{type}}" = "int" ]; then \
     ./bin/test; \
+  elif [ "{{type}}" = "all" ]; then \
+    cargo test && ./bin/test; \
   else \
     echo "Usage: just test [unit|int]"; \
   fi

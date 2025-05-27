@@ -1,7 +1,7 @@
 use super::util;
 use crate::environment::Environment;
 use crate::err::{EvalError, EvalErrorKind};
-use komi_syntax::{Ast, Value, ValueKind};
+use komi_syntax::{Ast, Stdout, Value, ValueKind};
 use komi_util::Range;
 
 type ResVal = Result<Value, EvalError>;
@@ -13,6 +13,7 @@ pub fn reduce_num<F, G>(
     right: &Box<Ast>,
     location: &Range,
     env: &mut Environment,
+    stdouts: &mut Stdout,
     reduce_infix: F,
     get_kind: G,
 ) -> ResVal
@@ -20,7 +21,16 @@ where
     F: Fn(f64, f64) -> f64,
     G: Fn(f64) -> ValueKind,
 {
-    reduce(left, right, location, env, get_num_primitive, reduce_infix, get_kind)
+    reduce(
+        left,
+        right,
+        location,
+        env,
+        stdouts,
+        get_num_primitive,
+        reduce_infix,
+        get_kind,
+    )
 }
 
 /// Reduces the operand `operand` of a boolean infix operand to a value.
@@ -30,6 +40,7 @@ pub fn reduce_bool<F, G>(
     right: &Box<Ast>,
     location: &Range,
     env: &mut Environment,
+    stdouts: &mut Stdout,
     reduce_infix: F,
     get_kind: G,
 ) -> ResVal
@@ -37,15 +48,24 @@ where
     F: Fn(bool, bool) -> bool,
     G: Fn(bool) -> ValueKind,
 {
-    reduce(left, right, location, env, get_bool_primitive, reduce_infix, get_kind)
+    reduce(
+        left,
+        right,
+        location,
+        env,
+        stdouts,
+        get_bool_primitive,
+        reduce_infix,
+        get_kind,
+    )
 }
 
-fn get_num_primitive(ast: &Box<Ast>, env: &mut Environment) -> Result<f64, EvalError> {
-    util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidNumInfixOperand, env)
+fn get_num_primitive(ast: &Box<Ast>, env: &mut Environment, stdouts: &mut Stdout) -> Result<f64, EvalError> {
+    util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidNumInfixOperand, env, stdouts)
 }
 
-fn get_bool_primitive(ast: &Box<Ast>, env: &mut Environment) -> Result<bool, EvalError> {
-    util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidBoolInfixOperand, env)
+fn get_bool_primitive(ast: &Box<Ast>, env: &mut Environment, stdouts: &mut Stdout) -> Result<bool, EvalError> {
+    util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidBoolInfixOperand, env, stdouts)
 }
 
 /// Reduces the operand `operand` of an infix to a value.
@@ -60,17 +80,18 @@ fn reduce<T, F, G, H>(
     right: &Box<Ast>,
     location: &Range,
     env: &mut Environment,
+    stdouts: &mut Stdout,
     reduce_operand: F,
     reduce_infix: G,
     get_kind: H,
 ) -> ResVal
 where
-    F: Fn(&Box<Ast>, &mut Environment) -> Result<T, EvalError>,
+    F: Fn(&Box<Ast>, &mut Environment, &mut Stdout) -> Result<T, EvalError>,
     G: Fn(T, T) -> T,
     H: Fn(T) -> ValueKind,
 {
-    let left_val = reduce_operand(left, env)?;
-    let right_val = reduce_operand(right, env)?;
+    let left_val = reduce_operand(left, env, stdouts)?;
+    let right_val = reduce_operand(right, env, stdouts)?;
     let infix_val = reduce_infix(left_val, right_val);
 
     let kind = get_kind(infix_val);

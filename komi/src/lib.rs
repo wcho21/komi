@@ -1,6 +1,7 @@
 mod err;
 
 pub use err::ExecError;
+use komi_evaluator::Evaluator;
 use komi_evaluator::eval;
 use komi_lexer::lex;
 use komi_parser::parse;
@@ -8,7 +9,20 @@ pub use komi_representer::EMPTY_REPR;
 use komi_representer::represent;
 
 pub type ExecResult = Result<String, ExecError>;
+pub type ExecOutRes = Result<ExecOut, ExecError>;
 
+pub struct ExecOut {
+    pub representation: String,
+    pub stdout: String,
+}
+
+impl ExecOut {
+    pub fn new(representation: String, stdout: String) -> Self {
+        Self { representation, stdout }
+    }
+}
+
+#[deprecated]
 pub fn execute(source: &str) -> ExecResult {
     let tokens = lex(&source)?;
     let ast = parse(&tokens)?;
@@ -18,9 +32,22 @@ pub fn execute(source: &str) -> ExecResult {
     Ok(representation)
 }
 
+pub fn execute_and_get_stdout(source: &str) -> ExecOutRes {
+    let tokens = lex(&source)?;
+    let ast = parse(&tokens)?;
+
+    let mut evaluator = Evaluator::new(&ast);
+    let value = evaluator.eval()?;
+    let representation = represent(&value);
+    let stdout = evaluator.flush();
+
+    let exec_out = ExecOut::new(representation, stdout);
+    Ok(exec_out)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{EMPTY_REPR, ExecError, execute};
+    use super::*;
     use komi_evaluator::{EvalError, EvalErrorKind};
     use komi_lexer::{LexError, LexErrorKind};
     use komi_parser::{ParseError, ParseErrorKind};
@@ -29,6 +56,7 @@ mod tests {
 
     /// Asserts a given source to be interpreted into the expected result.
     /// Helps write a test declaratively.
+    #[deprecated]
     macro_rules! assert_exec {
         ($source:expr, $expected:expr) => {
             assert_eq!(
@@ -38,6 +66,22 @@ mod tests {
                 $source,
             );
         };
+    }
+
+    /// Asserts a given source to be interpreted into the expected result with stdout.
+    /// Helps write a test declaratively.
+    macro_rules! assert_out {
+        ($source:expr, $expected_repr:expr, $expected_stdout:expr) => {{
+            let out = execute_and_get_stdout($source).unwrap();
+            let repr = out.representation;
+            let stdout = out.stdout;
+
+            assert_eq!($expected_repr, repr, "expected a value (left), but it isn't (right)",);
+            assert_eq!(
+                $expected_stdout, stdout,
+                "expected a stdout (left), but it isn't (right)",
+            );
+        }};
     }
 
     /// Asserts executing a given source will fail.
@@ -328,5 +372,12 @@ mod tests {
     #[case::two_numbers("1 2", "2")] // Evaluated as the value of the last expression.
     fn multiple_expressions(#[case] source: &str, #[case] expected: String) {
         assert_exec!(source, expected);
+    }
+
+    #[rstest]
+    #[case::num_without_decimal("쓰기(1)", "1", "1")]
+    #[case::num_without_decimal("쓰기(12.25)", "5", "12.25")]
+    fn stdout(#[case] source: &str, #[case] expected_repr: String, #[case] expected_stdout: String) {
+        assert_out!(source, expected_repr, expected_stdout);
     }
 }

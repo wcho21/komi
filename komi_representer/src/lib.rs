@@ -10,6 +10,7 @@ pub const TRUE_REPR: &str = "참";
 pub const FALSE_REPR: &str = "거짓";
 pub const CLOSURE_REPR_KEYWORD: &str = "함수";
 pub const CLOSURE_REPR_BODY: &str = "{ ... }";
+pub const BUILTIN_FUNC_REPR: &str = "(내장 함수)";
 
 /// Produces the string representation for a given value.
 pub fn represent(val: &Value) -> String {
@@ -17,6 +18,7 @@ pub fn represent(val: &Value) -> String {
         ValueKind::Number(n) => n.to_string(),
         ValueKind::Bool(b) => represent_bool(*b),
         ValueKind::Closure { parameters: p, .. } => represent_closure(p),
+        ValueKind::BuiltinFunc(_) => BUILTIN_FUNC_REPR.to_string(),
         ValueKind::Empty => EMPTY_REPR.to_string(),
     }
 }
