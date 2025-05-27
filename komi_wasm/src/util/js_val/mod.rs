@@ -1,3 +1,4 @@
+use crate::JsRes;
 use js_sys::{Error, JsString, Number, Object, Reflect};
 use komi_util::unpacker::unpack_spot;
 use komi_util::{Range, Spot};
@@ -41,23 +42,22 @@ pub fn convert_range_to_js_object(location: &Range) -> Result<Object, JsValue> {
     Ok(obj)
 }
 
-// TODO: make interface consistent: all js-values or all rust-type values
-pub fn make_js_err(name: &str, message: &str, location: &JsValue) -> Error {
-    let js_err = Error::new(message);
-
-    js_err.set_name(name);
-
-    let cause = Object::new();
-    let _ = Reflect::set(&cause, &JsString::from("location"), &location);
-    js_err.set_cause(&cause);
-
-    js_err
-}
-
-pub fn make_js_out(representation: &str, stdout: &str) -> Result<JsValue, JsValue> {
+pub fn convert_repr_and_stdout_to_js_val(repr: &str, stdout: &str) -> JsRes {
     let obj = Object::new();
-    set_string_property(&obj, "representation", representation)?;
+    set_string_property(&obj, "representation", repr)?;
     set_string_property(&obj, "stdout", stdout)?;
 
     Ok(obj.into())
+}
+
+pub fn convert_str_and_location_to_js_val(name: &str, message: &str, cause_location: &Range) -> JsRes {
+    let cause = Object::new();
+    let js_range_obj = convert_range_to_js_object(cause_location)?;
+    set_object_property(&cause, "location", &js_range_obj)?;
+
+    let js_err = Error::new(message);
+    js_err.set_name(name);
+    js_err.set_cause(&cause);
+
+    Ok(js_err.into())
 }
