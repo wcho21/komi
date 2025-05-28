@@ -13,16 +13,15 @@ pub enum ParseErrorKind {
     NoInfixRightOperand,
     // A left parenthesis `(` not closed, such as `(1+2`.
     LParenNotClosed,
-    // Invalid tokens in function parameters, such as `함수 +`.
-    InvalidFuncParam,
-    // A function body beginning with `{` is not closed, such as `함수 {`
-    FuncBodyNotClosed,
+    // Invalid tokens in closure parameters, such as `함수 +`.
+    InvalidClosureParam,
+    // A closure body beginning with `{` is not closed, such as `함수 {`
+    ClosureBodyNotClosed,
     // Invalid tokens in call arguments, such as `사과(`.
     InvalidCallArgs,
     /// An internal error impossible to occur if parsed as expected.
     Unexpected,
 }
-// TODO: rename func to closure
 
 pub type ParseError = EngineError<ParseErrorKind>;
 
@@ -33,8 +32,8 @@ impl fmt::Display for ParseErrorKind {
             ParseErrorKind::LParenNotClosed => "LParenNotClosed",
             ParseErrorKind::NoInfixRightOperand => "NoInfixRightOperand",
             ParseErrorKind::NoPrefixOperand => "NoPrefixOperand",
-            ParseErrorKind::InvalidFuncParam => "InvalidFuncParam",
-            ParseErrorKind::FuncBodyNotClosed => "FuncBodyNotClosed",
+            ParseErrorKind::InvalidClosureParam => "InvalidClosureParam",
+            ParseErrorKind::ClosureBodyNotClosed => "ClosureBodyNotClosed",
             ParseErrorKind::InvalidCallArgs => "InvalidCallArgs",
             ParseErrorKind::Unexpected => "Unexpected",
         };

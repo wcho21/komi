@@ -94,7 +94,7 @@ impl<'a> Parser<'a> {
         }
         if token.is_none() || token.unwrap().kind != TokenKind::LBrace {
             // Should be an rbrace if no identifier appears. Return an error if not.
-            return Err(ParseError::new(ParseErrorKind::InvalidFuncParam, token_location));
+            return Err(ParseError::new(ParseErrorKind::InvalidClosureParam, token_location));
         }
 
         let body = self.parse_closure_expression_body()?;
@@ -102,7 +102,7 @@ impl<'a> Parser<'a> {
         let token_location = self.scanner.locate();
         let token = self.scanner.read_and_advance();
         if token.is_none() || token.unwrap().kind != TokenKind::RBrace {
-            return Err(ParseError::new(ParseErrorKind::FuncBodyNotClosed, token_location));
+            return Err(ParseError::new(ParseErrorKind::ClosureBodyNotClosed, token_location));
         }
 
         let closure_location = Range::new(keyword_location.begin, token_location.end);
@@ -138,7 +138,7 @@ impl<'a> Parser<'a> {
             if let Some(Token { kind: TokenKind::Identifier(id), .. }) = &token {
                 parameters.push(String::from(id));
             } else {
-                return Err(ParseError::new(ParseErrorKind::InvalidFuncParam, token_location));
+                return Err(ParseError::new(ParseErrorKind::InvalidClosureParam, token_location));
             }
         }
 
@@ -2186,7 +2186,7 @@ mod tests {
                 TokenKind::Closure,
             ),
         ],
-        mkerr!(InvalidFuncParam, str_loc!("함수", ""))
+        mkerr!(InvalidClosureParam, str_loc!("함수", ""))
     )]
     #[case::invalid_parameters(
         // Represents `함수 +`.
@@ -2198,7 +2198,7 @@ mod tests {
                 TokenKind::Plus,
             ),
         ],
-        mkerr!(InvalidFuncParam, str_loc!("함수 ", "+"))
+        mkerr!(InvalidClosureParam, str_loc!("함수 ", "+"))
     )]
     #[case::empty_body_not_closed(
         // Represents `함수 {`.
@@ -2210,7 +2210,7 @@ mod tests {
                 TokenKind::LBrace,
             ),
         ],
-        mkerr!(FuncBodyNotClosed, str_loc!("함수 {", ""))
+        mkerr!(ClosureBodyNotClosed, str_loc!("함수 {", ""))
     )]
     #[case::nonempty_body_not_closed(
         // Represents `함수 { 1`.
@@ -2225,7 +2225,7 @@ mod tests {
                 TokenKind::Number(1.0),
             ),
         ],
-        mkerr!(FuncBodyNotClosed, str_loc!("함수 { 1", ""))
+        mkerr!(ClosureBodyNotClosed, str_loc!("함수 { 1", ""))
     )]
     fn invalid_closure(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
