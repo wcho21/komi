@@ -15,13 +15,6 @@ macro_rules! test_exec {
 }
 
 macro_rules! test_error {
-    ($name:ident, $src:expr, $err_name:literal, $err_msg:literal, $br:expr, $bc:expr, $er:expr, $ec:expr $(,)?) => {
-        #[wasm_bindgen_test]
-        fn $name() -> Result<(), JsValue> {
-            assert_error!($src, $err_name, $err_msg, $br, $bc, $er, $ec);
-            Ok(())
-        }
-    };
     ($name:ident, $src:expr, $err_name:literal, $err_msg:literal, loc $range:expr $(,)?) => {
         #[wasm_bindgen_test]
         fn $name() -> Result<(), JsValue> {
@@ -113,7 +106,7 @@ macro_rules! assert_error {
 #[allow(dead_code)] // Suppress warnings from #[wasm_bindgen_test] test codes.
 mod tests {
     use super::*;
-    use komi_util::{Range, str_between};
+    use komi_util::{Range, str_loc};
 
     mod success {
         use super::*;
@@ -182,7 +175,6 @@ mod tests {
                 use super::*;
 
                 test_exec!(expression, "(1.5 - 2.5) * 3 / 4 + 5 % 6", "4.25", "");
-                // Note that the expression will be parsed into `(((8 - 4) - 2) - 1)` if without grouping.
                 test_exec!(nested_grouping, "8 - (4 - (2 - 1))", "5", "");
                 test_exec!(negation_on_conjunction, "!(참 또는 참)", "거짓", "");
             }
@@ -198,7 +190,7 @@ mod tests {
             test_exec!(division_assignment, "사과=6 사과/=4 사과", "1.5", "");
             test_exec!(modular_assignment, "사과=6 사과%=4 사과", "2", "");
 
-            test_error!(mixed_type, "사과=참 사과+=1", "EvalError", "InvalidNumInfixOperand", loc str_between!("사과=참 ", "사과=참 사과"));
+            test_error!(mixed_type, "사과=참 사과+=1", "EvalError", "InvalidNumInfixOperand", loc str_loc!("사과=참 ", "사과"));
         }
 
         mod call {
@@ -223,37 +215,36 @@ mod tests {
         mod lex {
             use super::*;
 
-            test_error!(empty, "", "LexError", "NoSource", loc str_between!("", ""));
-            test_error!(only_comment, "# comment", "LexError", "NoSource", loc str_between!("", "# comment"));
-            // `^` represents an illegal char.
-            test_error!(illegal_char, "^", "LexError", "IllegalChar", loc str_between!("", "^"));
-            test_error!(arithmetic_plus, "12.", "LexError", "IllegalNumLiteral", loc str_between!("", "12."));
+            test_error!(empty, "", "LexError", "NoSource", loc str_loc!("", ""));
+            test_error!(only_comment, "# comment", "LexError", "NoSource", loc str_loc!("", "# comment"));
+            test_error!(illegal_char, "^", "LexError", "IllegalChar", loc str_loc!("", "^")); // `^` represents an illegal char.
+            test_error!(arithmetic_plus, "12.", "LexError", "IllegalNumLiteral", loc str_loc!("", "12."));
         }
 
         mod parse {
             use super::*;
 
-            test_error!(arithmetic_asterisk, "*", "ParseError", "InvalidExprStart", loc str_between!("", "*"));
-            test_error!(arithmetic_plus, "+", "ParseError", "NoPrefixOperand", loc str_between!("", "+"));
-            test_error!(no_operand, "1+", "ParseError", "NoInfixRightOperand", loc str_between!("", "1+"));
-            test_error!(paren_not_closed, "(12+3", "ParseError", "LParenNotClosed", loc str_between!("", "(12+3"));
-            test_error!(invalid_closure_param, "함수 +", "ParseError", "InvalidFuncParam", loc str_between!("함수 ", "함수 +"));
-            test_error!(closure_body_open_but_end, "함수 {", "ParseError", "FuncBodyNotClosed", loc str_between!("함수 {", "함수 {"));
-            test_error!(closure_body_not_closed, "함수 {1", "ParseError", "FuncBodyNotClosed", loc str_between!("함수 {1", "함수 {1"));
-            test_error!(invalid_call_not_closed, "함수{1}(", "ParseError", "InvalidCallArgs", loc str_between!("", "함수(1){"));
+            test_error!(arithmetic_asterisk, "*", "ParseError", "InvalidExprStart", loc str_loc!("", "*"));
+            test_error!(arithmetic_plus, "+", "ParseError", "NoPrefixOperand", loc str_loc!("", "+"));
+            test_error!(no_operand, "1+", "ParseError", "NoInfixRightOperand", loc str_loc!("", "1+"));
+            test_error!(paren_not_closed, "(12+3", "ParseError", "LParenNotClosed", loc str_loc!("", "(12+3"));
+            test_error!(invalid_closure_param, "함수 +", "ParseError", "InvalidFuncParam", loc str_loc!("함수 ", "+"));
+            test_error!(closure_body_open_but_end, "함수 {", "ParseError", "FuncBodyNotClosed", loc str_loc!("함수 {", ""));
+            test_error!(closure_body_not_closed, "함수 {1", "ParseError", "FuncBodyNotClosed", loc str_loc!("함수 {1", ""));
+            test_error!(invalid_call_not_closed, "함수{1}(", "ParseError", "InvalidCallArgs", loc str_loc!("", "함수(1){"));
         }
 
         mod eval {
             use super::*;
 
-            test_error!(call_num, "1()", "EvalError", "InvalidCallTarget", 0, 0, 0, 1);
-            test_error!(undefined_identifier, "사과", "EvalError", "UndefinedIdentifier", loc str_between!("", "사과"));
-            test_error!(invalid_assignment_left, "1=1", "EvalError", "InvalidAssignmentLeftValue", loc str_between!("", "1"));
-            test_error!(invalid_num_infix_operand, "참+1", "EvalError", "InvalidNumInfixOperand", loc str_between!("", "참"));
-            test_error!(invalid_bool_infix_operand, "1 그리고 참", "EvalError", "InvalidBoolInfixOperand", loc str_between!("", "1"));
-            test_error!(invalid_num_prefix_operand, "+참", "EvalError", "InvalidNumPrefixOperand", loc str_between!("+", "+참"));
-            test_error!(invalid_bool_prefix_operand, "!1", "EvalError", "InvalidBoolPrefixOperand", loc str_between!("!", "!1"));
-            test_error!(invalid_call_target, "1()", "EvalError", "InvalidCallTarget", loc str_between!("", "1"));
+            test_error!(call_num, "1()", "EvalError", "InvalidCallTarget", loc str_loc!("", "1"));
+            test_error!(undefined_identifier, "사과", "EvalError", "UndefinedIdentifier", loc str_loc!("", "사과"));
+            test_error!(invalid_assignment_left, "1=1", "EvalError", "InvalidAssignmentLeftValue", loc str_loc!("", "1"));
+            test_error!(invalid_num_infix_operand, "참+1", "EvalError", "InvalidNumInfixOperand", loc str_loc!("", "참"));
+            test_error!(invalid_bool_infix_operand, "1 그리고 참", "EvalError", "InvalidBoolInfixOperand", loc str_loc!("", "1"));
+            test_error!(invalid_num_prefix_operand, "+참", "EvalError", "InvalidNumPrefixOperand", loc str_loc!("+", "참"));
+            test_error!(invalid_bool_prefix_operand, "!1", "EvalError", "InvalidBoolPrefixOperand", loc str_loc!("!", "1"));
+            test_error!(invalid_call_target, "1()", "EvalError", "InvalidCallTarget", loc str_loc!("", "1"));
         }
     }
 }

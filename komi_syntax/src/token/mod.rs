@@ -119,12 +119,12 @@ impl StrSegmentKind {
     }
 }
 
-/// Makes a token with the kind and the location specified by four numbers.
+/// Makes a token with the kind and the location.
 /// Helps write a token declaratively.
 #[macro_export]
 macro_rules! mktoken {
-    ($kind:expr, loc $br:expr, $bc:expr, $er:expr, $ec:expr) => {
-        Token::new($kind, Range::from_nums($br as u32, $bc as u32, $er as u32, $ec as u32))
+    ($range:expr, $kind:expr $(,)?) => {
+        Token::new($kind, $range)
     };
 }
 
