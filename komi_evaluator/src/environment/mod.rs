@@ -11,18 +11,12 @@ mod tests {
     use komi_util::Range;
     use rstest::rstest;
 
-    mod fixtures {
-        use super::*;
-
-        pub const VALUE_MOCK: &Value = &Value::new(ValueKind::Number(1.0), Range::from_nums(0, 0, 0, 1));
-    }
-
     #[rstest]
     #[case::set_and_get_some(
         // Represents `foo = 1.0`.
-        vec![("foo", VALUE_MOCK)],
+        vec![("foo", value())],
         "foo",
-        Some(VALUE_MOCK),
+        Some(value()),
     )]
     #[case::set_and_get_none(
         // Represents no binding.
@@ -30,7 +24,7 @@ mod tests {
         "foo",
         None
     )]
-    fn single_environment(#[case] to_set: Vec<(&str, &Value)>, #[case] to_get: &str, #[case] expected: Option<&Value>) {
+    fn single_environment(#[case] to_set: Vec<(&str, Value)>, #[case] to_get: &str, #[case] expected: Option<Value>) {
         let mut env = Environment::new();
         for (k, v) in to_set {
             env.set(k, &v);
@@ -38,15 +32,15 @@ mod tests {
 
         let value = env.get(to_get);
 
-        assert_eq!(value, expected);
+        assert_eq!(value, expected.as_ref());
     }
 
     #[rstest]
     #[case::set_and_get_some(
         // Represents `foo = 1.0`.
-        vec![("foo", VALUE_MOCK)],
+        vec![("foo", value())],
         "foo",
-        Some(VALUE_MOCK),
+        Some(value()),
     )]
     #[case::set_and_get_none(
         // Represents no binding.
@@ -54,7 +48,7 @@ mod tests {
         "foo",
         None
     )]
-    fn outer_environment(#[case] to_set: Vec<(&str, &Value)>, #[case] to_get: &str, #[case] expected: Option<&Value>) {
+    fn outer_environment(#[case] to_set: Vec<(&str, Value)>, #[case] to_get: &str, #[case] expected: Option<Value>) {
         let mut outer_env = Environment::new();
         for (k, v) in to_set {
             outer_env.set(k, &v);
@@ -63,6 +57,18 @@ mod tests {
 
         let value = env.get(to_get);
 
-        assert_eq!(value, expected);
+        assert_eq!(value, expected.as_ref());
+    }
+
+    mod fixtures {
+        use super::*;
+
+        pub fn value() -> Value {
+            Value::new(ValueKind::Number(1.0), range())
+        }
+
+        pub fn range() -> Range {
+            Range::ORIGIN
+        }
     }
 }
