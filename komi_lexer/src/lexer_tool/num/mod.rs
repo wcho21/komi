@@ -30,7 +30,7 @@ pub fn lex_num(scanner: &mut SourceScanner, first_location: Range, first_char: &
         let location = Range::new(begin, scanner.locate().end);
         return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
     };
-    if !char_validator::is_digit(x) {
+    if !char_validator::is_digit_char(x) {
         let location = Range::new(begin, scanner.locate().end);
         return Err(LexError::new(LexErrorKind::IllegalNumLiteral, location));
     }
@@ -50,7 +50,7 @@ fn read_digits(scanner: &mut SourceScanner, first_char: &str) -> String {
     let mut digits = first_char.to_string();
 
     while let Some(x) = scanner.read() {
-        if !char_validator::is_digit(x) {
+        if !char_validator::is_digit_char(x) {
             break;
         }
 
