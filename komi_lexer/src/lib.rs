@@ -152,20 +152,23 @@ mod tests {
         };
     }
 
+    /// Makes a `LexError`.
+    /// The first argument is the error kind `LexErrorKind`.
+    /// The second argument is the error location `Range`.
+    macro_rules! mkerr {
+        ($kind:ident, $range:expr) => {
+            LexError::new(LexErrorKind::$kind, $range)
+        };
+    }
+
     // Should fail to lex empty sources.
     #[rstest]
-    #[case::empty("", LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 0)))]
-    #[case::whitespaces("  ", LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 2)))]
-    #[case::tabs("\t\t", LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 2)))]
-    #[case::new_lines(
-        "\n\n\r\r\r\n\r\n",
-        LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 6, 0))
-    )]
-    #[case::comment("# foo", LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 0, 5)))]
-    #[case::multi_line_comment(
-        "# foo\r\n# bar",
-        LexError::new(LexErrorKind::NoSource, Range::from_nums(0, 0, 1, 5))
-    )]
+    #[case::empty("", mkerr!(NoSource, Range::from_nums(0, 0, 0, 0)))]
+    #[case::whitespaces("  ", mkerr!(NoSource, Range::from_nums(0, 0, 0, 2)))]
+    #[case::tabs("\t\t", mkerr!(NoSource, Range::from_nums(0, 0, 0, 2)))]
+    #[case::new_lines("\n\n\r\r\r\n\r\n", mkerr!(NoSource, Range::from_nums(0, 0, 6, 0)))]
+    #[case::comment("# foo", mkerr!(NoSource, Range::from_nums(0, 0, 0, 5)))]
+    #[case::multi_line_comment("# foo\r\n# bar", mkerr!(NoSource, Range::from_nums(0, 0, 1, 5)))]
     fn empty(#[case] source: &str, #[case] error: LexError) {
         assert_lex_fail!(source, error);
     }
@@ -180,12 +183,12 @@ mod tests {
 
     // Should fail to lex illegal number literals.
     #[rstest]
-    #[case::illegal_char("12^", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 2, 0, 3)))]
-    #[case::beginning_with_dot(".25", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
-    #[case::ending_with_dot("12.", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 3)))]
-    #[case::ending_with_two_dots("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
-    #[case::ending_with_two_dots("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
-    #[case::illegal_decimal("12..", LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
+    #[case::illegal_char("12^", mkerr!(IllegalChar, Range::from_nums(0, 2, 0, 3)))]
+    #[case::beginning_with_dot(".25", mkerr!(IllegalChar, Range::from_nums(0, 0, 0, 1)))]
+    #[case::ending_with_dot("12.", mkerr!(IllegalNumLiteral, Range::from_nums(0, 0, 0, 3)))]
+    #[case::ending_with_two_dots("12..", mkerr!(IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
+    #[case::ending_with_two_dots("12..", mkerr!(IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
+    #[case::illegal_decimal("12..", mkerr!(IllegalNumLiteral, Range::from_nums(0, 0, 0, 4)))]
     fn illegal_num_literal(#[case] source: &str, #[case] error: LexError) {
         assert_lex_fail!(source, error);
     }
@@ -281,31 +284,13 @@ mod tests {
 
     // Should fail to lex illegal str literals.
     #[rstest]
-    #[case::lbrace_not_closed_with_immediate_end(
-        "\"{",
-        LexError::new(LexErrorKind::InterpolationNotClosed, Range::from_nums(0, 1, 0, 2))
-    )]
-    #[case::lbrace_not_closed_with_not_immediate_end(
-        "\"{사과",
-        LexError::new(LexErrorKind::InterpolationNotClosed, Range::from_nums(0, 1, 0, 4))
-    )]
-    #[case::rbrace_in_str("\"}", LexError::new(LexErrorKind::IllegalRBraceInStr, Range::from_nums(0, 1, 0, 2)))]
-    #[case::empty_identifier(
-        "\"{}\"",
-        LexError::new(LexErrorKind::NoInterpolatedIdentifier, Range::from_nums(0, 1, 0, 3))
-    )]
-    #[case::illegal_identifier_char_at_first(
-        "\"{+}\"",
-        LexError::new(LexErrorKind::IllegalInterpolationChar, Range::from_nums(0, 2, 0, 3))
-    )]
-    #[case::illegal_identifier_char_in_middle(
-        "\"{사+}\"",
-        LexError::new(LexErrorKind::IllegalInterpolationChar, Range::from_nums(0, 3, 0, 4))
-    )]
-    #[case::lbrace_not_closed_with_some_chars(
-        "\"{사과",
-        LexError::new(LexErrorKind::InterpolationNotClosed, Range::from_nums(0, 1, 0, 4))
-    )]
+    #[case::lbrace_not_closed_with_immediate_end("\"{", mkerr!(InterpolationNotClosed, Range::from_nums(0, 1, 0, 2)))]
+    #[case::lbrace_not_closed_with_not_immediate_end("\"{사과", mkerr!(InterpolationNotClosed, Range::from_nums(0, 1, 0, 4)))]
+    #[case::rbrace_in_str("\"}", mkerr!(IllegalRBraceInStr, Range::from_nums(0, 1, 0, 2)))]
+    #[case::empty_identifier("\"{}\"", mkerr!(NoInterpolatedIdentifier, Range::from_nums(0, 1, 0, 3)))]
+    #[case::illegal_identifier_char_at_first("\"{+}\"", mkerr!(IllegalInterpolationChar, Range::from_nums(0, 2, 0, 3)))]
+    #[case::illegal_identifier_char_in_middle("\"{사+}\"", mkerr!(IllegalInterpolationChar, Range::from_nums(0, 3, 0, 4)))]
+    #[case::lbrace_not_closed_with_some_chars("\"{사과", mkerr!(InterpolationNotClosed, Range::from_nums(0, 1, 0, 4)))]
     fn illegal_string_segment(#[case] source: &str, #[case] error: LexError) {
         assert_lex_fail!(source, error);
     }
@@ -597,8 +582,8 @@ mod tests {
 
     // Should fail to lex illegal characters.
     #[rstest]
-    #[case::caret("^", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
-    #[case::dollar("$", LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))]
+    #[case::caret("^", mkerr!(IllegalChar, Range::from_nums(0, 0, 0, 1)))]
+    #[case::dollar("$", mkerr!(IllegalChar, Range::from_nums(0, 0, 0, 1)))]
     fn illegal_char(#[case] source: &str, #[case] error: LexError) {
         assert_lex_fail!(source, error);
     }
