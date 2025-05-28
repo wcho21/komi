@@ -37,6 +37,12 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_program(&mut self) -> ResAst {
+        let expressions = self.parse_expressions()?;
+
+        self.make_program_ast(expressions)
+    }
+
+    fn parse_expressions(&mut self) -> Result<Vec<Box<Ast>>, ParseError> {
         let mut expressions: Vec<Box<Ast>> = vec![];
 
         while let Some(x) = self.scanner.read_and_advance() {
@@ -44,7 +50,7 @@ impl<'a> Parser<'a> {
             expressions.push(e);
         }
 
-        self.make_program_ast(expressions)
+        Ok(expressions)
     }
 
     fn parse_expression(&mut self, first_token: &'a Token, threshold_bp: &Bp) -> ResAst {
