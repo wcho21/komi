@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 # test-watch: wrapper script for watching files and running unit tests.
 
-cargo watch -x "test --tests --workspace --exclude komi_wasm"
+cargo watch -x "test --tests --quiet --workspace --exclude komi_wasm"
