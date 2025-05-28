@@ -146,7 +146,6 @@ dependencies = [
  "komi_evaluator",
  "komi_lexer",
  "komi_parser",
- "komi_representer",
  "komi_syntax",
  "komi_util",
  "rstest",
@@ -177,14 +176,6 @@ dependencies = [
  "komi_syntax",
  "komi_util",
  "rstest",
-]
-
-[[package]]
-name = "komi_representer"
-version = "0.0.0-local"
-dependencies = [
- "komi_syntax",
- "komi_util",
 ]
 
 [[package]]
