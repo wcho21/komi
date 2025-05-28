@@ -30,7 +30,6 @@ pub const CLOSURE_REPR_BODY: &str = "{ ... }";
 pub const BUILTIN_FUNC_REPR: &str = "(내장 함수)";
 
 impl Value {
-    // TODO: move representing logic into here (see `komi_representer`)
     pub fn represent(&self) -> String {
         match &self.kind {
             ValueKind::Number(n) => n.to_string(),
@@ -41,7 +40,6 @@ impl Value {
     }
 }
 
-// TODO: move representing logic into here (see `komi_representer`)
 fn represent_bool(boolean: bool) -> String {
     match boolean {
         true => TRUE_REPR.to_string(),
@@ -49,7 +47,6 @@ fn represent_bool(boolean: bool) -> String {
     }
 }
 
-// TODO: move representing logic into here (see `komi_representer`)
 fn represent_closure(parameters: &Vec<String>) -> String {
     let mut parts: Vec<String> = vec![];
     parts.push(String::from(CLOSURE_REPR_KEYWORD));

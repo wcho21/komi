@@ -2,41 +2,11 @@
 //!
 //! Returns *a string representation* from *a value*.
 
-use komi_syntax::{Value, ValueKind};
-
-/// Predefined representations
-pub const EMPTY_REPR: &str = "(EMPTY)";
-pub const TRUE_REPR: &str = "참";
-pub const FALSE_REPR: &str = "거짓";
-pub const CLOSURE_REPR_KEYWORD: &str = "함수";
-pub const CLOSURE_REPR_BODY: &str = "{ ... }";
-pub const BUILTIN_FUNC_REPR: &str = "(내장 함수)";
+use komi_syntax::Value;
 
 /// Produces the string representation for a given value.
 pub fn represent(val: &Value) -> String {
-    match &val.kind {
-        ValueKind::Number(n) => n.to_string(),
-        ValueKind::Bool(b) => represent_bool(*b),
-        ValueKind::Closure { parameters: p, .. } => represent_closure(p),
-        ValueKind::BuiltinFunc(_) => BUILTIN_FUNC_REPR.to_string(),
-    }
-}
-
-fn represent_bool(boolean: bool) -> String {
-    match boolean {
-        true => TRUE_REPR.to_string(),
-        false => FALSE_REPR.to_string(),
-    }
-}
-
-fn represent_closure(parameters: &Vec<String>) -> String {
-    let mut parts: Vec<String> = vec![];
-    parts.push(String::from(CLOSURE_REPR_KEYWORD));
-    parts.push(parameters.join(", "));
-    parts.push(String::from(CLOSURE_REPR_BODY));
-
-    let repr = parts.join(" ");
-    repr
+    val.represent()
 }
 
 /// Note: Use the constant `EMPTY_REPR` to test the representation of the empty value, to avoid depending on the implementation detail.
@@ -44,6 +14,7 @@ fn represent_closure(parameters: &Vec<String>) -> String {
 mod tests {
     use super::*;
     use fixtures::*;
+    use komi_syntax::ValueKind;
     use komi_util::{Environment, Range};
 
     /// Asserts a given value to be represented into the expected representation.
