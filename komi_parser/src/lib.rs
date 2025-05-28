@@ -11,7 +11,7 @@ use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
 use komi_util::{Range, Scanner};
 use token_scanner::TokenScanner;
 
-type ResAst = Result<Box<Ast>, ParseError>;
+type AstRes = Result<Box<Ast>, ParseError>;
 
 /// Produces an AST from tokens.
 struct Parser<'a> {
@@ -32,11 +32,11 @@ impl<'a> Parser<'a> {
         Self { scanner: TokenScanner::new(tokens) }
     }
 
-    pub fn parse(&mut self) -> ResAst {
+    pub fn parse(&mut self) -> AstRes {
         self.parse_program()
     }
 
-    fn parse_program(&mut self) -> ResAst {
+    fn parse_program(&mut self) -> AstRes {
         let expressions = self.parse_expressions()?;
 
         self.make_program_ast(expressions)
@@ -53,7 +53,7 @@ impl<'a> Parser<'a> {
         Ok(expressions)
     }
 
-    fn parse_expression(&mut self, first_token: &'a Token, threshold_bp: &Bp) -> ResAst {
+    fn parse_expression(&mut self, first_token: &'a Token, threshold_bp: &Bp) -> AstRes {
         let mut top = self.parse_expression_start(first_token)?;
 
         while let Some(token) = self.scanner.read() {
@@ -69,7 +69,7 @@ impl<'a> Parser<'a> {
         Ok(top)
     }
 
-    fn parse_expression_start(&mut self, first_token: &'a Token) -> ResAst {
+    fn parse_expression_start(&mut self, first_token: &'a Token) -> AstRes {
         match &first_token.kind {
             TokenKind::Number(n) => self.make_num_ast(*n, &first_token.location),
             TokenKind::Bool(b) => self.make_bool_ast(*b, &first_token.location),
@@ -88,7 +88,7 @@ impl<'a> Parser<'a> {
 
     /// Parses characters into a closure-expression AST, with the location `keyword_location` of the closure keyword.
     /// Should be called after the scanner has advanced past the closure keyword.
-    fn parse_closure_expression(&mut self, keyword_location: &'a Range) -> ResAst {
+    fn parse_closure_expression(&mut self, keyword_location: &'a Range) -> AstRes {
         let mut parameters: Vec<String> = vec![];
 
         let token_location = self.scanner.locate();
@@ -151,22 +151,22 @@ impl<'a> Parser<'a> {
         Ok(parameters)
     }
 
-    fn parse_plus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
+    fn parse_plus_prefix_expression(&mut self, prefix_location: &'a Range) -> AstRes {
         let get_kind = |operand| AstKind::PrefixPlus { operand };
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_minus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
+    fn parse_minus_prefix_expression(&mut self, prefix_location: &'a Range) -> AstRes {
         let get_kind = |operand| AstKind::PrefixMinus { operand };
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_bang_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
+    fn parse_bang_prefix_expression(&mut self, prefix_location: &'a Range) -> AstRes {
         let get_kind = |operand| AstKind::PrefixBang { operand };
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_expression_middle(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
+    fn parse_expression_middle(&mut self, left: Box<Ast>, infix: &'a Token) -> AstRes {
         // Determine the AST kind by `get_kind` and the binding power of the infix by `bp`.
         match infix.kind {
             TokenKind::Plus => read_right_and_make_infix_ast!(self, left, ADDITIVE, InfixPlus),
@@ -187,7 +187,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_grouped_expression(&mut self, first_token: &'a Token) -> ResAst {
+    fn parse_grouped_expression(&mut self, first_token: &'a Token) -> AstRes {
         let mut grouped_ast = match self.scanner.read_and_advance() {
             Some(x) => self.parse_expression(x, &Bp::LOWEST),
             None => Err(ParseError::new(ParseErrorKind::LParenNotClosed, first_token.location)),
@@ -207,7 +207,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn read_operand_and_make_prefix_ast<F>(&mut self, prefix_location: &'a Range, get_kind: F) -> ResAst
+    fn read_operand_and_make_prefix_ast<F>(&mut self, prefix_location: &'a Range, get_kind: F) -> AstRes
     where
         F: Fn(Box<Ast>) -> AstKind,
     {
@@ -225,7 +225,7 @@ impl<'a> Parser<'a> {
         Ok(prefix)
     }
 
-    fn read_right_and_make_call_ast(&mut self, left: Box<Ast>) -> ResAst {
+    fn read_right_and_make_call_ast(&mut self, left: Box<Ast>) -> AstRes {
         // Return an error if end
         let Some(token) = self.scanner.read_and_advance() else {
             let location = Range::new(left.location.begin, self.scanner.locate().end);
@@ -278,7 +278,7 @@ impl<'a> Parser<'a> {
         Ok(arguments)
     }
 
-    fn read_right_and_make_infix_ast<F>(&mut self, left: Box<Ast>, bp: &Bp, get_kind: F) -> ResAst
+    fn read_right_and_make_infix_ast<F>(&mut self, left: Box<Ast>, bp: &Bp, get_kind: F) -> AstRes
     where
         F: Fn(Box<Ast>, Box<Ast>) -> AstKind,
     {
@@ -296,29 +296,29 @@ impl<'a> Parser<'a> {
         Ok(infix)
     }
 
-    fn make_num_ast(&self, num: f64, location: &Range) -> ResAst {
+    fn make_num_ast(&self, num: f64, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(AstKind::Number(num), *location)))
     }
 
-    fn make_bool_ast(&self, boolean: bool, location: &Range) -> ResAst {
+    fn make_bool_ast(&self, boolean: bool, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(AstKind::Bool(boolean), *location)))
     }
 
-    fn make_identifier_ast(&self, identifier: &str, location: &Range) -> ResAst {
+    fn make_identifier_ast(&self, identifier: &str, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(
             AstKind::Identifier(identifier.to_owned()),
             *location,
         )))
     }
 
-    fn make_closure_ast(&self, parameters: Vec<String>, expressions: Vec<Box<Ast>>, location: &Range) -> ResAst {
+    fn make_closure_ast(&self, parameters: Vec<String>, expressions: Vec<Box<Ast>>, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(
             AstKind::Closure { parameters, body: expressions },
             *location,
         )))
     }
 
-    fn make_program_ast(&self, expressions: Vec<Box<Ast>>) -> ResAst {
+    fn make_program_ast(&self, expressions: Vec<Box<Ast>>) -> AstRes {
         let location = self.locate_expressions(&expressions);
 
         Ok(Box::new(Ast::new(AstKind::Program { expressions }, location)))
@@ -337,7 +337,7 @@ impl<'a> Parser<'a> {
 }
 
 /// Produces an AST from tokens.
-pub fn parse(tokens: &Vec<Token>) -> ResAst {
+pub fn parse(tokens: &Vec<Token>) -> AstRes {
     Parser::new(tokens).parse()
 }
 
