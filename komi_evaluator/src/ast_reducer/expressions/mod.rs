@@ -1,20 +1,15 @@
 use super::reduce_ast;
-use crate::environment::Environment;
+use crate::ValRes;
+use crate::ast_reducer::Exprs;
+use crate::environment::Environment as Env;
 use crate::err::{EvalError, EvalErrorKind};
-use komi_syntax::{Ast, Stdout, Value};
+use komi_syntax::Stdout;
 use komi_util::Range;
-
-type ResVal = Result<Value, EvalError>;
 
 /// Returns the evaluated result of the last AST in the ASTs `expressions`.
 ///
 /// Sets its location to be `expressions_location`, since it represents the entire expressions, not a single one.
-pub fn reduce(
-    expressions: &Vec<Box<Ast>>,
-    expressions_location: &Range,
-    env: &mut Environment,
-    stdouts: &mut Stdout,
-) -> ResVal {
+pub fn reduce(expressions: &Exprs, expressions_location: &Range, env: &mut Env, stdouts: &mut Stdout) -> ValRes {
     let Some(first_expression) = expressions.get(0) else {
         return Err(EvalError::new(EvalErrorKind::NoExpressions, Range::ORIGIN));
     };

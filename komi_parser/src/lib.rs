@@ -11,7 +11,13 @@ use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
 use komi_util::{Range, Scanner};
 use token_scanner::TokenScanner;
 
-type ResAst = Result<Box<Ast>, ParseError>;
+type AstRes = Result<Box<Ast>, ParseError>;
+type Args = Vec<Box<Ast>>;
+type Params = Vec<String>;
+type Exprs = Vec<Box<Ast>>;
+type ArgsRes = Result<Args, ParseError>;
+type ParamsRes = Result<Params, ParseError>;
+type ExprsRes = Result<Exprs, ParseError>;
 
 /// Produces an AST from tokens.
 struct Parser<'a> {
@@ -32,22 +38,28 @@ impl<'a> Parser<'a> {
         Self { scanner: TokenScanner::new(tokens) }
     }
 
-    pub fn parse(&mut self) -> ResAst {
+    pub fn parse(&mut self) -> AstRes {
         self.parse_program()
     }
 
-    fn parse_program(&mut self) -> ResAst {
-        let mut expressions: Vec<Box<Ast>> = vec![];
+    fn parse_program(&mut self) -> AstRes {
+        let expressions = self.parse_expressions()?;
+
+        self.make_program_ast(expressions)
+    }
+
+    fn parse_expressions(&mut self) -> ExprsRes {
+        let mut expressions: Exprs = vec![];
 
         while let Some(x) = self.scanner.read_and_advance() {
             let e = self.parse_expression(x, &Bp::LOWEST)?;
             expressions.push(e);
         }
 
-        self.make_program_ast(expressions)
+        Ok(expressions)
     }
 
-    fn parse_expression(&mut self, first_token: &'a Token, threshold_bp: &Bp) -> ResAst {
+    fn parse_expression(&mut self, first_token: &'a Token, threshold_bp: &Bp) -> AstRes {
         let mut top = self.parse_expression_start(first_token)?;
 
         while let Some(token) = self.scanner.read() {
@@ -63,7 +75,7 @@ impl<'a> Parser<'a> {
         Ok(top)
     }
 
-    fn parse_expression_start(&mut self, first_token: &'a Token) -> ResAst {
+    fn parse_expression_start(&mut self, first_token: &'a Token) -> AstRes {
         match &first_token.kind {
             TokenKind::Number(n) => self.make_num_ast(*n, &first_token.location),
             TokenKind::Bool(b) => self.make_bool_ast(*b, &first_token.location),
@@ -82,8 +94,8 @@ impl<'a> Parser<'a> {
 
     /// Parses characters into a closure-expression AST, with the location `keyword_location` of the closure keyword.
     /// Should be called after the scanner has advanced past the closure keyword.
-    fn parse_closure_expression(&mut self, keyword_location: &'a Range) -> ResAst {
-        let mut parameters: Vec<String> = vec![];
+    fn parse_closure_expression(&mut self, keyword_location: &'a Range) -> AstRes {
+        let mut parameters: Params = vec![];
 
         let token_location = self.scanner.locate();
         let mut token = self.scanner.read_and_advance();
@@ -94,7 +106,7 @@ impl<'a> Parser<'a> {
         }
         if token.is_none() || token.unwrap().kind != TokenKind::LBrace {
             // Should be an rbrace if no identifier appears. Return an error if not.
-            return Err(ParseError::new(ParseErrorKind::InvalidFuncParam, token_location));
+            return Err(ParseError::new(ParseErrorKind::InvalidClosureParam, token_location));
         }
 
         let body = self.parse_closure_expression_body()?;
@@ -102,7 +114,7 @@ impl<'a> Parser<'a> {
         let token_location = self.scanner.locate();
         let token = self.scanner.read_and_advance();
         if token.is_none() || token.unwrap().kind != TokenKind::RBrace {
-            return Err(ParseError::new(ParseErrorKind::FuncBodyNotClosed, token_location));
+            return Err(ParseError::new(ParseErrorKind::ClosureBodyNotClosed, token_location));
         }
 
         let closure_location = Range::new(keyword_location.begin, token_location.end);
@@ -111,8 +123,8 @@ impl<'a> Parser<'a> {
 
     /// Should be called after the scanner has advanced past a left brace.
     /// Stops at the end or a right brace.
-    fn parse_closure_expression_body(&mut self) -> Result<Vec<Box<Ast>>, ParseError> {
-        let mut expressions: Vec<Box<Ast>> = vec![];
+    fn parse_closure_expression_body(&mut self) -> ExprsRes {
+        let mut expressions: Exprs = vec![];
 
         while let Some(token) = self.scanner.read() {
             if token.kind == TokenKind::RBrace {
@@ -127,8 +139,8 @@ impl<'a> Parser<'a> {
         Ok(expressions)
     }
 
-    fn parse_closure_expression_parameters(&mut self) -> Result<Vec<String>, ParseError> {
-        let mut parameters: Vec<String> = vec![];
+    fn parse_closure_expression_parameters(&mut self) -> ParamsRes {
+        let mut parameters: Params = vec![];
 
         while let Some(Token { kind: TokenKind::Comma, .. }) = self.scanner.read() {
             self.scanner.advance();
@@ -138,29 +150,29 @@ impl<'a> Parser<'a> {
             if let Some(Token { kind: TokenKind::Identifier(id), .. }) = &token {
                 parameters.push(String::from(id));
             } else {
-                return Err(ParseError::new(ParseErrorKind::InvalidFuncParam, token_location));
+                return Err(ParseError::new(ParseErrorKind::InvalidClosureParam, token_location));
             }
         }
 
         Ok(parameters)
     }
 
-    fn parse_plus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
+    fn parse_plus_prefix_expression(&mut self, prefix_location: &'a Range) -> AstRes {
         let get_kind = |operand| AstKind::PrefixPlus { operand };
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_minus_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
+    fn parse_minus_prefix_expression(&mut self, prefix_location: &'a Range) -> AstRes {
         let get_kind = |operand| AstKind::PrefixMinus { operand };
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_bang_prefix_expression(&mut self, prefix_location: &'a Range) -> ResAst {
+    fn parse_bang_prefix_expression(&mut self, prefix_location: &'a Range) -> AstRes {
         let get_kind = |operand| AstKind::PrefixBang { operand };
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_expression_middle(&mut self, left: Box<Ast>, infix: &'a Token) -> ResAst {
+    fn parse_expression_middle(&mut self, left: Box<Ast>, infix: &'a Token) -> AstRes {
         // Determine the AST kind by `get_kind` and the binding power of the infix by `bp`.
         match infix.kind {
             TokenKind::Plus => read_right_and_make_infix_ast!(self, left, ADDITIVE, InfixPlus),
@@ -181,7 +193,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_grouped_expression(&mut self, first_token: &'a Token) -> ResAst {
+    fn parse_grouped_expression(&mut self, first_token: &'a Token) -> AstRes {
         let mut grouped_ast = match self.scanner.read_and_advance() {
             Some(x) => self.parse_expression(x, &Bp::LOWEST),
             None => Err(ParseError::new(ParseErrorKind::LParenNotClosed, first_token.location)),
@@ -201,7 +213,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn read_operand_and_make_prefix_ast<F>(&mut self, prefix_location: &'a Range, get_kind: F) -> ResAst
+    fn read_operand_and_make_prefix_ast<F>(&mut self, prefix_location: &'a Range, get_kind: F) -> AstRes
     where
         F: Fn(Box<Ast>) -> AstKind,
     {
@@ -219,7 +231,7 @@ impl<'a> Parser<'a> {
         Ok(prefix)
     }
 
-    fn read_right_and_make_call_ast(&mut self, left: Box<Ast>) -> ResAst {
+    fn read_right_and_make_call_ast(&mut self, left: Box<Ast>) -> AstRes {
         // Return an error if end
         let Some(token) = self.scanner.read_and_advance() else {
             let location = Range::new(left.location.begin, self.scanner.locate().end);
@@ -235,10 +247,10 @@ impl<'a> Parser<'a> {
         Ok(call)
     }
 
-    fn read_call_arguments(&mut self, first_token: &'a Token) -> Result<Vec<Box<Ast>>, ParseError> {
+    fn read_call_arguments(&mut self, first_token: &'a Token) -> ArgsRes {
         // This function will read the pattern `first_arg [, arg]*`
 
-        let mut arguments: Vec<Box<Ast>> = vec![];
+        let mut arguments: Args = vec![];
 
         if first_token.kind == TokenKind::RParen {
             return Ok(arguments);
@@ -272,7 +284,7 @@ impl<'a> Parser<'a> {
         Ok(arguments)
     }
 
-    fn read_right_and_make_infix_ast<F>(&mut self, left: Box<Ast>, bp: &Bp, get_kind: F) -> ResAst
+    fn read_right_and_make_infix_ast<F>(&mut self, left: Box<Ast>, bp: &Bp, get_kind: F) -> AstRes
     where
         F: Fn(Box<Ast>, Box<Ast>) -> AstKind,
     {
@@ -290,29 +302,29 @@ impl<'a> Parser<'a> {
         Ok(infix)
     }
 
-    fn make_num_ast(&self, num: f64, location: &Range) -> ResAst {
+    fn make_num_ast(&self, num: f64, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(AstKind::Number(num), *location)))
     }
 
-    fn make_bool_ast(&self, boolean: bool, location: &Range) -> ResAst {
+    fn make_bool_ast(&self, boolean: bool, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(AstKind::Bool(boolean), *location)))
     }
 
-    fn make_identifier_ast(&self, identifier: &str, location: &Range) -> ResAst {
+    fn make_identifier_ast(&self, identifier: &str, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(
             AstKind::Identifier(identifier.to_owned()),
             *location,
         )))
     }
 
-    fn make_closure_ast(&self, parameters: Vec<String>, expressions: Vec<Box<Ast>>, location: &Range) -> ResAst {
+    fn make_closure_ast(&self, parameters: Vec<String>, expressions: Vec<Box<Ast>>, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(
             AstKind::Closure { parameters, body: expressions },
             *location,
         )))
     }
 
-    fn make_program_ast(&self, expressions: Vec<Box<Ast>>) -> ResAst {
+    fn make_program_ast(&self, expressions: Vec<Box<Ast>>) -> AstRes {
         let location = self.locate_expressions(&expressions);
 
         Ok(Box::new(Ast::new(AstKind::Program { expressions }, location)))
@@ -331,7 +343,7 @@ impl<'a> Parser<'a> {
 }
 
 /// Produces an AST from tokens.
-pub fn parse(tokens: &Vec<Token>) -> ResAst {
+pub fn parse(tokens: &Vec<Token>) -> AstRes {
     Parser::new(tokens).parse()
 }
 
@@ -1997,7 +2009,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 {}"), vec![
             mkast!(closure loc str_loc!("", "함수 {}"),
-                param vec![],
+                params vec![],
                 body vec![],
             ),
         ])
@@ -2020,7 +2032,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 사과 {}"), vec![
             mkast!(closure loc str_loc!("", "함수 사과 {}"),
-                param vec![String::from("사과")],
+                params vec![String::from("사과")],
                 body vec![],
             ),
         ])
@@ -2055,7 +2067,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 사과, 오렌지, 바나나 {}"), vec![
             mkast!(closure loc str_loc!("", "함수 사과, 오렌지, 바나나 {}"),
-                param vec![
+                params vec![
                     String::from("사과"),
                     String::from("오렌지"),
                     String::from("바나나"),
@@ -2082,7 +2094,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 { 1 }"), vec![
             mkast!(closure loc str_loc!("", "함수 { 1 }"),
-                param vec![],
+                params vec![],
                 body vec![
                     mkast!(num 1.0, loc str_loc!("함수 { ", "1")),
                 ],
@@ -2113,7 +2125,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 { 1 2 3 }"), vec![
             mkast!(closure loc str_loc!("", "함수 { 1 2 3 }"),
-                param vec![],
+                params vec![],
                 body vec![
                     mkast!(num 1.0, loc str_loc!("함수 { ", "1")),
                     mkast!(num 2.0, loc str_loc!("함수 { 1 ", "2")),
@@ -2161,7 +2173,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"), vec![
             mkast!(closure loc str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"),
-                param vec![
+                params vec![
                     String::from("사과"),
                     String::from("오렌지"),
                     String::from("바나나"),
@@ -2186,7 +2198,7 @@ mod tests {
                 TokenKind::Closure,
             ),
         ],
-        mkerr!(InvalidFuncParam, str_loc!("함수", ""))
+        mkerr!(InvalidClosureParam, str_loc!("함수", ""))
     )]
     #[case::invalid_parameters(
         // Represents `함수 +`.
@@ -2198,7 +2210,7 @@ mod tests {
                 TokenKind::Plus,
             ),
         ],
-        mkerr!(InvalidFuncParam, str_loc!("함수 ", "+"))
+        mkerr!(InvalidClosureParam, str_loc!("함수 ", "+"))
     )]
     #[case::empty_body_not_closed(
         // Represents `함수 {`.
@@ -2210,7 +2222,7 @@ mod tests {
                 TokenKind::LBrace,
             ),
         ],
-        mkerr!(FuncBodyNotClosed, str_loc!("함수 {", ""))
+        mkerr!(ClosureBodyNotClosed, str_loc!("함수 {", ""))
     )]
     #[case::nonempty_body_not_closed(
         // Represents `함수 { 1`.
@@ -2225,7 +2237,7 @@ mod tests {
                 TokenKind::Number(1.0),
             ),
         ],
-        mkerr!(FuncBodyNotClosed, str_loc!("함수 { 1", ""))
+        mkerr!(ClosureBodyNotClosed, str_loc!("함수 { 1", ""))
     )]
     fn invalid_closure(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);

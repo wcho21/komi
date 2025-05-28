@@ -1,8 +1,14 @@
-pub fn is_digit(s: &str) -> bool {
+/// Returns true if the string is a digit char; false otherwise.
+pub fn is_digit_char(s: &str) -> bool {
     s.len() == 1 && s.chars().next().unwrap().is_ascii_digit()
 }
 
-pub fn is_whitespace(s: &str) -> bool {
+/// Returns true if the string is a whitespace char; false otherwise.
+///
+/// Specifically, the whitespace includes:
+/// - ASCII whitespace, including newlines.
+/// - CRLF (`"\r\n"`).
+pub fn is_whitespace_char(s: &str) -> bool {
     (s.len() == 1 && s.chars().next().unwrap().is_ascii_whitespace()) || (s == "\r\n")
 }
 
@@ -18,7 +24,7 @@ pub fn is_in_identifier_domain(s: &str) -> bool {
     if ascii {
         return true;
     }
-    let hangul = s.len() == 3 && is_hangul_identifier_domain(s.chars().next().unwrap());
+    let hangul = s.len() == 3 && is_in_hangul_identifier_domain(s.chars().next().unwrap());
     if hangul {
         return true;
     }
@@ -27,7 +33,7 @@ pub fn is_in_identifier_domain(s: &str) -> bool {
 }
 
 /// Returns true if the given character is within the Unicode range for Hangul (from `U+AC00` to `U+D7AC`); false otherwise.
-fn is_hangul_identifier_domain(c: char) -> bool {
+fn is_in_hangul_identifier_domain(c: char) -> bool {
     let u = u32::from(c);
     0xAC00 <= u && u <= 0xD7A3
 }
@@ -42,7 +48,7 @@ mod tests {
     #[case::two_digits("12", false)]
     #[case::non_digit("x", false)]
     fn test_is_digit(#[case] s: &str, #[case] expected: bool) {
-        assert_eq!(is_digit(s), expected);
+        assert_eq!(is_digit_char(s), expected);
     }
 
     #[rstest]
@@ -56,7 +62,7 @@ mod tests {
     #[case::lflf("\n\n", false)]
     #[case::crlfcrlf("\r\n\r\n", false)]
     fn test_is_whitespace(#[case] s: &str, #[case] expected: bool) {
-        assert_eq!(is_whitespace(s), expected);
+        assert_eq!(is_whitespace_char(s), expected);
     }
 
     #[rstest]
@@ -87,6 +93,6 @@ mod tests {
     #[case::below_hangul_boundary(char::from_u32(0xD7A4).unwrap(), false)]
     #[case::above_hangul_boundary(char::from_u32(0xD7A4).unwrap(), false)]
     fn test_is_hangul_identifier_domain(#[case] c: char, #[case] expected: bool) {
-        assert_eq!(is_hangul_identifier_domain(c), expected);
+        assert_eq!(is_in_hangul_identifier_domain(c), expected);
     }
 }

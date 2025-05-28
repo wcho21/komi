@@ -1,8 +1,8 @@
-use crate::Environment;
+use crate::Environment as Env;
 use komi_syntax::{Stdout, Value, ValueKind};
 use komi_util::Range;
 
-pub fn bind(env: &mut Environment) -> () {
+pub fn bind(env: &mut Env) -> () {
     env.set("쓰기", &Value::new(ValueKind::BuiltinFunc(stdout_write), Range::ORIGIN))
 }
 

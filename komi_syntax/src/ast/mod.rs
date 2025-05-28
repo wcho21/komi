@@ -81,14 +81,13 @@ macro_rules! mkast {
     (identifier $name:expr, loc $range:expr) => {
         Box::new(Ast::new(AstKind::Identifier(String::from($name)), $range))
     };
-    // TODO: fix param to params
-    (closure loc $br:expr, $bc:expr, $er:expr, $ec: expr, param $param:expr, body $body:expr $(,)?) => {
+    (closure loc $br:expr, $bc:expr, $er:expr, $ec: expr, params $param:expr, body $body:expr $(,)?) => {
         Box::new(Ast::new(
             AstKind::Closure { parameters: $param, body: $body },
             Range::from_nums($br, $bc, $er, $ec),
         ))
     };
-    (closure loc $range:expr, param $param:expr, body $body:expr $(,)?) => {
+    (closure loc $range:expr, params $param:expr, body $body:expr $(,)?) => {
         Box::new(Ast::new(AstKind::Closure { parameters: $param, body: $body }, $range))
     };
     (call loc $br:expr, $bc:expr, $er:expr, $ec: expr, target $target:expr, args $args:expr $(,)?) => {

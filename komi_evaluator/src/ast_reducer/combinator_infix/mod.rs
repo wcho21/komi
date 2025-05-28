@@ -5,22 +5,14 @@
 mod combinator_infix_reducer;
 
 use super::util;
-use crate::environment::Environment;
-use crate::err::EvalError;
+use crate::ValRes;
+use crate::environment::Environment as Env;
 use combinator_infix_reducer as reducer;
-use komi_syntax::{Ast, Stdout, Value, ValueKind};
+use komi_syntax::{Ast, Stdout, ValueKind};
 use komi_util::Range;
 
-type ResVal = Result<Value, EvalError>;
-
 /// Reduces the operands `left` and `right` of a plus infix to a value.
-pub fn reduce_plus(
-    left: &Box<Ast>,
-    right: &Box<Ast>,
-    location: &Range,
-    env: &mut Environment,
-    stdouts: &mut Stdout,
-) -> ResVal {
+pub fn reduce_plus(left: &Box<Ast>, right: &Box<Ast>, location: &Range, env: &mut Env, stdouts: &mut Stdout) -> ValRes {
     reducer::reduce_num(
         left,
         right,
@@ -37,9 +29,9 @@ pub fn reduce_minus(
     left: &Box<Ast>,
     right: &Box<Ast>,
     location: &Range,
-    env: &mut Environment,
+    env: &mut Env,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     reducer::reduce_num(
         left,
         right,
@@ -56,9 +48,9 @@ pub fn reduce_asterisk(
     left: &Box<Ast>,
     right: &Box<Ast>,
     location: &Range,
-    env: &mut Environment,
+    env: &mut Env,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     reducer::reduce_num(
         left,
         right,
@@ -75,9 +67,9 @@ pub fn reduce_slash(
     left: &Box<Ast>,
     right: &Box<Ast>,
     location: &Range,
-    env: &mut Environment,
+    env: &mut Env,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     reducer::reduce_num(
         left,
         right,
@@ -94,9 +86,9 @@ pub fn reduce_percent(
     left: &Box<Ast>,
     right: &Box<Ast>,
     location: &Range,
-    env: &mut Environment,
+    env: &mut Env,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     reducer::reduce_num(
         left,
         right,
@@ -113,9 +105,9 @@ pub fn reduce_conjunct(
     left: &Box<Ast>,
     right: &Box<Ast>,
     location: &Range,
-    env: &mut Environment,
+    env: &mut Env,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     reducer::reduce_bool(
         left,
         right,
@@ -132,9 +124,9 @@ pub fn reduce_disjunct(
     left: &Box<Ast>,
     right: &Box<Ast>,
     location: &Range,
-    env: &mut Environment,
+    env: &mut Env,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     reducer::reduce_bool(
         left,
         right,

@@ -1,12 +1,12 @@
-use crate::environment::Environment;
+use crate::ValRes;
+use crate::ast_reducer::{Exprs, Params};
+use crate::environment::Environment as Env;
 use crate::err::{EvalError, EvalErrorKind};
-use komi_syntax::{Ast, Value, ValueKind};
+use komi_syntax::{Value, ValueKind};
 use komi_util::Range;
 
-type ResVal = Result<Value, EvalError>;
-
 /// Returns the evaluated result, from name `name` and its location `location`.
-pub fn evaluate_identifier(name: &String, location: &Range, env: &Environment) -> ResVal {
+pub fn evaluate_identifier(name: &String, location: &Range, env: &Env) -> ValRes {
     let Some(x) = env.get(name) else {
         return Err(EvalError::new(EvalErrorKind::UndefinedIdentifier, *location));
     };
@@ -27,21 +27,16 @@ pub fn evaluate_identifier(name: &String, location: &Range, env: &Environment) -
 }
 
 /// Returns the evaluated numeric result, from number `num` and its location `location`.
-pub fn evaluate_num(num: f64, location: &Range) -> ResVal {
+pub fn evaluate_num(num: f64, location: &Range) -> ValRes {
     Ok(Value::new(ValueKind::Number(num), *location))
 }
 
 /// Returns the evaluated boolean result, from boolean `boolean` and its location `location`.
-pub fn evaluate_bool(boolean: bool, location: &Range) -> ResVal {
+pub fn evaluate_bool(boolean: bool, location: &Range) -> ValRes {
     Ok(Value::new(ValueKind::Bool(boolean), *location))
 }
 
-pub fn evaluate_closure(
-    parameters: &Vec<String>,
-    body: &Vec<Box<Ast>>,
-    location: &Range,
-    env: &mut Environment,
-) -> ResVal {
+pub fn evaluate_closure(parameters: &Params, body: &Exprs, location: &Range, env: &mut Env) -> ValRes {
     Ok(Value::new(
         ValueKind::Closure {
             parameters: parameters.clone(),
@@ -62,7 +57,7 @@ mod tests {
     #[case::root_env(root_env(), id_name(), ID_VALUE, ID_RANGE)]
     #[case::inner_env(inner_env(), id_name(), ID_VALUE, ID_RANGE)]
     fn identifier_evaluated(
-        #[case] env: Environment,
+        #[case] env: Env,
         #[case] id_name: String,
         #[case] id_value: Value,
         #[case] location: Range,
@@ -75,7 +70,7 @@ mod tests {
     #[rstest]
     #[case::root_env(root_env(), undefined_id_name(), ID_RANGE)]
     #[case::inner_env(inner_env(), undefined_id_name(), ID_RANGE)]
-    fn identifier_undefined(#[case] env: Environment, #[case] id_name: String, #[case] location: Range) {
+    fn identifier_undefined(#[case] env: Env, #[case] id_name: String, #[case] location: Range) {
         let evaluated = evaluate_identifier(&id_name, &location, &env);
 
         assert_eq!(
@@ -101,19 +96,19 @@ mod tests {
         }
 
         /// Simulates a root scope, whose environment has no outer environment any more.
-        pub fn root_env() -> Environment {
-            let mut env = Environment::new();
+        pub fn root_env() -> Env {
+            let mut env = Env::new();
             env.set(&id_name(), &ID_VALUE);
 
             env
         }
 
         /// Simulates an inner scope, whose environment has an outer environment.
-        pub fn inner_env() -> Environment {
-            let mut outer_env = Environment::new();
+        pub fn inner_env() -> Env {
+            let mut outer_env = Env::new();
             outer_env.set(&id_name(), &ID_VALUE);
 
-            let env = Environment::from_outer(outer_env);
+            let env = Env::from_outer(outer_env);
             env
         }
     }

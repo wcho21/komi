@@ -14,7 +14,8 @@ use ast_reducer::reduce_ast;
 pub use err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, Stdout, Value};
 
-type ResVal = Result<Value, EvalError>;
+pub type ValRes = Result<Value, EvalError>;
+pub type ValsRes = Result<Vec<Value>, EvalError>;
 
 /// Produces a value from an AST.
 pub struct Evaluator<'a> {
@@ -27,7 +28,7 @@ impl<'a> Evaluator<'a> {
         Self { ast, stdouts: vec![] }
     }
 
-    pub fn eval(&mut self) -> ResVal {
+    pub fn eval(&mut self) -> ValRes {
         let mut env = Environment::new();
 
         builtins::bind(&mut env);
@@ -46,7 +47,7 @@ impl<'a> Evaluator<'a> {
 
 /// Produces a value from an AST.
 #[deprecated]
-pub fn eval(ast: &Box<Ast>) -> ResVal {
+pub fn eval(ast: &Box<Ast>) -> ValRes {
     Evaluator::new(ast).eval()
 }
 
