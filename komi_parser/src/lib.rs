@@ -5,6 +5,7 @@
 
 mod err;
 mod token_scanner;
+mod util;
 
 pub use err::{ParseError, ParseErrorKind};
 use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
@@ -317,28 +318,17 @@ impl<'a> Parser<'a> {
         )))
     }
 
-    fn make_closure_ast(&self, parameters: Vec<String>, expressions: Vec<Box<Ast>>, location: &Range) -> AstRes {
+    fn make_closure_ast(&self, parameters: Params, expressions: Exprs, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(
             AstKind::Closure { parameters, body: expressions },
             *location,
         )))
     }
 
-    fn make_program_ast(&self, expressions: Vec<Box<Ast>>) -> AstRes {
-        let location = self.locate_expressions(&expressions);
+    fn make_program_ast(&self, expressions: Exprs) -> AstRes {
+        let location = util::locate_expressions(&expressions);
 
         Ok(Box::new(Ast::new(AstKind::Program { expressions }, location)))
-    }
-
-    fn locate_expressions(&self, expressions: &Vec<Box<Ast>>) -> Range {
-        if expressions.len() == 0 {
-            return Range::ORIGIN;
-        }
-
-        Range {
-            begin: expressions[0].location.begin,
-            end: expressions[expressions.len() - 1].location.end,
-        }
     }
 }
 

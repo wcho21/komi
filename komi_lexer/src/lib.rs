@@ -11,7 +11,7 @@ mod utf8_tape;
 pub use err::{LexError, LexErrorKind};
 use komi_syntax::{Token, TokenKind as Kind};
 use komi_util::{Range, Scanner, Spot, char_validator};
-use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, lex_str};
+use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, lex_str, skip_comment};
 use source_scanner::SourceScanner;
 
 type Tokens = Vec<Token>;
@@ -69,7 +69,7 @@ impl<'a> Lexer<'a> {
                 "=" => expect_or(&mut self.scanner, "=", Kind::DoubleEquals, Kind::Equals, location)?,
                 "\"" => lex_str(&mut self.scanner, location)?,
                 "#" => {
-                    self.skip_comment();
+                    lexer_tool::skip_comment(&mut self.scanner);
                     continue;
                 }
                 s if char_validator::is_digit_char(s) => lexer_tool::lex_num(&mut self.scanner, location, char)?,
@@ -88,20 +88,6 @@ impl<'a> Lexer<'a> {
         }
 
         Ok(tokens)
-    }
-
-    /// Skips characters until newline characters encountered.
-    ///
-    /// Call this after advance the scanner past the beginning comment character `#`.
-    /// The scanner stops at the first character immediately after the newline.
-    fn skip_comment(&mut self) -> () {
-        while let Some(x) = self.scanner.read() {
-            self.scanner.advance();
-
-            if let "\n" | "\r" | "\r\n" = x {
-                break;
-            }
-        }
     }
 
     fn post_validate(&self, tokens: &Tokens) -> Result<(), LexError> {
