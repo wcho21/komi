@@ -1,6 +1,6 @@
 use crate::JsRes;
 use crate::util::js_val;
-use komi::{ExecError, ExecOut, ExecOutRes};
+use komi::{ExecError, ExecOut, ExecRes};
 use komi_util::unpacker::unpack_engine_error;
 
 macro_rules! unpack_err {
@@ -10,7 +10,7 @@ macro_rules! unpack_err {
     }};
 }
 
-pub fn convert(exec_out: &ExecOutRes) -> JsRes {
+pub fn convert(exec_out: &ExecRes) -> JsRes {
     match exec_out {
         Ok(out) => Ok(convert_out_to_js_val(out)?),
         Err(e) => Err(convert_err_to_js_val(&e)?),

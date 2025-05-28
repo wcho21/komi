@@ -7,7 +7,7 @@ use komi_parser::parse;
 pub use komi_representer::EMPTY_REPR;
 use komi_representer::represent;
 
-pub type ExecOutRes = Result<ExecOut, ExecError>;
+pub type ExecRes = Result<ExecOut, ExecError>;
 
 #[derive(Debug)]
 pub struct ExecOut {
@@ -21,7 +21,7 @@ impl ExecOut {
     }
 }
 
-pub fn execute(source: &str) -> ExecOutRes {
+pub fn execute(source: &str) -> ExecRes {
     let tokens = lex(&source)?;
     let ast = parse(&tokens)?;
 
