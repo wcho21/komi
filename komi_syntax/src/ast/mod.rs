@@ -121,16 +121,21 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let ast = Ast::new(AST_KIND_MOCK, RANGE_MOCK);
+        let ast = Ast::new(ast_kind(), range());
 
-        let expected = Ast { kind: AST_KIND_MOCK, location: RANGE_MOCK };
+        let expected = Ast { kind: ast_kind(), location: range() };
         assert_eq!(ast, expected);
     }
 
     mod fixtures {
         use super::*;
 
-        pub const RANGE_MOCK: Range = Range::from_nums(1, 2, 3, 4);
-        pub const AST_KIND_MOCK: AstKind = AstKind::Number(1.0);
+        pub fn range() -> Range {
+            Range::from_nums(0, 0, 1, 1)
+        }
+
+        pub fn ast_kind() -> AstKind {
+            AstKind::Number(1.0)
+        }
     }
 }

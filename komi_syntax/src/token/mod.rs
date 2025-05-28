@@ -132,16 +132,15 @@ macro_rules! mktoken {
 mod tests {
     use super::*;
     use fixtures::*;
-    use komi_util::Spot;
 
     mod token {
         use super::*;
 
         #[test]
         fn new() {
-            let token = Token::new(TokenKind::Number(1.0), RANGE_MOCK);
+            let token = Token::new(TokenKind::Number(1.0), range());
 
-            assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: RANGE_MOCK })
+            assert_eq!(token, Token { kind: TokenKind::Number(1.0), location: range() })
         }
     }
 
@@ -150,13 +149,13 @@ mod tests {
 
         #[test]
         fn new() {
-            let seg = StrSegment::new(StrSegmentKind::Str(String::from("사과")), RANGE_MOCK);
+            let seg = StrSegment::new(StrSegmentKind::Str(String::from("사과")), range());
 
             assert_eq!(
                 seg,
                 StrSegment {
                     kind: StrSegmentKind::Str(String::from("사과")),
-                    location: RANGE_MOCK
+                    location: range()
                 }
             )
         }
@@ -169,20 +168,22 @@ mod tests {
         fn str() {
             let kind = StrSegmentKind::str("사과");
 
-            assert_eq!(kind, StrSegmentKind::Str(String::from("사과")),)
+            assert_eq!(kind, StrSegmentKind::Str(String::from("사과")))
         }
 
         #[test]
         fn identifier() {
             let kind = StrSegmentKind::identifier("사과");
 
-            assert_eq!(kind, StrSegmentKind::Identifier(String::from("사과")),)
+            assert_eq!(kind, StrSegmentKind::Identifier(String::from("사과")))
         }
     }
 
     mod fixtures {
         use super::*;
 
-        pub const RANGE_MOCK: Range = Range::new(Spot::new(1, 2), Spot::new(3, 4));
+        pub fn range() -> Range {
+            Range::from_nums(0, 0, 1, 1)
+        }
     }
 }

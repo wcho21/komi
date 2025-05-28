@@ -43,9 +43,8 @@ fn represent_closure(parameters: &Vec<String>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fixtures::*;
     use komi_util::{Environment, Range};
-
-    const RANGE_MOCKS: &[Range] = &[Range::from_nums(0, 0, 0, 1), Range::from_nums(0, 1, 0, 2)];
 
     /// Asserts a given value to be represented into the expected representation.
     /// Helps write a test more declaratively.
@@ -65,25 +64,25 @@ mod tests {
         /// Represents `12.25`.
         #[test]
         fn test_positive_num() {
-            assert_repr!(&Value::new(ValueKind::Number(12.25), RANGE_MOCKS[0]), "12.25");
+            assert_repr!(&Value::new(ValueKind::Number(12.25), range()), "12.25");
         }
 
         /// Represents `-12.25`.
         #[test]
         fn test_negative_num() {
-            assert_repr!(&Value::new(ValueKind::Number(-12.25), RANGE_MOCKS[0]), "-12.25");
+            assert_repr!(&Value::new(ValueKind::Number(-12.25), range()), "-12.25");
         }
 
         /// Represents `참`.
         #[test]
         fn test_true_bool() {
-            assert_repr!(&Value::new(ValueKind::Bool(true), RANGE_MOCKS[0]), "참");
+            assert_repr!(&Value::new(ValueKind::Bool(true), range()), "참");
         }
 
         /// Represents `거짓`.
         #[test]
         fn test_false_bool() {
-            assert_repr!(&Value::new(ValueKind::Bool(false), RANGE_MOCKS[0]), "거짓");
+            assert_repr!(&Value::new(ValueKind::Bool(false), range()), "거짓");
         }
 
         /// Represents `함수 사과, 오렌지, 바나나 {}`.
@@ -96,10 +95,18 @@ mod tests {
                         body: vec![],
                         env: Environment::<Value>::new(),
                     },
-                    RANGE_MOCKS[0]
+                    range()
                 ),
                 "함수 사과, 오렌지, 바나나 { ... }"
             );
+        }
+    }
+
+    mod fixtures {
+        use super::*;
+
+        pub fn range() -> Range {
+            Range::from_nums(0, 0, 1, 1)
         }
     }
 }
