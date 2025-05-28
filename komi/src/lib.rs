@@ -7,7 +7,6 @@ use komi_parser::parse;
 pub use komi_representer::EMPTY_REPR;
 use komi_representer::represent;
 
-pub type ExecResult = Result<String, ExecError>;
 pub type ExecOutRes = Result<ExecOut, ExecError>;
 
 #[derive(Debug)]
