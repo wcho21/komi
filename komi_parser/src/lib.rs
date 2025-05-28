@@ -365,6 +365,15 @@ mod tests {
         };
     }
 
+    /// Makes a `ParseError`.
+    /// The first argument is the error kind `ParseErrorKind`.
+    /// The second argument is the error location `Range`.
+    macro_rules! mkerr {
+        ($kind:ident, $range:expr) => {
+            ParseError::new(ParseErrorKind::$kind, $range)
+        };
+    }
+
     #[test]
     fn empty() {
         // Represents ``.
@@ -683,7 +692,7 @@ mod tests {
             mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1),
             mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::slash_without_left(
         // Represents `/1`.
@@ -691,7 +700,7 @@ mod tests {
             mktoken!(TokenKind::Slash, loc 0, 0, 0, 1),
             mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::percent_without_left(
         // Represents `%1`.
@@ -699,7 +708,7 @@ mod tests {
             mktoken!(TokenKind::Percent, loc 0, 0, 0, 1),
             mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::conjunct_without_left(
         // Represents `그리고 참`.
@@ -707,7 +716,7 @@ mod tests {
             mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3),
             mktoken!(TokenKind::Bool(true), loc 0, 4, 0, 5),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 3))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 3))
     )]
     #[case::disjunct_without_left(
         // Represents `또는 참`.
@@ -715,7 +724,7 @@ mod tests {
             mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 2),
             mktoken!(TokenKind::Bool(true), loc 0, 3, 0, 4),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::equals_without_left(
         // Represents `=1`.
@@ -723,7 +732,7 @@ mod tests {
             mktoken!(TokenKind::Equals, loc 0, 0, 0, 1),
             mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::plus_equals_without_left(
         // Represents `+=1`.
@@ -731,7 +740,7 @@ mod tests {
             mktoken!(TokenKind::PlusEquals, loc 0, 0, 0, 2),
             mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::minus_equals_without_left(
         // Represents `-=1`.
@@ -739,7 +748,7 @@ mod tests {
             mktoken!(TokenKind::MinusEquals, loc 0, 0, 0, 2),
             mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::asterisk_equals_without_left(
         // Represents `*=1`.
@@ -747,7 +756,7 @@ mod tests {
             mktoken!(TokenKind::AsteriskEquals, loc 0, 0, 0, 2),
             mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::slash_equals_without_left(
         // Represents `/=1`.
@@ -755,7 +764,7 @@ mod tests {
             mktoken!(TokenKind::SlashEquals, loc 0, 0, 0, 2),
             mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::percent_equals_without_left(
         // Represents `%=1`.
@@ -763,7 +772,7 @@ mod tests {
             mktoken!(TokenKind::PercentEquals, loc 0, 0, 0, 2),
             mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     fn infix_no_left_operand(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -776,7 +785,7 @@ mod tests {
             mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
             mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::minus_without_right(
         // Represents `1-`.
@@ -784,7 +793,7 @@ mod tests {
             mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
             mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::asterisk_without_right(
         // Represents `1*`.
@@ -792,7 +801,7 @@ mod tests {
             mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
             mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::slash_without_right(
         // Represents `1/`.
@@ -800,7 +809,7 @@ mod tests {
             mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
             mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::percent_without_right(
         // Represents `1%`.
@@ -808,7 +817,7 @@ mod tests {
             mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
             mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::conjunct_without_right(
         // Represents `참 그리고`.
@@ -816,7 +825,7 @@ mod tests {
             mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
             mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 5))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 5))
     )]
     #[case::disjunct_without_right(
         // Represents `참 또는`.
@@ -824,7 +833,7 @@ mod tests {
             mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
             mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 4))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 4))
     )]
     #[case::equals_without_right(
         // Represents `a=`.
@@ -832,7 +841,7 @@ mod tests {
             mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
             mktoken!(TokenKind::Equals, loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::plus_equals_without_right(
         // Represents `a+=`.
@@ -840,7 +849,7 @@ mod tests {
             mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
             mktoken!(TokenKind::PlusEquals, loc 0, 1, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::minus_equals_without_right(
         // Represents `a-=`.
@@ -848,7 +857,7 @@ mod tests {
             mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
             mktoken!(TokenKind::MinusEquals, loc 0, 2, 0, 3),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
     )]
     #[case::asterisk_equals_without_right(
         // Represents `a*=`.
@@ -856,7 +865,7 @@ mod tests {
             mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
             mktoken!(TokenKind::AsteriskEquals, loc 0, 2, 0, 3),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
     )]
     #[case::slash_equals_without_right(
         // Represents `a/=`.
@@ -864,7 +873,7 @@ mod tests {
             mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
             mktoken!(TokenKind::SlashEquals, loc 0, 2, 0, 3),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
     )]
     #[case::percent_equals_without_right(
         // Represents `a%=`.
@@ -872,7 +881,7 @@ mod tests {
             mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
             mktoken!(TokenKind::PercentEquals, loc 0, 2, 0, 3),
         ],
-        ParseError::new(ParseErrorKind::NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
     )]
     fn infix_no_right_operand(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -882,72 +891,72 @@ mod tests {
     #[case::plus(
         // Represents `+`.
         vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)],
-        ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
+        mkerr!(NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::minus(
         // Represents `-`.
         vec![mktoken!(TokenKind::Minus, loc 0, 0, 0, 1)],
-        ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
+        mkerr!(NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::asterisk(
         // Represents `*`.
         vec![mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::slash(
         // Represents `/`.
         vec![mktoken!(TokenKind::Slash, loc 0, 0, 0, 1)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::percent(
         // Represents `%`.
         vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::bang(
         // Represents `!`.
         vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)],
-        ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
+        mkerr!(NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::conjunct(
         // Represents `그리고`.
         vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 3))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 3))
     )]
     #[case::disjunct(
         // Represents `또는`.
         vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::equals(
         // Represents `=`.
         vec![mktoken!(TokenKind::Equals, loc 0, 0, 0, 1)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::plus_equals(
         // Represents `+=`.
         vec![mktoken!(TokenKind::PlusEquals, loc 0, 0, 0, 2)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::minus_equals(
         // Represents `-=`.
         vec![mktoken!(TokenKind::MinusEquals, loc 0, 0, 0, 2)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::asterisk_equals(
         // Represents `*=`.
         vec![mktoken!(TokenKind::AsteriskEquals, loc 0, 0, 0, 2)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::slash_equals(
         // Represents `/=`.
         vec![mktoken!(TokenKind::SlashEquals, loc 0, 0, 0, 2)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     #[case::percent_equals(
         // Represents `%=`.
         vec![mktoken!(TokenKind::PercentEquals, loc 0, 0, 0, 2)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
     )]
     fn single_token(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -957,12 +966,12 @@ mod tests {
     #[case::lparen(
         // Represents `(`.
         vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)],
-        ParseError::new(ParseErrorKind::LParenNotClosed, Range::from_nums(0, 0, 0, 1))
+        mkerr!(LParenNotClosed, Range::from_nums(0, 0, 0, 1))
     )]
     #[case::rparen(
         // Represents `)`.
         vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
     )]
     fn parenthesis(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -1418,7 +1427,7 @@ mod tests {
             mktoken!(TokenKind::Plus, loc 0, 2, 0, 3),
             mktoken!(TokenKind::Number(2.0), loc 0, 3, 0, 4),
         ],
-        ParseError::new(ParseErrorKind::LParenNotClosed, Range::from_nums(0, 0, 0, 4))
+        mkerr!(LParenNotClosed, Range::from_nums(0, 0, 0, 4))
     )]
     #[case::lparen_not_closed_and_something(
         // Represents `(1+2 3`.
@@ -1429,7 +1438,7 @@ mod tests {
             mktoken!(TokenKind::Number(2.0), loc 0, 3, 0, 4),
             mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
         ],
-        ParseError::new(ParseErrorKind::LParenNotClosed, Range::from_nums(0, 0, 0, 5))
+        mkerr!(LParenNotClosed, Range::from_nums(0, 0, 0, 5))
     )]
     fn unmatched_parenthesis(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -1560,7 +1569,7 @@ mod tests {
         vec![
             mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
         ],
-        ParseError::new(ParseErrorKind::InvalidFuncParam, Range::from_nums(0, 2, 0, 2))
+        mkerr!(InvalidFuncParam, Range::from_nums(0, 2, 0, 2))
     )]
     #[case::invalid_parameters(
         // Represents `함수 +`.
@@ -1568,7 +1577,7 @@ mod tests {
             mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
             mktoken!(TokenKind::Plus, loc 0, 3, 0, 4),
         ],
-        ParseError::new(ParseErrorKind::InvalidFuncParam, Range::from_nums(0, 3, 0, 4))
+        mkerr!(InvalidFuncParam, Range::from_nums(0, 3, 0, 4))
     )]
     #[case::empty_body_not_closed(
         // Represents `함수 {`.
@@ -1576,7 +1585,7 @@ mod tests {
             mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
             mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
         ],
-        ParseError::new(ParseErrorKind::FuncBodyNotClosed, Range::from_nums(0, 4, 0, 4))
+        mkerr!(FuncBodyNotClosed, Range::from_nums(0, 4, 0, 4))
     )]
     #[case::nonempty_body_not_closed(
         // Represents `함수 { 1`.
@@ -1585,7 +1594,7 @@ mod tests {
             mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
             mktoken!(TokenKind::Number(1.0), loc 0, 5, 0, 6),
         ],
-        ParseError::new(ParseErrorKind::FuncBodyNotClosed, Range::from_nums(0, 6, 0, 6))
+        mkerr!(FuncBodyNotClosed, Range::from_nums(0, 6, 0, 6))
     )]
     fn invalid_closure(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -1657,7 +1666,7 @@ mod tests {
             mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
             mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
         ],
-        ParseError::new(ParseErrorKind::InvalidCallArgs, Range::from_nums(0, 0, 0, 3))
+        mkerr!(InvalidCallArgs, Range::from_nums(0, 0, 0, 3))
     )]
     #[case::comma_after_lparen(
         // Represents `사과(,`.
@@ -1666,7 +1675,7 @@ mod tests {
             mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
             mktoken!(TokenKind::Comma, loc 0, 3, 0, 4),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 3, 0, 4))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 3, 0, 4))
     )]
     #[case::two_comma_after_arg(
         // Represents `사과(1,,`.
@@ -1677,7 +1686,7 @@ mod tests {
             mktoken!(TokenKind::Comma, loc 0, 4, 0, 5),
             mktoken!(TokenKind::Comma, loc 0, 5, 0, 6),
         ],
-        ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 5, 0, 6))
+        mkerr!(InvalidExprStart, Range::from_nums(0, 5, 0, 6))
     )]
     fn invalid_call(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
