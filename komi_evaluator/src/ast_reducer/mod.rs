@@ -7,12 +7,16 @@ mod prefix;
 mod util;
 
 use crate::ValRes;
-use crate::environment::Environment;
+use crate::environment::Environment as Env;
 use assignment_infix as assign_infix;
 use combinator_infix as comb_infix;
 use komi_syntax::{Ast, AstKind, Stdout};
 
-pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment, stdouts: &mut Stdout) -> ValRes {
+type Args = Vec<Box<Ast>>;
+type Params = Vec<String>;
+type Exprs = Vec<Box<Ast>>;
+
+pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes {
     // Design principle: once you read something, pass it as an argument.
     // This avoids unnecessary repeated reading in subfunctions.
     // Moreover, if you delay determining the kind of what you read, the decision is only postponed to subfunctions.
@@ -66,8 +70,8 @@ mod tests {
     /// Helps write a test declaratively.
     macro_rules! assert_eval {
         ($ast:expr, $expected:expr $(,)?) => {{
-            let mut env = Environment::new();
-            let mut stdouts: Vec<String> = vec![];
+            let mut env = Env::new();
+            let mut stdouts: Stdout = vec![];
             assert_eq!(
                 reduce_ast($ast, &mut env, &mut stdouts),
                 Ok($expected),
@@ -75,7 +79,7 @@ mod tests {
             );
         }};
         ($ast:expr, $env:expr, $expected:expr $(,)?) => {{
-            let mut stdouts: Vec<String> = vec![];
+            let mut stdouts: Stdout = vec![];
             assert_eq!(
                 reduce_ast($ast, $env, &mut stdouts),
                 Ok($expected),
@@ -88,8 +92,8 @@ mod tests {
     /// Helps write a test declaratively.
     macro_rules! assert_eval_fail {
         ($ast:expr, $expected:expr $(,)?) => {{
-            let mut env = Environment::new();
-            let mut stdouts: Vec<String> = vec![];
+            let mut env = Env::new();
+            let mut stdouts: Stdout = vec![];
             assert_eq!(
                 reduce_ast($ast, &mut env, &mut stdouts),
                 Err($expected),
@@ -97,7 +101,7 @@ mod tests {
             );
         }};
         ($ast:expr, $env:expr, $expected:expr $(,)?) => {{
-            let mut stdouts: Vec<String> = vec![];
+            let mut stdouts: Stdout = vec![];
             assert_eq!(
                 reduce_ast($ast, $env, &mut stdouts),
                 Err($expected),
@@ -182,7 +186,7 @@ mod tests {
                 body: vec![
                     mkast!(num 1.0, loc range()),
                 ],
-                env: Environment::new(),
+                env: Env::new(),
             }, range())),
             Value::from_num(1.0, str_loc!("", "사과()")),
         )]
@@ -209,11 +213,11 @@ mod tests {
                         right mkast!(identifier "바나나", loc range()),
                     ),
                 ],
-                env: Environment::new(),
+                env: Env::new(),
             }, range())),
             Value::from_num(3.0, str_loc!("", "사과(1, 2)")),
         )]
-        fn call(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] expected: Value) {
+        fn call(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
         }
 
@@ -240,7 +244,7 @@ mod tests {
             root_empty_env(),
             mkerr!(InvalidCallTarget, str_loc!("", "참")),
         )]
-        fn invalid_call(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] error: EvalError) {
+        fn invalid_call(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] error: EvalError) {
             assert_eval_fail!(&ast, &mut env, error);
         }
     }
@@ -277,17 +281,17 @@ mod tests {
                 body: vec![
                     mkast!(num 1.0, loc range()),
                 ],
-                env: Environment::new()
+                env: Env::new()
             }, range())),
             Value::new(ValueKind::Closure {
                 parameters: vec![String::from("오렌지")],
                 body: vec![
                     mkast!(num 1.0, loc range()),
                 ],
-                env: Environment::new()
+                env: Env::new()
             }, str_loc!("", "사과"))
         )]
-        fn single_identifier(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] expected: Value) {
+        fn single_identifier(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
         }
 
@@ -345,7 +349,7 @@ mod tests {
                     mkast!(num 2.0, loc str_loc!("함수 사과, ", "오렌지")),
                     mkast!(num 3.0, loc str_loc!("함수 사과, 오렌지, ", "바나나")),
                 ],
-                env: Environment::new()
+                env: Env::new()
             }, str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"))
         )]
         #[case::closure_with_closure(
@@ -386,7 +390,7 @@ mod tests {
                         ],
                     ),
                 ],
-                env: Environment::new()
+                env: Env::new()
             }, str_loc!("", "함수 사과 { 함수 오렌지 { 사과 + 오렌지 } }"))
         )]
         fn single(#[case] ast: Box<Ast>, #[case] expected: Value) {
@@ -911,7 +915,7 @@ mod tests {
             root_env("사과", &Value::from_num(6.0, range())),
             Value::from_num(2.0, str_loc!("", "사과 %= 4"))
         )]
-        fn combinating_equals(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] expected: Value) {
+        fn combinating_equals(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
         }
 
@@ -976,11 +980,7 @@ mod tests {
             root_env("사과", &Value::from_num(1.0, range())),
             mkerr!(InvalidNumInfixOperand, str_loc!("사과 %= ", "참")),
         )]
-        fn combinating_equals_with_wrong_type(
-            #[case] ast: Box<Ast>,
-            #[case] mut env: Environment,
-            #[case] error: EvalError,
-        ) {
+        fn combinating_equals_with_wrong_type(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] error: EvalError) {
             assert_eval_fail!(&ast, &mut env, error);
         }
     }
@@ -1157,7 +1157,7 @@ mod tests {
             root_env("사과", &Value::from_bool(false, range())),
             Value::from_bool(false, str_loc!("", "거짓 그리고 사과"))
         )]
-        fn expression(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] expected: Value) {
+        fn expression(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
         }
     }
@@ -1190,12 +1190,12 @@ mod tests {
     mod fixtures {
         use super::*;
 
-        pub fn root_empty_env() -> Environment {
-            Environment::new()
+        pub fn root_empty_env() -> Env {
+            Env::new()
         }
 
-        pub fn root_env(id_name: &str, id_value: &Value) -> Environment {
-            let mut env = Environment::new();
+        pub fn root_env(id_name: &str, id_value: &Value) -> Env {
+            let mut env = Env::new();
             env.set(id_name, id_value);
             env
         }

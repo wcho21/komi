@@ -1,6 +1,6 @@
 use crate::ValRes;
 use crate::ast_reducer::reduce_ast;
-use crate::environment::Environment;
+use crate::environment::Environment as Env;
 use crate::err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, AstKind, Stdout, Value};
 use komi_util::Range;
@@ -9,7 +9,7 @@ pub fn reduce_equals(
     left: &Box<Ast>,
     right: &Box<Ast>,
     location: &Range,
-    env: &mut Environment,
+    env: &mut Env,
     stdouts: &mut Stdout,
 ) -> ValRes {
     let AstKind::Identifier(id_name) = &left.kind else {
@@ -23,12 +23,7 @@ pub fn reduce_equals(
     Ok(assign_val)
 }
 
-pub fn reduce_equals_with_right_value(
-    left: &Box<Ast>,
-    right: Value,
-    location: &Range,
-    env: &mut Environment,
-) -> ValRes {
+pub fn reduce_equals_with_right_value(left: &Box<Ast>, right: Value, location: &Range, env: &mut Env) -> ValRes {
     let AstKind::Identifier(id_name) = &left.kind else {
         return Err(EvalError::new(EvalErrorKind::InvalidAssignmentLeftValue, left.location));
     };

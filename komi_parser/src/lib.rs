@@ -12,6 +12,12 @@ use komi_util::{Range, Scanner};
 use token_scanner::TokenScanner;
 
 type AstRes = Result<Box<Ast>, ParseError>;
+type Args = Vec<Box<Ast>>;
+type Params = Vec<String>;
+type Exprs = Vec<Box<Ast>>;
+type ArgsRes = Result<Args, ParseError>;
+type ParamsRes = Result<Params, ParseError>;
+type ExprsRes = Result<Exprs, ParseError>;
 
 /// Produces an AST from tokens.
 struct Parser<'a> {
@@ -42,8 +48,8 @@ impl<'a> Parser<'a> {
         self.make_program_ast(expressions)
     }
 
-    fn parse_expressions(&mut self) -> Result<Vec<Box<Ast>>, ParseError> {
-        let mut expressions: Vec<Box<Ast>> = vec![];
+    fn parse_expressions(&mut self) -> ExprsRes {
+        let mut expressions: Exprs = vec![];
 
         while let Some(x) = self.scanner.read_and_advance() {
             let e = self.parse_expression(x, &Bp::LOWEST)?;
@@ -89,7 +95,7 @@ impl<'a> Parser<'a> {
     /// Parses characters into a closure-expression AST, with the location `keyword_location` of the closure keyword.
     /// Should be called after the scanner has advanced past the closure keyword.
     fn parse_closure_expression(&mut self, keyword_location: &'a Range) -> AstRes {
-        let mut parameters: Vec<String> = vec![];
+        let mut parameters: Params = vec![];
 
         let token_location = self.scanner.locate();
         let mut token = self.scanner.read_and_advance();
@@ -117,8 +123,8 @@ impl<'a> Parser<'a> {
 
     /// Should be called after the scanner has advanced past a left brace.
     /// Stops at the end or a right brace.
-    fn parse_closure_expression_body(&mut self) -> Result<Vec<Box<Ast>>, ParseError> {
-        let mut expressions: Vec<Box<Ast>> = vec![];
+    fn parse_closure_expression_body(&mut self) -> ExprsRes {
+        let mut expressions: Exprs = vec![];
 
         while let Some(token) = self.scanner.read() {
             if token.kind == TokenKind::RBrace {
@@ -133,8 +139,8 @@ impl<'a> Parser<'a> {
         Ok(expressions)
     }
 
-    fn parse_closure_expression_parameters(&mut self) -> Result<Vec<String>, ParseError> {
-        let mut parameters: Vec<String> = vec![];
+    fn parse_closure_expression_parameters(&mut self) -> ParamsRes {
+        let mut parameters: Params = vec![];
 
         while let Some(Token { kind: TokenKind::Comma, .. }) = self.scanner.read() {
             self.scanner.advance();
@@ -241,10 +247,10 @@ impl<'a> Parser<'a> {
         Ok(call)
     }
 
-    fn read_call_arguments(&mut self, first_token: &'a Token) -> Result<Vec<Box<Ast>>, ParseError> {
+    fn read_call_arguments(&mut self, first_token: &'a Token) -> ArgsRes {
         // This function will read the pattern `first_arg [, arg]*`
 
-        let mut arguments: Vec<Box<Ast>> = vec![];
+        let mut arguments: Args = vec![];
 
         if first_token.kind == TokenKind::RParen {
             return Ok(arguments);

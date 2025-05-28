@@ -1,6 +1,6 @@
 use crate::ValRes;
 use crate::ast_reducer::util;
-use crate::environment::Environment;
+use crate::environment::Environment as Env;
 use crate::err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, Stdout, Value, ValueKind};
 use komi_util::Range;
@@ -9,7 +9,7 @@ use komi_util::Range;
 pub fn reduce_num<F>(
     operand: &Box<Ast>,
     prefix_location: &Range,
-    env: &mut Environment,
+    env: &mut Env,
     stdouts: &mut Stdout,
     get_kind: F,
 ) -> ValRes
@@ -23,7 +23,7 @@ where
 pub fn reduce_bool<F>(
     operand: &Box<Ast>,
     prefix_location: &Range,
-    env: &mut Environment,
+    env: &mut Env,
     stdouts: &mut Stdout,
     get_kind: F,
 ) -> ValRes
@@ -33,11 +33,11 @@ where
     reduce(operand, prefix_location, env, stdouts, get_bool_primitive, get_kind)
 }
 
-fn get_num_primitive(ast: &Box<Ast>, env: &mut Environment, stdouts: &mut Stdout) -> Result<f64, EvalError> {
+fn get_num_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<f64, EvalError> {
     util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidNumPrefixOperand, env, stdouts)
 }
 
-fn get_bool_primitive(ast: &Box<Ast>, env: &mut Environment, stdouts: &mut Stdout) -> Result<bool, EvalError> {
+fn get_bool_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<bool, EvalError> {
     util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidBoolPrefixOperand, env, stdouts)
 }
 
@@ -50,13 +50,13 @@ fn get_bool_primitive(ast: &Box<Ast>, env: &mut Environment, stdouts: &mut Stdou
 fn reduce<T, F, G>(
     operand: &Box<Ast>,
     prefix_location: &Range,
-    env: &mut Environment,
+    env: &mut Env,
     stdouts: &mut Stdout,
     reduce_operand: F,
     get_kind: G,
 ) -> ValRes
 where
-    F: Fn(&Box<Ast>, &mut Environment, &mut Stdout) -> Result<T, EvalError>,
+    F: Fn(&Box<Ast>, &mut Env, &mut Stdout) -> Result<T, EvalError>,
     G: Fn(T) -> ValueKind,
 {
     let reduced = reduce_operand(operand, env, stdouts)?;

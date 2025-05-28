@@ -15,6 +15,7 @@ pub use err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, Stdout, Value};
 
 pub type ValRes = Result<Value, EvalError>;
+pub type ValsRes = Result<Vec<Value>, EvalError>;
 
 /// Produces a value from an AST.
 pub struct Evaluator<'a> {
