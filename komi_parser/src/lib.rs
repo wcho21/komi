@@ -318,14 +318,14 @@ impl<'a> Parser<'a> {
         )))
     }
 
-    fn make_closure_ast(&self, parameters: Vec<String>, expressions: Vec<Box<Ast>>, location: &Range) -> AstRes {
+    fn make_closure_ast(&self, parameters: Params, expressions: Exprs, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(
             AstKind::Closure { parameters, body: expressions },
             *location,
         )))
     }
 
-    fn make_program_ast(&self, expressions: Vec<Box<Ast>>) -> AstRes {
+    fn make_program_ast(&self, expressions: Exprs) -> AstRes {
         let location = util::locate_expressions(&expressions);
 
         Ok(Box::new(Ast::new(AstKind::Program { expressions }, location)))
