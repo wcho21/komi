@@ -85,11 +85,22 @@ fn is_equal_str(source: Option<&str>, target: &str) -> bool {
 mod tests {
     use super::*;
     use komi_syntax::mktoken;
+    use komi_util::str_loc;
     use rstest::rstest;
 
     #[rstest]
-    #[case::plus("+", mktoken!(Kind::Plus, loc 0, 0, 0, 1))]
-    #[case::plus_equals("+=", mktoken!(Kind::PlusEquals, loc 0, 0, 0, 2))]
+    #[case::plus(
+        "+",
+        mktoken!(str_loc!("", "+"),
+            Kind::Plus,
+        )
+    )]
+    #[case::plus_equals(
+        "+=",
+        mktoken!(str_loc!("", "+="),
+            Kind::PlusEquals,
+        )
+    )]
     fn test_expect_or(#[case] source: &str, #[case] expected: Token) {
         let mut scanner = SourceScanner::new(source);
         let first_location = scanner.locate();
@@ -101,8 +112,18 @@ mod tests {
     }
 
     #[rstest]
-    #[case::plus("거", mktoken!(Kind::Identifier(String::from("거")), loc 0, 0, 0, 1))]
-    #[case::plus("거짓", mktoken!(Kind::Bool(false), loc 0, 0, 0, 2))]
+    #[case::plus(
+        "거",
+        mktoken!(str_loc!("", "거"),
+            Kind::Identifier(String::from("거")),
+        )
+    )]
+    #[case::plus(
+        "거짓",
+        mktoken!(str_loc!("", "거짓"),
+            Kind::Bool(false),
+        )
+    )]
     fn test_expect_or_lex_identifier(#[case] source: &str, #[case] expected: Token) {
         let mut scanner = SourceScanner::new(source);
         let first_char = scanner.read().unwrap();

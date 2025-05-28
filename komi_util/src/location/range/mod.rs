@@ -22,6 +22,43 @@ impl Range {
     }
 }
 
+/// Makes a `Range` value to locate a string.
+/// - The first argument is the base string, which is a string from the beginning to the character just before the string to locate.
+/// - The second argument is the string to locate.
+/// - The third argument is the number of newlines after the base string. Optional, and zero by default.
+///
+/// # Examples
+///
+/// ```
+/// use komi_util::{Range, str_loc};
+///
+/// // Location of `"bar"` in `"foobar"`.
+/// assert_eq!(str_loc!("foo", "bar"), Range::from_nums(0, 3, 0, 6));
+///
+/// // Location of `"\r\nbar"` in `"foo\r\nbar"`.
+/// // Since the macro doesn't recognize the newlines, you have to specify the number of the newlines `1`.
+/// assert_eq!(str_loc!("foo", "bar", 1), Range::from_nums(0, 3, 1, 3));
+/// ```
+#[macro_export]
+macro_rules! str_loc {
+    ($base:literal, $str:literal) => {
+        Range::from_nums(
+            0,
+            $base.chars().count() as u32,
+            0,
+            ($base.chars().count() + $str.chars().count()) as u32,
+        )
+    };
+    ($base:literal, $str:literal, $newlines:literal) => {
+        Range::from_nums(
+            0,
+            $base.chars().count() as u32,
+            $newlines as u32,
+            $str.chars().count() as u32,
+        )
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -36,9 +73,4 @@ mod tests {
 
         assert_eq!(range, expected)
     }
-}
-
-#[macro_export]
-macro_rules! str_between {
-    ($left:literal, $right:literal) => {{ Range::from_nums(0, $left.chars().count() as u32, 0, $right.chars().count() as u32) }};
 }

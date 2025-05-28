@@ -72,13 +72,34 @@ mod tests {
     use super::*;
     use fixtures::*;
     use komi_syntax::mktoken;
+    use komi_util::str_loc;
     use rstest::rstest;
 
     #[rstest]
-    #[case::whole_number("123", mktoken!(Kind::Number(123.0), loc 0, 0, 0, 3))]
-    #[case::whole_number_and_non_digit("123+", mktoken!(Kind::Number(123.0), loc 0, 0, 0, 3))]
-    #[case::with_decimal("12.25", mktoken!(Kind::Number(12.25), loc 0, 0, 0, 5))]
-    #[case::with_decimal_and_non_digit("12.25+", mktoken!(Kind::Number(12.25), loc 0, 0, 0, 5))]
+    #[case::whole_number(
+        "123",
+        mktoken!(str_loc!("", "123"),
+            Kind::Number(123.0),
+        )
+    )]
+    #[case::whole_number_and_non_digit(
+        "123+",
+        mktoken!(str_loc!("", "123"),
+            Kind::Number(123.0),
+        )
+    )]
+    #[case::with_decimal(
+        "12.25",
+        mktoken!(str_loc!("", "12.25"),
+            Kind::Number(12.25),
+        )
+    )]
+    #[case::with_decimal_and_non_digit(
+        "12.25+",
+        mktoken!(str_loc!("", "12.25"),
+            Kind::Number(12.25),
+        )
+    )]
     fn ok(#[case] source: &str, #[case] expected: Token) {
         let mut scanner = SourceScanner::new(source);
         let first_char = scanner.read_and_advance().unwrap();

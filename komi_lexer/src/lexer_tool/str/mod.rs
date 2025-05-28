@@ -116,22 +116,48 @@ mod tests {
     use super::*;
     use fixtures::*;
     use komi_syntax::mktoken;
+    use komi_util::str_loc;
     use rstest::rstest;
 
     #[rstest]
-    #[case::empty("\"\"", mktoken!(Kind::Str(vec![]), loc 0, 0, 0, 2))]
-    #[case::str("\"a\"", mktoken!(Kind::Str(vec![
-        StrSegment::new(StrSegmentKind::str("a"), Range::from_nums(0,1,0,2)),
-    ]), loc 0, 0, 0, 3))]
-    #[case::id("\"{a}\"", mktoken!(Kind::Str(vec![
-        StrSegment::new(StrSegmentKind::identifier("a"), Range::from_nums(0,2,0,3)),
-    ]), loc 0, 0, 0, 5))]
-    #[case::lbrace_escape("\"{{\"", mktoken!(Kind::Str(vec![
-        StrSegment::new(StrSegmentKind::str("{"), Range::from_nums(0,1,0,3)),
-    ]), loc 0, 0, 0, 4))]
-    #[case::lbrace_escape("\"}}\"", mktoken!(Kind::Str(vec![
-        StrSegment::new(StrSegmentKind::str("}"), Range::from_nums(0,1,0,3)),
-    ]), loc 0, 0, 0, 4))]
+    #[case::empty(
+        "\"\"",
+        mktoken!(str_loc!("", "\"\""),
+            Kind::Str(vec![]),
+        )
+    )]
+    #[case::str(
+        "\"a\"",
+        mktoken!(str_loc!("", "\"a\""),
+            Kind::Str(vec![
+                StrSegment::new(StrSegmentKind::str("a"), Range::from_nums(0,1,0,2)),
+            ]),
+        )
+    )]
+    #[case::id(
+        "\"{a}\"",
+        mktoken!(str_loc!("", "\"{a}\""),
+            Kind::Str(vec![
+                StrSegment::new(StrSegmentKind::identifier("a"), Range::from_nums(0,2,0,3)),
+            ]),
+        )
+    )]
+    #[case::lbrace_escape(
+        "\"{{\"",
+        mktoken!(str_loc!("", "\"{{\""),
+            Kind::Str(vec![
+                StrSegment::new(StrSegmentKind::str("{"), Range::from_nums(0,1,0,3)),
+            ]),
+        )
+    )]
+    #[case::lbrace_escape(
+        "\"}}\"",
+        mktoken!(str_loc!("", "\"}}\""),
+            Kind::Str(vec![
+                StrSegment::new(StrSegmentKind::str("}"), Range::from_nums(0,1,0,3)),
+            ]),
+        )
+    )]
     fn ok(#[case] source: &str, #[case] expected: Token) {
         let mut scanner = SourceScanner::new(source);
         scanner.advance();

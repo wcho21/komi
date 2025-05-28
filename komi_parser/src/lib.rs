@@ -337,8 +337,9 @@ pub fn parse(tokens: &Vec<Token>) -> ResAst {
 
 #[cfg(test)]
 mod tests {
-    use super::{Ast, ParseError, ParseErrorKind, Range, Token, TokenKind, parse};
+    use super::*;
     use komi_syntax::{AstKind, mkast, mktoken};
+    use komi_util::str_loc;
     use rstest::rstest;
 
     /// Asserts given tokens to be parsed into the expected AST.
@@ -377,35 +378,41 @@ mod tests {
     #[test]
     fn empty() {
         // Represents ``.
-        assert_parse!(&vec![], mkast!(prog loc 0, 0, 0, 0, vec![]));
+        assert_parse!(&vec![], mkast!(prog loc str_loc!("", ""), vec![]));
     }
 
     #[rstest]
     #[case::num(
         // Represents `1`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1)
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0)
+            )
         ],
-        mkast!(prog loc 0, 0, 0, 1, vec![
-            mkast!(num 1.0, loc 0, 0, 0, 1),
+        mkast!(prog loc str_loc!("", "1"), vec![
+            mkast!(num 1.0, loc str_loc!("", "1")),
         ])
     )]
     #[case::bool(
         // Represents `참`.
         vec![
-            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1)
+            mktoken!(str_loc!("", "참"),
+                TokenKind::Bool(true)
+            )
         ],
-        mkast!(prog loc 0, 0, 0, 1, vec![
-            mkast!(boolean true, loc 0, 0, 0, 1),
+        mkast!(prog loc str_loc!("", "참"), vec![
+            mkast!(boolean true, loc str_loc!("", "참")),
         ])
     )]
     #[case::identifier(
         // Represents `a`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1)
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a"))
+            )
         ],
-        mkast!(prog loc 0, 0, 0, 1, vec![
-            mkast!(identifier "a", loc 0, 0, 0, 1),
+        mkast!(prog loc str_loc!("", "a"), vec![
+            mkast!(identifier "a", loc str_loc!("", "a")),
         ])
     )]
     fn single_literal(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
@@ -416,38 +423,52 @@ mod tests {
     #[case::plus_num(
         // Represents `+1`.
         vec![
-            mktoken!(TokenKind::Plus, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("+", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 2, vec![
-            mkast!(prefix PrefixPlus, loc 0, 0, 0, 2,
-                operand mkast!(num 1.0, loc 0, 1, 0, 2),
+        mkast!(prog loc str_loc!("", "+1"), vec![
+            mkast!(prefix PrefixPlus, loc str_loc!("", "+1"),
+                operand mkast!(num 1.0, loc str_loc!("+", "1")),
             ),
         ])
     )]
     #[case::minus_num(
         // Represents `-1`.
         vec![
-            mktoken!(TokenKind::Minus, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "-"),
+                TokenKind::Minus,
+            ),
+            mktoken!(str_loc!("-", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 2, vec![
-            mkast!(prefix PrefixMinus, loc 0, 0, 0, 2,
-                operand mkast!(num 1.0, loc 0, 1, 0, 2),
+        mkast!(prog loc str_loc!("", "-1"), vec![
+            mkast!(prefix PrefixMinus, loc str_loc!("", "-1"),
+                operand mkast!(num 1.0, loc str_loc!("-", "1")),
             ),
         ])
     )]
     #[case::two_pluses_num(
         // Represents `++1`.
         vec![
-            mktoken!(TokenKind::Plus, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("+", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("++", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 3, vec![
-            mkast!(prefix PrefixPlus, loc 0, 0, 0, 3,
-                operand mkast!(prefix PrefixPlus, loc 0, 1, 0, 3,
-                    operand mkast!(num 1.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "++1"), vec![
+            mkast!(prefix PrefixPlus, loc str_loc!("", "++1"),
+                operand mkast!(prefix PrefixPlus, loc str_loc!("+", "+1"),
+                    operand mkast!(num 1.0, loc str_loc!("++", "1")),
                 ),
             ),
         ])
@@ -455,14 +476,20 @@ mod tests {
     #[case::two_minuses_num(
         // Represents `--1`.
         vec![
-            mktoken!(TokenKind::Minus, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "-"),
+                TokenKind::Minus,
+            ),
+            mktoken!(str_loc!("-", "-"),
+                TokenKind::Minus,
+            ),
+            mktoken!(str_loc!("--", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 3, vec![
-            mkast!(prefix PrefixMinus, loc 0, 0, 0, 3,
-                operand mkast!(prefix PrefixMinus, loc 0, 1, 0, 3,
-                    operand mkast!(num 1.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "--1"), vec![
+            mkast!(prefix PrefixMinus, loc str_loc!("", "--1"),
+                operand mkast!(prefix PrefixMinus, loc str_loc!("-", "-1"),
+                    operand mkast!(num 1.0, loc str_loc!("--", "1")),
                 ),
             ),
         ])
@@ -470,26 +497,36 @@ mod tests {
     #[case::bang_bool(
         // Represents `!참`.
         vec![
-            mktoken!(TokenKind::Bang, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Bool(true), loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "!"),
+                TokenKind::Bang,
+            ),
+            mktoken!(str_loc!("!", "참"),
+                TokenKind::Bool(true),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 2, vec![
-            mkast!(prefix PrefixBang, loc 0, 0, 0, 2,
-                operand mkast!(boolean true, loc 0, 1, 0, 2),
+        mkast!(prog loc str_loc!("", "!참"), vec![
+            mkast!(prefix PrefixBang, loc str_loc!("", "!참"),
+                operand mkast!(boolean true, loc str_loc!("!", "참")),
             ),
         ])
     )]
     #[case::two_bang_bool(
         // Represents `!!참`.
         vec![
-            mktoken!(TokenKind::Bang, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Bang, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Bool(true), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "!"),
+                TokenKind::Bang,
+            ),
+            mktoken!(str_loc!("!", "!"),
+                TokenKind::Bang,
+            ),
+            mktoken!(str_loc!("!!", "참"),
+                TokenKind::Bool(true),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 3, vec![
-            mkast!(prefix PrefixBang, loc 0, 0, 0, 3,
-                operand mkast!(prefix PrefixBang, loc 0, 1, 0, 3,
-                    operand mkast!(boolean true, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "!!참"), vec![
+            mkast!(prefix PrefixBang, loc str_loc!("", "!!참"),
+                operand mkast!(prefix PrefixBang, loc str_loc!("!", "!참"),
+                    operand mkast!(boolean true, loc str_loc!("!!", "참")),
                 ),
             ),
         ])
@@ -500,184 +537,262 @@ mod tests {
 
     #[rstest]
     #[case::plus(
-        // Represents `1+2`.
+        // Represents `1 + 2`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("1 + ", "2"),
+                TokenKind::Number(2.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 3, vec![
-            mkast!(infix InfixPlus, loc 0, 0, 0, 3,
-                left mkast!(num 1.0, loc 0, 0, 0, 1),
-                right mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 + 2"), vec![
+            mkast!(infix InfixPlus, loc str_loc!("", "1 + 2"),
+                left mkast!(num 1.0, loc str_loc!("", "1")),
+                right mkast!(num 2.0, loc str_loc!("1 + ", "2")),
             ),
         ])
     )]
     #[case::minus(
-        // Represents `1-2`.
+        // Represents `1 - 2`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1", "-"),
+                TokenKind::Minus,
+            ),
+            mktoken!(str_loc!("1 - ", "2"),
+                TokenKind::Number(2.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 3, vec![
-            mkast!(infix InfixMinus, loc 0, 0, 0, 3,
-                left mkast!(num 1.0, loc 0, 0, 0, 1),
-                right mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 - 2"), vec![
+            mkast!(infix InfixMinus, loc str_loc!("", "1 - 2"),
+                left mkast!(num 1.0, loc str_loc!("", "1")),
+                right mkast!(num 2.0, loc str_loc!("1 - ", "2")),
             ),
         ])
     )]
     #[case::asterisk(
-        // Represents `1*2`.
+        // Represents `1 * 2`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "*"),
+                TokenKind::Asterisk,
+            ),
+            mktoken!(str_loc!("1 * ", "2"),
+                TokenKind::Number(2.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 3, vec![
-            mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
-                left mkast!(num 1.0, loc 0, 0, 0, 1),
-                right mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 * 2"), vec![
+            mkast!(infix InfixAsterisk, loc str_loc!("", "1 * 2"),
+                left mkast!(num 1.0, loc str_loc!("", "1")),
+                right mkast!(num 2.0, loc str_loc!("1 * ", "2")),
             ),
         ])
     )]
     #[case::slash(
-        // Represents `1/2`.
+        // Represents `1 / 2`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "/"),
+                TokenKind::Slash,
+            ),
+            mktoken!(str_loc!("1 / ", "2"),
+                TokenKind::Number(2.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 3, vec![
-            mkast!(infix InfixSlash, loc 0, 0, 0, 3,
-                left mkast!(num 1.0, loc 0, 0, 0, 1),
-                right mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 / 2"), vec![
+            mkast!(infix InfixSlash, loc str_loc!("", "1 / 2"),
+                left mkast!(num 1.0, loc str_loc!("", "1")),
+                right mkast!(num 2.0, loc str_loc!("1 / ", "2")),
             ),
         ])
     )]
     #[case::percent(
-        // Represents `1%2`.
+        // Represents `1 % 2`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "%"),
+                TokenKind::Percent,
+            ),
+            mktoken!(str_loc!("1 % ", "2"),
+                TokenKind::Number(2.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 3, vec![
-            mkast!(infix InfixPercent, loc 0, 0, 0, 3,
-                left mkast!(num 1.0, loc 0, 0, 0, 1),
-                right mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 % 2"), vec![
+            mkast!(infix InfixPercent, loc str_loc!("", "1 % 2"),
+                left mkast!(num 1.0, loc str_loc!("", "1")),
+                right mkast!(num 2.0, loc str_loc!("1 % ", "2")),
             ),
         ])
     )]
     #[case::conjunct(
         // Represents `참 그리고 거짓`.
         vec![
-            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
-            mktoken!(TokenKind::Bool(false), loc 0, 6, 0, 8),
+            mktoken!(str_loc!("", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 ", "그리고"),
+                TokenKind::Conjunct,
+            ),
+            mktoken!(str_loc!("참 그리고 ", "거짓"),
+                TokenKind::Bool(false),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 8, vec![
-            mkast!(infix InfixConjunct, loc 0, 0, 0, 8,
-                left mkast!(boolean true, loc 0, 0, 0, 1),
-                right mkast!(boolean false, loc 0, 6, 0, 8),
+        mkast!(prog loc str_loc!("", "참 그리고 거짓"), vec![
+            mkast!(infix InfixConjunct, loc str_loc!("", "참 그리고 거짓"),
+                left mkast!(boolean true, loc str_loc!("", "참")),
+                right mkast!(boolean false, loc str_loc!("참 그리고 ", "거짓")),
             ),
         ])
     )]
     #[case::disjunct(
         // Represents `참 또는 거짓`.
         vec![
-            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
-            mktoken!(TokenKind::Bool(false), loc 0, 5, 0, 7),
+            mktoken!(str_loc!("", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 ", "또는"),
+                TokenKind::Disjunct,
+            ),
+            mktoken!(str_loc!("참 또는 ", "거짓"),
+                TokenKind::Bool(false),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 7, vec![
-            mkast!(infix InfixDisjunct, loc 0, 0, 0, 7,
-                left mkast!(boolean true, loc 0, 0, 0, 1),
-                right mkast!(boolean false, loc 0, 5, 0, 7),
+        mkast!(prog loc str_loc!("", "참 또는 거짓"), vec![
+            mkast!(infix InfixDisjunct, loc str_loc!("", "참 또는 거짓"),
+                left mkast!(boolean true, loc str_loc!("", "참")),
+                right mkast!(boolean false, loc str_loc!("참 또는 ", "거짓")),
             ),
         ])
     )]
     #[case::equals(
         // Represents `a = 1`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Equals, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "="),
+                TokenKind::Equals,
+            ),
+            mktoken!(str_loc!("a = ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixEquals, loc 0, 0, 0, 5,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(num 1.0, loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "a = 1"), vec![
+            mkast!(infix InfixEquals, loc str_loc!("", "a = 1"),
+                left mkast!(identifier String::from("a"), loc str_loc!("", "a")),
+                right mkast!(num 1.0, loc str_loc!("a = ", "1")),
             ),
         ])
     )]
     #[case::plus_equals(
         // Represents `a += 1`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::PlusEquals, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "+="),
+                TokenKind::PlusEquals,
+            ),
+            mktoken!(str_loc!("a += ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixPlusEquals, loc 0, 0, 0, 5,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(num 1.0, loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "a += 1"), vec![
+            mkast!(infix InfixPlusEquals, loc str_loc!("", "a += 1"),
+                left mkast!(identifier String::from("a"), loc str_loc!("", "a")),
+                right mkast!(num 1.0, loc str_loc!("a += ", "1")),
             ),
         ])
     )]
     #[case::minus_equals(
         // Represents `a -= 1`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::MinusEquals, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "-="),
+                TokenKind::MinusEquals,
+            ),
+            mktoken!(str_loc!("a -= ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixMinusEquals, loc 0, 0, 0, 5,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(num 1.0, loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "a -= 1"), vec![
+            mkast!(infix InfixMinusEquals, loc str_loc!("", "a -= 1"),
+                left mkast!(identifier String::from("a"), loc str_loc!("", "a")),
+                right mkast!(num 1.0, loc str_loc!("a -= ", "1")),
             ),
         ])
     )]
     #[case::asterisk_equals(
         // Represents `a *= 1`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::AsteriskEquals, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "*="),
+                TokenKind::AsteriskEquals,
+            ),
+            mktoken!(str_loc!("a *= ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixAsteriskEquals, loc 0, 0, 0, 5,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(num 1.0, loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "a *= 1"), vec![
+            mkast!(infix InfixAsteriskEquals, loc str_loc!("", "a *= 1"),
+                left mkast!(identifier String::from("a"), loc str_loc!("", "a")),
+                right mkast!(num 1.0, loc str_loc!("a *= ", "1")),
             ),
         ])
     )]
     #[case::slash_equals(
         // Represents `a /= 1`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::SlashEquals, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "/="),
+                TokenKind::SlashEquals,
+            ),
+            mktoken!(str_loc!("a /= ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixSlashEquals, loc 0, 0, 0, 5,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(num 1.0, loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "a /= 1"), vec![
+            mkast!(infix InfixSlashEquals, loc str_loc!("", "a /= 1"),
+                left mkast!(identifier String::from("a"), loc str_loc!("", "a")),
+                right mkast!(num 1.0, loc str_loc!("a /= ", "1")),
             ),
         ])
     )]
     #[case::percent_equals(
         // Represents `a %= 1`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::PercentEquals, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(1.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "%="),
+                TokenKind::PercentEquals,
+            ),
+            mktoken!(str_loc!("a %= ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixPercentEquals, loc 0, 0, 0, 5,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(num 1.0, loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "a %= 1"), vec![
+            mkast!(infix InfixPercentEquals, loc str_loc!("", "a %= 1"),
+                left mkast!(identifier String::from("a"), loc str_loc!("", "a")),
+                right mkast!(num 1.0, loc str_loc!("a %= ", "1")),
             ),
         ])
     )]
@@ -687,92 +802,136 @@ mod tests {
 
     #[rstest]
     #[case::asterisk_without_left(
-        // Represents `*1`.
+        // Represents `* 1`.
         vec![
-            mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "*"),
+                TokenKind::Asterisk,
+            ),
+            mktoken!(str_loc!("* ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, str_loc!("", "*")),
     )]
     #[case::slash_without_left(
-        // Represents `/1`.
+        // Represents `/ 1`.
         vec![
-            mktoken!(TokenKind::Slash, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "/"),
+                TokenKind::Slash,
+            ),
+            mktoken!(str_loc!("/ ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, str_loc!("", "/")),
     )]
     #[case::percent_without_left(
-        // Represents `%1`.
+        // Represents `% 1`.
         vec![
-            mktoken!(TokenKind::Percent, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "%"),
+                TokenKind::Percent,
+            ),
+            mktoken!(str_loc!("% ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, str_loc!("", "%")),
     )]
     #[case::conjunct_without_left(
         // Represents `그리고 참`.
         vec![
-            mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3),
-            mktoken!(TokenKind::Bool(true), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "그리고"),
+                TokenKind::Conjunct,
+            ),
+            mktoken!(str_loc!("그리고 ", "그리고 참"),
+                TokenKind::Bool(true),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 3))
+        mkerr!(InvalidExprStart, str_loc!("", "그리고")),
     )]
     #[case::disjunct_without_left(
         // Represents `또는 참`.
         vec![
-            mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Bool(true), loc 0, 3, 0, 4),
+            mktoken!(str_loc!("", "또는"),
+                TokenKind::Conjunct,
+            ),
+            mktoken!(str_loc!("또는 ", "참"),
+                TokenKind::Bool(true),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, str_loc!("", "또는")),
     )]
     #[case::equals_without_left(
-        // Represents `=1`.
+        // Represents `= 1`.
         vec![
-            mktoken!(TokenKind::Equals, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "="),
+                TokenKind::Equals,
+            ),
+            mktoken!(str_loc!("= ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        mkerr!(InvalidExprStart, str_loc!("", "=")),
     )]
     #[case::plus_equals_without_left(
-        // Represents `+=1`.
+        // Represents `+= 1`.
         vec![
-            mktoken!(TokenKind::PlusEquals, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "+="),
+                TokenKind::PlusEquals,
+            ),
+            mktoken!(str_loc!("+= ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, str_loc!("", "+=")),
     )]
     #[case::minus_equals_without_left(
-        // Represents `-=1`.
+        // Represents `-= 1`.
         vec![
-            mktoken!(TokenKind::MinusEquals, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "-="),
+                TokenKind::MinusEquals,
+            ),
+            mktoken!(str_loc!("-= ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, str_loc!("", "-=")),
     )]
     #[case::asterisk_equals_without_left(
-        // Represents `*=1`.
+        // Represents `*= 1`.
         vec![
-            mktoken!(TokenKind::AsteriskEquals, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "*="),
+                TokenKind::AsteriskEquals,
+            ),
+            mktoken!(str_loc!("*= ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, str_loc!("", "*=")),
     )]
     #[case::slash_equals_without_left(
-        // Represents `/=1`.
+        // Represents `/= 1`.
         vec![
-            mktoken!(TokenKind::SlashEquals, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "/="),
+                TokenKind::SlashEquals,
+            ),
+            mktoken!(str_loc!("/= ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, str_loc!("", "/=")),
     )]
     #[case::percent_equals_without_left(
-        // Represents `%=1`.
+        // Represents `%= 1`.
         vec![
-            mktoken!(TokenKind::PercentEquals, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "%="),
+                TokenKind::PercentEquals,
+            ),
+            mktoken!(str_loc!("%= ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        mkerr!(InvalidExprStart, str_loc!("", "%=")),
     )]
     fn infix_no_left_operand(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -780,108 +939,160 @@ mod tests {
 
     #[rstest]
     #[case::plus_without_right(
-        // Represents `1+`.
+        // Represents `1 +`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "+"),
+                TokenKind::Plus,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, str_loc!("", "1 +")),
     )]
     #[case::minus_without_right(
-        // Represents `1-`.
+        // Represents `1 -`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "-"),
+                TokenKind::Minus,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, str_loc!("", "1 -")),
     )]
     #[case::asterisk_without_right(
-        // Represents `1*`.
+        // Represents `1 *`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "*"),
+                TokenKind::Asterisk,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, str_loc!("", "1 *")),
     )]
     #[case::slash_without_right(
-        // Represents `1/`.
+        // Represents `1 /`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "/"),
+                TokenKind::Slash,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, str_loc!("", "1 /")),
     )]
     #[case::percent_without_right(
-        // Represents `1%`.
+        // Represents `1 %`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "%"),
+                TokenKind::Percent,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, str_loc!("", "1 %")),
     )]
     #[case::conjunct_without_right(
         // Represents `참 그리고`.
         vec![
-            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
+            mktoken!(str_loc!("", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 ", "그리고"),
+                TokenKind::Conjunct,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 5))
+        mkerr!(NoInfixRightOperand, str_loc!("", "참 그리고")),
     )]
     #[case::disjunct_without_right(
         // Represents `참 또는`.
         vec![
-            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
+            mktoken!(str_loc!("", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 ", "또는"),
+                TokenKind::Disjunct,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 4))
+        mkerr!(NoInfixRightOperand, str_loc!("", "참 또는")),
     )]
     #[case::equals_without_right(
-        // Represents `a=`.
+        // Represents `a =`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Equals, loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a " , "="),
+                TokenKind::Equals,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, str_loc!("", "a =")),
     )]
     #[case::plus_equals_without_right(
-        // Represents `a+=`.
+        // Represents `a +=`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::PlusEquals, loc 0, 1, 0, 2),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a " , "+="),
+                TokenKind::PlusEquals,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 2))
+        mkerr!(NoInfixRightOperand, str_loc!("", "a +=")),
     )]
     #[case::minus_equals_without_right(
-        // Represents `a-=`.
+        // Represents `a -=`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::MinusEquals, loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a " , "-="),
+                TokenKind::MinusEquals,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+        mkerr!(NoInfixRightOperand, str_loc!("", "a -=")),
     )]
     #[case::asterisk_equals_without_right(
-        // Represents `a*=`.
+        // Represents `a *=`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::AsteriskEquals, loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a " , "*="),
+                TokenKind::AsteriskEquals,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+        mkerr!(NoInfixRightOperand, str_loc!("", "a *=")),
     )]
     #[case::slash_equals_without_right(
-        // Represents `a/=`.
+        // Represents `a /=`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::SlashEquals, loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a " , "/="),
+                TokenKind::SlashEquals,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+        mkerr!(NoInfixRightOperand, str_loc!("", "a /=")),
     )]
     #[case::percent_equals_without_right(
-        // Represents `a%=`.
+        // Represents `a %=`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::PercentEquals, loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a " , "%="),
+                TokenKind::PercentEquals,
+            ),
         ],
-        mkerr!(NoInfixRightOperand, Range::from_nums(0, 0, 0, 3))
+        mkerr!(NoInfixRightOperand, str_loc!("", "a %=")),
     )]
     fn infix_no_right_operand(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -890,73 +1101,129 @@ mod tests {
     #[rstest]
     #[case::plus(
         // Represents `+`.
-        vec![mktoken!(TokenKind::Plus, loc 0, 0, 0, 1)],
-        mkerr!(NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
+        vec![
+            mktoken!(str_loc!("", "+"),
+                TokenKind::Plus,
+            )
+        ],
+        mkerr!(NoPrefixOperand, str_loc!("", "+"))
     )]
     #[case::minus(
         // Represents `-`.
-        vec![mktoken!(TokenKind::Minus, loc 0, 0, 0, 1)],
-        mkerr!(NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
+        vec![
+            mktoken!(str_loc!("", "-"),
+                TokenKind::Minus,
+            )
+        ],
+        mkerr!(NoPrefixOperand, str_loc!("", "-"))
     )]
     #[case::asterisk(
         // Represents `*`.
-        vec![mktoken!(TokenKind::Asterisk, loc 0, 0, 0, 1)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        vec![
+            mktoken!(str_loc!("", "*"),
+                TokenKind::Asterisk,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "*"))
     )]
     #[case::slash(
         // Represents `/`.
-        vec![mktoken!(TokenKind::Slash, loc 0, 0, 0, 1)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        vec![
+            mktoken!(str_loc!("", "/"),
+                TokenKind::Slash,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "/"))
     )]
     #[case::percent(
         // Represents `%`.
-        vec![mktoken!(TokenKind::Percent, loc 0, 0, 0, 1)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        vec![
+            mktoken!(str_loc!("", "%"),
+                TokenKind::Percent,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "%"))
     )]
     #[case::bang(
         // Represents `!`.
-        vec![mktoken!(TokenKind::Bang, loc 0, 0, 0, 1)],
-        mkerr!(NoPrefixOperand, Range::from_nums(0, 0, 0, 1))
+        vec![
+            mktoken!(str_loc!("", "!"),
+                TokenKind::Bang,
+            )
+        ],
+        mkerr!(NoPrefixOperand, str_loc!("", "!"))
     )]
     #[case::conjunct(
         // Represents `그리고`.
-        vec![mktoken!(TokenKind::Conjunct, loc 0, 0, 0, 3)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 3))
+        vec![
+            mktoken!(str_loc!("", "그리고"),
+                TokenKind::Conjunct,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "그리고"))
     )]
     #[case::disjunct(
         // Represents `또는`.
-        vec![mktoken!(TokenKind::Disjunct, loc 0, 0, 0, 2)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        vec![
+            mktoken!(str_loc!("", "또는"),
+                TokenKind::Disjunct,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "또는"))
     )]
     #[case::equals(
         // Represents `=`.
-        vec![mktoken!(TokenKind::Equals, loc 0, 0, 0, 1)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        vec![
+            mktoken!(str_loc!("", "="),
+                TokenKind::Equals,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "="))
     )]
     #[case::plus_equals(
         // Represents `+=`.
-        vec![mktoken!(TokenKind::PlusEquals, loc 0, 0, 0, 2)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        vec![
+            mktoken!(str_loc!("", "+="),
+                TokenKind::PlusEquals,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "+="))
     )]
     #[case::minus_equals(
         // Represents `-=`.
-        vec![mktoken!(TokenKind::MinusEquals, loc 0, 0, 0, 2)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        vec![
+            mktoken!(str_loc!("", "-="),
+                TokenKind::MinusEquals,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "-="))
     )]
     #[case::asterisk_equals(
         // Represents `*=`.
-        vec![mktoken!(TokenKind::AsteriskEquals, loc 0, 0, 0, 2)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        vec![
+            mktoken!(str_loc!("", "*="),
+                TokenKind::AsteriskEquals,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "*="))
     )]
     #[case::slash_equals(
         // Represents `/=`.
-        vec![mktoken!(TokenKind::SlashEquals, loc 0, 0, 0, 2)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        vec![
+            mktoken!(str_loc!("", "/="),
+                TokenKind::SlashEquals,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "/="))
     )]
     #[case::percent_equals(
         // Represents `%=`.
-        vec![mktoken!(TokenKind::PercentEquals, loc 0, 0, 0, 2)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 2))
+        vec![
+            mktoken!(str_loc!("", "%="),
+                TokenKind::PercentEquals,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", "%="))
     )]
     fn single_token(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -965,13 +1232,21 @@ mod tests {
     #[rstest]
     #[case::lparen(
         // Represents `(`.
-        vec![mktoken!(TokenKind::LParen, loc 0, 0, 0, 1)],
-        mkerr!(LParenNotClosed, Range::from_nums(0, 0, 0, 1))
+        vec![
+            mktoken!(str_loc!("", "("),
+                TokenKind::LParen,
+            )
+        ],
+        mkerr!(LParenNotClosed, str_loc!("", "("))
     )]
     #[case::rparen(
         // Represents `)`.
-        vec![mktoken!(TokenKind::RParen, loc 0, 0, 0, 1)],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 0, 0, 1))
+        vec![
+            mktoken!(str_loc!("", ")"),
+                TokenKind::RParen,
+            )
+        ],
+        mkerr!(InvalidExprStart, str_loc!("", ")"))
     )]
     fn parenthesis(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -979,135 +1254,205 @@ mod tests {
 
     #[rstest]
     #[case::two_pluses(
-        // Represents `1+2+3`, and expects to be parsed into `(1+2)+3`.
+        // Represents `1 + 2 + 3`, and expects to be parsed into `(1 + 2) + 3`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Plus, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("1 + ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("1 + 2 ", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("1 + 2 + ", "3"),
+                TokenKind::Number(3.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixPlus, loc 0, 0, 0, 5,
-                left mkast!(infix InfixPlus, loc 0, 0, 0, 3,
-                    left mkast!(num 1.0, loc 0, 0, 0, 1),
-                    right mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 + 2 + 3"), vec![
+            mkast!(infix InfixPlus, loc str_loc!("", "1 + 2 + 3"),
+                left mkast!(infix InfixPlus, loc str_loc!("", "1 + 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 + ", "2")),
                 ),
-                right mkast!(num 3.0, loc 0, 4, 0, 5),
+                right mkast!(num 3.0, loc str_loc!("1 + 2 + ", "3")),
             ),
         ])
     )]
     #[case::two_minuses(
-    // Represents `1-2-3`, and expects to be parsed into `(1-2)-3`.
+        // Represents `1 - 2 - 3`, and expects to be parsed into `(1 - 2) - 3`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Minus, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "-"),
+                TokenKind::Minus,
+            ),
+            mktoken!(str_loc!("1 - ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("1 - 2 ", "-"),
+                TokenKind::Minus,
+            ),
+            mktoken!(str_loc!("1 - 2 - ", "3"),
+                TokenKind::Number(3.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixMinus, loc 0, 0, 0, 5,
-                left mkast!(infix InfixMinus, loc 0, 0, 0, 3,
-                    left mkast!(num 1.0, loc 0, 0, 0, 1),
-                    right mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 - 2 - 3"), vec![
+            mkast!(infix InfixMinus, loc str_loc!("", "1 - 2 - 3"),
+                left mkast!(infix InfixMinus, loc str_loc!("", "1 - 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 - ", "2")),
                 ),
-                right mkast!(num 3.0, loc 0, 4, 0, 5),
+                right mkast!(num 3.0, loc str_loc!("1 - 2 - ", "3")),
             ),
         ])
     )]
     #[case::two_asterisks(
-        // Represents `1*2*3`, and expects to be parsed into `(1*2)*3`.
+        // Represents `1 * 2 * 3`, and expects to be parsed into `(1 * 2) * 3`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Asterisk, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Asterisk, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "*"),
+                TokenKind::Asterisk,
+            ),
+            mktoken!(str_loc!("1 * ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("1 * 2 ", "*"),
+                TokenKind::Asterisk,
+            ),
+            mktoken!(str_loc!("1 * 2 * ", "3"),
+                TokenKind::Number(3.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixAsterisk, loc 0, 0, 0, 5,
-                left mkast!(infix InfixAsterisk, loc 0, 0, 0, 3,
-                    left mkast!(num 1.0, loc 0, 0, 0, 1),
-                    right mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 * 2 * 3"), vec![
+            mkast!(infix InfixAsterisk, loc str_loc!("", "1 * 2 * 3"),
+                left mkast!(infix InfixAsterisk, loc str_loc!("", "1 * 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 * ", "2")),
                 ),
-                right mkast!(num 3.0, loc 0, 4, 0, 5),
+                right mkast!(num 3.0, loc str_loc!("1 * 2 * ", "3")),
             ),
         ])
     )]
     #[case::two_slashes(
-        // Represents `1/2/3`, and expects to be parsed into `(1/2)/3`.
+        // Represents `1 / 2 / 3`, and expects to be parsed into `(1 / 2) / 3`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Slash, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Slash, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "/"),
+                TokenKind::Slash,
+            ),
+            mktoken!(str_loc!("1 / ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("1 / 2 ", "/"),
+                TokenKind::Slash,
+            ),
+            mktoken!(str_loc!("1 / 2 / ", "3"),
+                TokenKind::Number(3.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixSlash, loc 0, 0, 0, 5,
-                left mkast!(infix InfixSlash, loc 0, 0, 0, 3,
-                    left mkast!(num 1.0, loc 0, 0, 0, 1),
-                    right mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 / 2 / 3"), vec![
+            mkast!(infix InfixSlash, loc str_loc!("", "1 / 2 / 3"),
+                left mkast!(infix InfixSlash, loc str_loc!("", "1 / 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 / ", "2")),
                 ),
-                right mkast!(num 3.0, loc 0, 4, 0, 5),
+                right mkast!(num 3.0, loc str_loc!("1 / 2 / ", "3")),
             ),
         ])
     )]
     #[case::two_percents(
-        // Represents `1%2%3`, and expects to be parsed into `(1%2)%3`.
+        // Represents `1 % 2 % 3`, and expects to be parsed into `(1 % 2) % 3`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Percent, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Percent, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "%"),
+                TokenKind::Percent,
+            ),
+            mktoken!(str_loc!("1 % ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("1 % 2 ", "%"),
+                TokenKind::Percent,
+            ),
+            mktoken!(str_loc!("1 % 2 % ", "3"),
+                TokenKind::Number(3.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixPercent, loc 0, 0, 0, 5,
-                left mkast!(infix InfixPercent, loc 0, 0, 0, 3,
-                    left mkast!(num 1.0, loc 0, 0, 0, 1),
-                    right mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 % 2 % 3"), vec![
+            mkast!(infix InfixPercent, loc str_loc!("", "1 % 2 % 3"),
+                left mkast!(infix InfixPercent, loc str_loc!("", "1 % 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 % ", "2")),
                 ),
-                right mkast!(num 3.0, loc 0, 4, 0, 5),
+                right mkast!(num 3.0, loc str_loc!("1 % 2 % ", "3")),
             ),
         ])
     )]
     #[case::two_conjuncts(
         // Represents `참 그리고 참 그리고 참`, and expects to be parsed into `(참 그리고 참) 그리고 참`.
         vec![
-            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Conjunct, loc 0, 2, 0, 5),
-            mktoken!(TokenKind::Bool(true), loc 0, 6, 0, 7),
-            mktoken!(TokenKind::Conjunct, loc 0, 8, 0, 11),
-            mktoken!(TokenKind::Bool(true), loc 0, 12, 0, 13),
+            mktoken!(str_loc!("", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 ", "그리고"),
+                TokenKind::Conjunct,
+            ),
+            mktoken!(str_loc!("참 그리고 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 그리고 참 ", "그리고"),
+                TokenKind::Conjunct,
+            ),
+            mktoken!(str_loc!("참 그리고 참 그리고 ", "참"),
+                TokenKind::Bool(true),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 13, vec![
-            mkast!(infix InfixConjunct, loc 0, 0, 0, 13,
-                left mkast!(infix InfixConjunct, loc 0, 0, 0, 7,
-                    left mkast!(boolean true, loc 0, 0, 0, 1),
-                    right mkast!(boolean true, loc 0, 6, 0, 7),
+        mkast!(prog loc str_loc!("", "참 그리고 참 그리고 참"), vec![
+            mkast!(infix InfixConjunct, loc str_loc!("", "참 그리고 참 그리고 참"),
+                left mkast!(infix InfixConjunct, loc str_loc!("", "참 그리고 참"),
+                    left mkast!(boolean true, loc str_loc!("", "참")),
+                    right mkast!(boolean true, loc str_loc!("참 그리고 ", "참")),
                 ),
-                right mkast!(boolean true, loc 0, 12, 0, 13),
+                right mkast!(boolean true, loc str_loc!("참 그리고 참 그리고 ", "참")),
             ),
         ])
     )]
     #[case::two_disjuncts(
-        // Represents `참 그리고 참 그리고 참`, and expects to be parsed into `(참 그리고 참) 그리고 참`.
+        // Represents `참 또는 참 또는 참`, and expects to be parsed into `(참 또는 참) 또는 참`.
         vec![
-            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
-            mktoken!(TokenKind::Bool(true), loc 0, 5, 0, 6),
-            mktoken!(TokenKind::Disjunct, loc 0, 7, 0, 9),
-            mktoken!(TokenKind::Bool(true), loc 0, 10, 0, 11),
+            mktoken!(str_loc!("", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 ", "또는"),
+                TokenKind::Disjunct,
+            ),
+            mktoken!(str_loc!("참 또는 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 또는 참 ", "또는"),
+                TokenKind::Disjunct,
+            ),
+            mktoken!(str_loc!("참 또는 참 또는 ", "참"),
+                TokenKind::Bool(true),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 11, vec![
-            mkast!(infix InfixDisjunct, loc 0, 0, 0, 11,
-                left mkast!(infix InfixDisjunct, loc 0, 0, 0, 6,
-                    left mkast!(boolean true, loc 0, 0, 0, 1),
-                    right mkast!(boolean true, loc 0, 5, 0, 6),
+        mkast!(prog loc str_loc!("", "참 또는 참 또는 참"), vec![
+            mkast!(infix InfixDisjunct, loc str_loc!("", "참 또는 참 또는 참"),
+                left mkast!(infix InfixDisjunct, loc str_loc!("", "참 또는 참"),
+                    left mkast!(boolean true, loc str_loc!("", "참")),
+                    right mkast!(boolean true, loc str_loc!("참 또는 ", "참")),
                 ),
-                right mkast!(boolean true, loc 0, 10, 0, 11),
+                right mkast!(boolean true, loc str_loc!("참 또는 참 또는 ", "참")),
             ),
         ])
     )]
@@ -1117,115 +1462,175 @@ mod tests {
 
     #[rstest]
     #[case::two_equals(
-        // Represents `a=b=c`, and expects to be parsed into `a=(b=c)`.
+        // Represents `a = b = c`, and expects to be parsed into `a = (b = c)`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Equals, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Equals, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "="),
+                TokenKind::Equals,
+            ),
+            mktoken!(str_loc!("a = ", "b"),
+                TokenKind::Identifier(String::from("b")),
+            ),
+            mktoken!(str_loc!("a = b ", "="),
+                TokenKind::Equals,
+            ),
+            mktoken!(str_loc!("a = b = ", "c"),
+                TokenKind::Identifier(String::from("c")),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixEquals, loc 0, 0, 0, 5,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(infix InfixEquals, loc 0, 2, 0, 5,
-                    left mkast!(identifier "b", loc 0, 2, 0, 3),
-                    right mkast!(identifier "c", loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "a = b = c"), vec![
+            mkast!(infix InfixEquals, loc str_loc!("", "a = b = c"),
+                left mkast!(identifier "a", loc str_loc!("", "a")),
+                right mkast!(infix InfixEquals, loc str_loc!("a = ", "b = c"),
+                    left mkast!(identifier "b", loc str_loc!("a = ", "b")),
+                    right mkast!(identifier "c", loc str_loc!("a = b = ", "c")),
                 ),
             ),
         ])
     )]
     #[case::two_plus_equals(
-        // Represents `a+=b+=c`, and expects to be parsed into `a+=(b+=c)`.
+        // Represents `a += b += c`, and expects to be parsed into `a += (b += c)`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::PlusEquals, loc 0, 1, 0, 3),
-            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::PlusEquals, loc 0, 4, 0, 6),
-            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 6, 0, 7),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "+="),
+                TokenKind::PlusEquals,
+            ),
+            mktoken!(str_loc!("a += ", "b"),
+                TokenKind::Identifier(String::from("b")),
+            ),
+            mktoken!(str_loc!("a += b ", "+="),
+                TokenKind::PlusEquals,
+            ),
+            mktoken!(str_loc!("a += b += ", "c"),
+                TokenKind::Identifier(String::from("c")),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 7, vec![
-            mkast!(infix InfixPlusEquals, loc 0, 0, 0, 7,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(infix InfixPlusEquals, loc 0, 3, 0, 7,
-                    left mkast!(identifier "b", loc 0, 3, 0, 4),
-                    right mkast!(identifier "c", loc 0, 6, 0, 7),
+        mkast!(prog loc str_loc!("", "a += b += c"), vec![
+            mkast!(infix InfixPlusEquals, loc str_loc!("", "a += b += c"),
+                left mkast!(identifier "a", loc str_loc!("", "a")),
+                right mkast!(infix InfixPlusEquals, loc str_loc!("a += ", "b += c"),
+                    left mkast!(identifier "b", loc str_loc!("a += ", "b")),
+                    right mkast!(identifier "c", loc str_loc!("a += b += ", "c")),
                 ),
             ),
         ])
     )]
     #[case::two_minus_equals(
-        // Represents `a-=b-=c`, and expects to be parsed into `a-=(b-=c)`.
+        // Represents `a -= b -= c`, and expects to be parsed into `a -= (b -= c)`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::MinusEquals, loc 0, 1, 0, 3),
-            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::MinusEquals, loc 0, 4, 0, 6),
-            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 6, 0, 7),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "-="),
+                TokenKind::MinusEquals,
+            ),
+            mktoken!(str_loc!("a -= ", "b"),
+                TokenKind::Identifier(String::from("b")),
+            ),
+            mktoken!(str_loc!("a -= b ", "-="),
+                TokenKind::MinusEquals,
+            ),
+            mktoken!(str_loc!("a -= b -= ", "c"),
+                TokenKind::Identifier(String::from("c")),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 7, vec![
-            mkast!(infix InfixMinusEquals, loc 0, 0, 0, 7,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(infix InfixMinusEquals, loc 0, 3, 0, 7,
-                    left mkast!(identifier "b", loc 0, 3, 0, 4),
-                    right mkast!(identifier "c", loc 0, 6, 0, 7),
+        mkast!(prog loc str_loc!("", "a -= b -= c"), vec![
+            mkast!(infix InfixMinusEquals, loc str_loc!("", "a -= b -= c"),
+                left mkast!(identifier "a", loc str_loc!("", "a")),
+                right mkast!(infix InfixMinusEquals, loc str_loc!("a -= ", "b -= c"),
+                    left mkast!(identifier "b", loc str_loc!("a -= ", "b")),
+                    right mkast!(identifier "c", loc str_loc!("a -= b -= ", "c")),
                 ),
             ),
         ])
     )]
     #[case::two_asterisk_equals(
-        // Represents `a*=b*=c`, and expects to be parsed into `a*=(b*=c)`.
+        // Represents `a *= b *= c`, and expects to be parsed into `a *= (b *= c)`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::AsteriskEquals, loc 0, 1, 0, 3),
-            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::AsteriskEquals, loc 0, 4, 0, 6),
-            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 6, 0, 7),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "*="),
+                TokenKind::AsteriskEquals,
+            ),
+            mktoken!(str_loc!("a *= ", "b"),
+                TokenKind::Identifier(String::from("b")),
+            ),
+            mktoken!(str_loc!("a *= b ", "*="),
+                TokenKind::AsteriskEquals,
+            ),
+            mktoken!(str_loc!("a *= b *= ", "c"),
+                TokenKind::Identifier(String::from("c")),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 7, vec![
-            mkast!(infix InfixAsteriskEquals, loc 0, 0, 0, 7,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(infix InfixAsteriskEquals, loc 0, 3, 0, 7,
-                    left mkast!(identifier "b", loc 0, 3, 0, 4),
-                    right mkast!(identifier "c", loc 0, 6, 0, 7),
+        mkast!(prog loc str_loc!("", "a *= b *= c"), vec![
+            mkast!(infix InfixAsteriskEquals, loc str_loc!("", "a *= b *= c"),
+                left mkast!(identifier "a", loc str_loc!("", "a")),
+                right mkast!(infix InfixAsteriskEquals, loc str_loc!("a *= ", "b *= c"),
+                    left mkast!(identifier "b", loc str_loc!("a *= ", "b")),
+                    right mkast!(identifier "c", loc str_loc!("a *= b *= ", "c")),
                 ),
             ),
         ])
     )]
     #[case::two_slash_equals(
-        // Represents `a/=b/=c`, and expects to be parsed into `a/=(b/=c)`.
+        // Represents `a /= b /= c`, and expects to be parsed into `a /= (b /= c)`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::SlashEquals, loc 0, 1, 0, 3),
-            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::SlashEquals, loc 0, 4, 0, 6),
-            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 6, 0, 7),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "/="),
+                TokenKind::SlashEquals,
+            ),
+            mktoken!(str_loc!("a /= ", "b"),
+                TokenKind::Identifier(String::from("b")),
+            ),
+            mktoken!(str_loc!("a /= b ", "/="),
+                TokenKind::SlashEquals,
+            ),
+            mktoken!(str_loc!("a /= b /= ", "c"),
+                TokenKind::Identifier(String::from("c")),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 7, vec![
-            mkast!(infix InfixSlashEquals, loc 0, 0, 0, 7,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(infix InfixSlashEquals, loc 0, 3, 0, 7,
-                    left mkast!(identifier "b", loc 0, 3, 0, 4),
-                    right mkast!(identifier "c", loc 0, 6, 0, 7),
+        mkast!(prog loc str_loc!("", "a /= b /= c"), vec![
+            mkast!(infix InfixSlashEquals, loc str_loc!("", "a /= b /= c"),
+                left mkast!(identifier "a", loc str_loc!("", "a")),
+                right mkast!(infix InfixSlashEquals, loc str_loc!("a /= ", "b /= c"),
+                    left mkast!(identifier "b", loc str_loc!("a /= ", "b")),
+                    right mkast!(identifier "c", loc str_loc!("a /= b /= ", "c")),
                 ),
             ),
         ])
     )]
     #[case::two_percent_equals(
-        // Represents `a%=b%=c`, and expects to be parsed into `a%=(b%=c)`.
+        // Represents `a %= b %= c`, and expects to be parsed into `a %= (b %= c)`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::PercentEquals, loc 0, 1, 0, 3),
-            mktoken!(TokenKind::Identifier(String::from("b")), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::PercentEquals, loc 0, 4, 0, 6),
-            mktoken!(TokenKind::Identifier(String::from("c")), loc 0, 6, 0, 7),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "%="),
+                TokenKind::PercentEquals,
+            ),
+            mktoken!(str_loc!("a %= ", "b"),
+                TokenKind::Identifier(String::from("b")),
+            ),
+            mktoken!(str_loc!("a %= b ", "%="),
+                TokenKind::PercentEquals,
+            ),
+            mktoken!(str_loc!("a %= b %= ", "c"),
+                TokenKind::Identifier(String::from("c")),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 7, vec![
-            mkast!(infix InfixPercentEquals, loc 0, 0, 0, 7,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(infix InfixPercentEquals, loc 0, 3, 0, 7,
-                    left mkast!(identifier "b", loc 0, 3, 0, 4),
-                    right mkast!(identifier "c", loc 0, 6, 0, 7),
+        mkast!(prog loc str_loc!("", "a %= b %= c"), vec![
+            mkast!(infix InfixPercentEquals, loc str_loc!("", "a %= b %= c"),
+                left mkast!(identifier "a", loc str_loc!("", "a")),
+                right mkast!(infix InfixPercentEquals, loc str_loc!("a %= ", "b %= c"),
+                    left mkast!(identifier "b", loc str_loc!("a %= ", "b")),
+                    right mkast!(identifier "c", loc str_loc!("a %= b %= ", "c")),
                 ),
             ),
         ])
@@ -1236,77 +1641,117 @@ mod tests {
 
     #[rstest]
     #[case::asterisk_prioritized_over_plus(
-        // Represents `1+2*3`, and expects to be parsed into `1+(2*3)`.
+        // Represents `1 + 2 * 3`, and expects to be parsed into `1 + (2 * 3)`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Asterisk, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("1 + ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("1 + 2 ", "*"),
+                TokenKind::Asterisk,
+            ),
+            mktoken!(str_loc!("1 + 2 * ", "3"),
+                TokenKind::Number(3.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixPlus, loc 0, 0, 0, 5,
-                left mkast!(num 1.0, loc 0, 0, 0, 1),
-                right mkast!(infix InfixAsterisk, loc 0, 2, 0, 5,
-                    left mkast!(num 2.0, loc 0, 2, 0, 3),
-                    right mkast!(num 3.0, loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "1 + 2 * 3"), vec![
+            mkast!(infix InfixPlus, loc str_loc!("", "1 + 2 * 3"),
+                left mkast!(num 1.0, loc str_loc!("", "1")),
+                right mkast!(infix InfixAsterisk, loc str_loc!("1 + ", "2 * 3"),
+                    left mkast!(num 2.0, loc str_loc!("1 + ", "2")),
+                    right mkast!(num 3.0, loc str_loc!("1 + 2 * ", "3")),
                 ),
             ),
         ])
     )]
     #[case::slash_prioritized_over_minus(
-        // Represents `1-2/3`, and expects to be parsed into `1-(2/3)`.
+        // Represents `1 - 2 / 3`, and expects to be parsed into `1 - (2 / 3)`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Slash, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "-"),
+                TokenKind::Minus,
+            ),
+            mktoken!(str_loc!("1 - ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("1 - 2 ", "/"),
+                TokenKind::Slash,
+            ),
+            mktoken!(str_loc!("1 - 2 / ", "3"),
+                TokenKind::Number(3.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixMinus, loc 0, 0, 0, 5,
-                left mkast!(num 1.0, loc 0, 0, 0, 1),
-                right mkast!(infix InfixSlash, loc 0, 2, 0, 5,
-                    left mkast!(num 2.0, loc 0, 2, 0, 3),
-                    right mkast!(num 3.0, loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "1 - 2 / 3"), vec![
+            mkast!(infix InfixMinus, loc str_loc!("", "1 - 2 / 3"),
+                left mkast!(num 1.0, loc str_loc!("", "1")),
+                right mkast!(infix InfixSlash, loc str_loc!("1 - ", "2 / 3"),
+                    left mkast!(num 2.0, loc str_loc!("1 - ", "2")),
+                    right mkast!(num 3.0, loc str_loc!("1 - 2 / ", "3")),
                 ),
             ),
         ])
     )]
     #[case::percent_prioritized_over_plus(
-        // Represents `1+2%3`, and expects to be parsed into `1+(2%3)`.
+        // Represents `1 + 2 % 3`, and expects to be parsed into `1 + (2 % 3)`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Plus, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Percent, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("1 + ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("1 + 2 ", "%"),
+                TokenKind::Percent,
+            ),
+            mktoken!(str_loc!("1 + 2 % ", "3"),
+                TokenKind::Number(3.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixPlus, loc 0, 0, 0, 5,
-                left mkast!(num 1.0, loc 0, 0, 0, 1),
-                right mkast!(infix InfixPercent, loc 0, 2, 0, 5,
-                    left mkast!(num 2.0, loc 0, 2, 0, 3),
-                    right mkast!(num 3.0, loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "1 + 2 % 3"), vec![
+            mkast!(infix InfixPlus, loc str_loc!("", "1 + 2 % 3"),
+                left mkast!(num 1.0, loc str_loc!("", "1")),
+                right mkast!(infix InfixPercent, loc str_loc!("1 + ", "2 % 3"),
+                    left mkast!(num 2.0, loc str_loc!("1 + ", "2")),
+                    right mkast!(num 3.0, loc str_loc!("1 + 2 % ", "3")),
                 ),
             ),
         ])
     )]
     #[case::plus_prioritized_over_equals(
-        // Represents `a=1+2`, and expects to be parsed into `a=(1+2)`.
+        // Represents `a = 1 + 2`, and expects to be parsed into `a = (1 + 2)`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("a")), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Equals, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Number(1.0), loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Plus, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(2.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "a"),
+                TokenKind::Identifier(String::from("a")),
+            ),
+            mktoken!(str_loc!("a ", "="),
+                TokenKind::Equals,
+            ),
+            mktoken!(str_loc!("a = ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("a = 1 ", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("a = 1 + ", "2"),
+                TokenKind::Number(2.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(infix InfixEquals, loc 0, 0, 0, 5,
-                left mkast!(identifier "a", loc 0, 0, 0, 1),
-                right mkast!(infix InfixPlus, loc 0, 2, 0, 5,
-                    left mkast!(num 1.0, loc 0, 2, 0, 3),
-                    right mkast!(num 2.0, loc 0, 4, 0, 5),
+        mkast!(prog loc str_loc!("", "a = 1 + 2"), vec![
+            mkast!(infix InfixEquals, loc str_loc!("", "a = 1 + 2"),
+                left mkast!(identifier "a", loc str_loc!("", "a")),
+                right mkast!(infix InfixPlus, loc str_loc!("a = ", "1 + 2"),
+                    left mkast!(num 1.0, loc str_loc!("a = ", "1")),
+                    right mkast!(num 2.0, loc str_loc!("a = 1 + ", "2")),
                 ),
             ),
         ])
@@ -1317,49 +1762,85 @@ mod tests {
 
     #[rstest]
     #[case::arithmetic_grouping(
-        // Represents `(1-2)*3`
+        // Represents `(1 - 2) * 3`
         vec![
-            mktoken!(TokenKind::LParen, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Minus, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(2.0), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::RParen, loc 0, 4, 0, 5),
-            mktoken!(TokenKind::Asterisk, loc 0, 5, 0, 6),
-            mktoken!(TokenKind::Number(3.0), loc 0, 6, 0, 7),
+            mktoken!(str_loc!("", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("(", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("(1 ", "-"),
+                TokenKind::Minus,
+            ),
+            mktoken!(str_loc!("(1 - ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("(1 - 2", ")"),
+                TokenKind::RParen,
+            ),
+            mktoken!(str_loc!("(1 - 2) ", "*"),
+                TokenKind::Asterisk,
+            ),
+            mktoken!(str_loc!("(1 - 2) * ", "3"),
+                TokenKind::Number(3.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 7, vec![
-            mkast!(infix InfixAsterisk, loc 0, 0, 0, 7,
-                left mkast!(infix InfixMinus, loc 0, 0, 0, 5,
-                    left mkast!(num 1.0, loc 0, 1, 0, 2),
-                    right mkast!(num 2.0, loc 0, 3, 0, 4),
+        mkast!(prog loc str_loc!("", "(1 - 2) * 3"), vec![
+            mkast!(infix InfixAsterisk, loc str_loc!("", "(1 - 2) * 3"),
+                left mkast!(infix InfixMinus, loc str_loc!("", "(1 - 2)"),
+                    left mkast!(num 1.0, loc str_loc!("(", "1")),
+                    right mkast!(num 2.0, loc str_loc!("(1 - ", "2")),
                 ),
-                right mkast!(num 3.0, loc 0, 6, 0, 7),
+                right mkast!(num 3.0, loc str_loc!("(1 - 2) * ", "3")),
             ),
         ])
     )]
     #[case::arithmetic_nested_grouping(
-        // Represents `1-(2*(3-4))`
+        // Represents `1 - (2 * (3 - 4))`
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Minus, loc 0, 1, 0, 2),
-            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(2.0), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Asterisk, loc 0, 4, 0, 5),
-            mktoken!(TokenKind::LParen, loc 0, 5, 0, 6),
-            mktoken!(TokenKind::Number(3.0), loc 0, 6, 0, 7),
-            mktoken!(TokenKind::Minus, loc 0, 7, 0, 8),
-            mktoken!(TokenKind::Number(4.0), loc 0, 8, 0, 9),
-            mktoken!(TokenKind::RParen, loc 0, 9, 0, 10),
-            mktoken!(TokenKind::RParen, loc 0, 10, 0, 11),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "-"),
+                TokenKind::Minus,
+            ),
+            mktoken!(str_loc!("1 - ", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("1 - (", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("1 - (2 ", "*"),
+                TokenKind::Asterisk,
+            ),
+            mktoken!(str_loc!("1 - (2 * ", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("1 - (2 * (", "3"),
+                TokenKind::Number(3.0),
+            ),
+            mktoken!(str_loc!("1 - (2 * (3 ", "-"),
+                TokenKind::Minus,
+            ),
+            mktoken!(str_loc!("1 - (2 * (3 - ", "4"),
+                TokenKind::Number(4.0),
+            ),
+            mktoken!(str_loc!("1 - (2 * (3 - 4", ")"),
+                TokenKind::RParen,
+            ),
+            mktoken!(str_loc!("1 - (2 * (3 - 4)", ")"),
+                TokenKind::RParen,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 11, vec![
-            mkast!(infix InfixMinus, loc 0, 0, 0, 11,
-                left mkast!(num 1.0, loc 0, 0, 0, 1),
-                right mkast!(infix InfixAsterisk, loc 0, 2, 0, 11,
-                    left mkast!(num 2.0, loc 0, 3, 0, 4),
-                    right mkast!(infix InfixMinus, loc 0, 5, 0, 10,
-                        left mkast!(num 3.0, loc 0, 6, 0, 7),
-                        right mkast!(num 4.0, loc 0, 8, 0, 9),
+        mkast!(prog loc str_loc!("", "1 - (2 * (3 - 4))"), vec![
+            mkast!(infix InfixMinus, loc str_loc!("", "1 - (2 * (3 - 4))"),
+                left mkast!(num 1.0, loc str_loc!("", "1")),
+                right mkast!(infix InfixAsterisk, loc str_loc!("1 - ", "(2 * (3 - 4))"),
+                    left mkast!(num 2.0, loc str_loc!("1 - (", "2")),
+                    right mkast!(infix InfixMinus, loc str_loc!("1 - (2 * ", "(3 - 4)"),
+                        left mkast!(num 3.0, loc str_loc!("1 - (2 * (", "3")),
+                        right mkast!(num 4.0, loc str_loc!("1 - (2 * (3 - ", "4")),
                     ),
                 ),
             ),
@@ -1368,47 +1849,83 @@ mod tests {
     #[case::connective_grouping(
         // Represents `참 또는 (참 그리고 참)`
         vec![
-            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
-            mktoken!(TokenKind::LParen, loc 0, 5, 0, 6),
-            mktoken!(TokenKind::Bool(true), loc 0, 6, 0, 7),
-            mktoken!(TokenKind::Conjunct, loc 0, 8, 0, 10),
-            mktoken!(TokenKind::Bool(true), loc 0, 11, 0, 12),
-            mktoken!(TokenKind::RParen, loc 0, 12, 0, 13),
+            mktoken!(str_loc!("", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 ", "또는"),
+                TokenKind::Disjunct,
+            ),
+            mktoken!(str_loc!("참 또는 ", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("참 또는 (", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 또는 (참 ", "그리고"),
+                TokenKind::Conjunct,
+            ),
+            mktoken!(str_loc!("참 또는 (참 그리고 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 또는 (참 그리고 참", ")"),
+                TokenKind::RParen,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 13, vec![
-            mkast!(infix InfixDisjunct, loc 0, 0, 0, 13,
-                left mkast!(boolean true, loc 0, 0, 0, 1),
-                right mkast!(infix InfixConjunct, loc 0, 5, 0, 13,
-                    left mkast!(boolean true, loc 0, 6, 0, 7),
-                    right mkast!(boolean true, loc 0, 11, 0, 12),
+        mkast!(prog loc str_loc!("", "참 또는 (참 그리고 참)"), vec![
+            mkast!(infix InfixDisjunct, loc str_loc!("", "참 또는 (참 그리고 참)"), 
+                left mkast!(boolean true, loc str_loc!("", "참")),
+                right mkast!(infix InfixConjunct, loc str_loc!("참 또는 ", "(참 그리고 참)"),
+                    left mkast!(boolean true, loc str_loc!("참 또는 (", "참")),
+                    right mkast!(boolean true, loc str_loc!("참 또는 (참 그리고 ", "참")),
                 ),
             ),
         ])
     )]
     #[case::connective_nested_grouping(
-        // Represents `참 또는 (참 그리고 (참 또는 참))`
+        // Represents `참 또는 (거짓 그리고 (참 또는 참))`
         vec![
-            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Disjunct, loc 0, 2, 0, 4),
-            mktoken!(TokenKind::LParen, loc 0, 5, 0, 6),
-            mktoken!(TokenKind::Bool(true), loc 0, 6, 0, 7),
-            mktoken!(TokenKind::Conjunct, loc 0, 8, 0, 10),
-            mktoken!(TokenKind::LParen, loc 0, 11, 0, 12),
-            mktoken!(TokenKind::Bool(true), loc 0, 12, 0, 13),
-            mktoken!(TokenKind::Conjunct, loc 0, 14, 0, 17),
-            mktoken!(TokenKind::Bool(true), loc 0, 18, 0, 19),
-            mktoken!(TokenKind::RParen, loc 0, 19, 0, 20),
-            mktoken!(TokenKind::RParen, loc 0, 20, 0, 21),
+            mktoken!(str_loc!("", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 ", "또는"),
+                TokenKind::Disjunct,
+            ),
+            mktoken!(str_loc!("참 또는 ", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("참 또는 (", "거짓"),
+                TokenKind::Bool(false),
+            ),
+            mktoken!(str_loc!("참 또는 (거짓 ", "그리고"),
+                TokenKind::Conjunct,
+            ),
+            mktoken!(str_loc!("참 또는 (거짓 그리고 ", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("참 또는 (거짓 그리고 (", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 또는 (거짓 그리고 (참 ", "또는"),
+                TokenKind::Disjunct,
+            ),
+            mktoken!(str_loc!("참 또는 (거짓 그리고 (참 또는 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 또는 (거짓 그리고 (참 또는 참", ")"),
+                TokenKind::RParen,
+            ),
+            mktoken!(str_loc!("참 또는 (거짓 그리고 (참 또는 참)", ")"),
+                TokenKind::RParen,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 21, vec![
-            mkast!(infix InfixDisjunct, loc 0, 0, 0, 21,
-                left mkast!(boolean true, loc 0, 0, 0, 1),
-                right mkast!(infix InfixConjunct, loc 0, 5, 0, 21,
-                    left mkast!(boolean true, loc 0, 6, 0, 7),
-                    right mkast!(infix InfixConjunct, loc 0, 11, 0, 20,
-                        left mkast!(boolean true, loc 0, 12, 0, 13),
-                        right mkast!(boolean true, loc 0, 18, 0, 19),
+        mkast!(prog loc str_loc!("", "참 또는 (거짓 그리고 (참 또는 참))"), vec![
+            mkast!(infix InfixDisjunct, loc str_loc!("", "참 또는 (거짓 그리고 (참 또는 참))"), 
+                left mkast!(boolean true, loc str_loc!("", "참")),
+                right mkast!(infix InfixConjunct, loc str_loc!("참 또는 ", "(거짓 그리고 (참 또는 참))"),
+                    left mkast!(boolean false, loc str_loc!("참 또는 (", "거짓")),
+                    right mkast!(infix InfixDisjunct, loc str_loc!("참 또는 (거짓 그리고 ", "(참 또는 참)"),
+                        left mkast!(boolean true, loc str_loc!("참 또는 (거짓 그리고 (", "참")),
+                        right mkast!(boolean true, loc str_loc!("참 또는 (거짓 그리고 (참 또는 ", "참")),
                     ),
                 ),
             ),
@@ -1420,25 +1937,43 @@ mod tests {
 
     #[rstest]
     #[case::lparen_not_closed_and_end(
-        // Represents `(1+2`.
+        // Represents `(1 + 2`.
         vec![
-            mktoken!(TokenKind::LParen, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Plus, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(2.0), loc 0, 3, 0, 4),
+            mktoken!(str_loc!("", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("(", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("(1 ", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("(1 + ", "2"),
+                TokenKind::Number(2.0),
+            ),
         ],
-        mkerr!(LParenNotClosed, Range::from_nums(0, 0, 0, 4))
+        mkerr!(LParenNotClosed, str_loc!("", "(1 + 2"))
     )]
     #[case::lparen_not_closed_and_something(
-        // Represents `(1+2 3`.
+        // Represents `(1 + 2 3`.
         vec![
-            mktoken!(TokenKind::LParen, loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Number(1.0), loc 0, 1, 0, 2),
-            mktoken!(TokenKind::Plus, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(2.0), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(3.0), loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("(", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("(1 ", "+"),
+                TokenKind::Plus,
+            ),
+            mktoken!(str_loc!("(1 + ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("(1 + 2 ", "3"),
+                TokenKind::Number(2.0),
+            ),
         ],
-        mkerr!(LParenNotClosed, Range::from_nums(0, 0, 0, 5))
+        mkerr!(LParenNotClosed, str_loc!("", "(1 + 2 3"))
     )]
     fn unmatched_parenthesis(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -1450,12 +1985,18 @@ mod tests {
     #[case::no_parameters_and_empty_body(
         // Represents `함수 {}`.
         vec![
-            mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::RBrace, loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("함수 {", "}"),
+                TokenKind::RBrace,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(closure loc 0, 0, 0, 5,
+        mkast!(prog loc str_loc!("", "함수 {}"), vec![
+            mkast!(closure loc str_loc!("", "함수 {}"),
                 param vec![],
                 body vec![],
             ),
@@ -1464,13 +2005,21 @@ mod tests {
     #[case::single_parameter_and_empty_body(
         // Represents `함수 사과 {}`.
         vec![
-            mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 3, 0, 5),
-            mktoken!(TokenKind::LBrace, loc 0, 6, 0, 7),
-            mktoken!(TokenKind::RBrace, loc 0, 7, 0, 8),
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("함수 사과 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("함수 사과 {", "}"),
+                TokenKind::RBrace,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 8, vec![
-            mkast!(closure loc 0, 0, 0, 8,
+        mkast!(prog loc str_loc!("", "함수 사과 {}"), vec![
+            mkast!(closure loc str_loc!("", "함수 사과 {}"),
                 param vec![String::from("사과")],
                 body vec![],
             ),
@@ -1479,18 +2028,38 @@ mod tests {
     #[case::multiple_parameters_and_empty_body(
         // Represents `함수 사과, 오렌지, 바나나 {}`.
         vec![
-            mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 3, 0, 5),
-            mktoken!(TokenKind::Comma, loc 0, 5, 0, 6),
-            mktoken!(TokenKind::Identifier(String::from("오렌지")), loc 0, 7, 0, 10),
-            mktoken!(TokenKind::Comma, loc 0, 10, 0, 11),
-            mktoken!(TokenKind::Identifier(String::from("바나나")), loc 0, 12, 0, 15),
-            mktoken!(TokenKind::LBrace, loc 0, 16, 0, 17),
-            mktoken!(TokenKind::RBrace, loc 0, 17, 0, 18),
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("함수 사과", ","),
+                TokenKind::Comma,
+            ),
+            mktoken!(str_loc!("함수 사과, ", "오렌지"),
+                TokenKind::Identifier(String::from("오렌지")),
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지", ","),
+                TokenKind::Comma,
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, ", "바나나"),
+                TokenKind::Identifier(String::from("바나나")),
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 {", "}"),
+                TokenKind::RBrace,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 18, vec![
-            mkast!(closure loc 0, 0, 0, 18,
-                param vec![String::from("사과"), String::from("오렌지"), String::from("바나나")],
+        mkast!(prog loc str_loc!("", "함수 사과, 오렌지, 바나나 {}"), vec![
+            mkast!(closure loc str_loc!("", "함수 사과, 오렌지, 바나나 {}"),
+                param vec![
+                    String::from("사과"),
+                    String::from("오렌지"),
+                    String::from("바나나"),
+                ],
                 body vec![],
             ),
         ])
@@ -1498,16 +2067,24 @@ mod tests {
     #[case::no_parameters_and_single_expression(
         // Represents `함수 { 1 }`.
         vec![
-            mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(1.0), loc 0, 5, 0, 6),
-            mktoken!(TokenKind::RBrace, loc 0, 7, 0, 8),
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("함수 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("함수 { 1 ", "}"),
+                TokenKind::RBrace,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 8, vec![
-            mkast!(closure loc 0, 0, 0, 8,
+        mkast!(prog loc str_loc!("", "함수 { 1 }"), vec![
+            mkast!(closure loc str_loc!("", "함수 { 1 }"),
                 param vec![],
                 body vec![
-                    mkast!(num 1.0, loc 0, 5, 0, 6),
+                    mkast!(num 1.0, loc str_loc!("함수 { ", "1")),
                 ],
             ),
         ])
@@ -1515,20 +2092,32 @@ mod tests {
     #[case::no_parameters_and_multiple_expression(
         // Represents `함수 { 1 2 3 }`.
         vec![
-            mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(1.0), loc 0, 5, 0, 6),
-            mktoken!(TokenKind::Number(2.0), loc 0, 7, 0, 8),
-            mktoken!(TokenKind::Number(3.0), loc 0, 9, 0, 10),
-            mktoken!(TokenKind::RBrace, loc 0, 11, 0, 12),
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("함수 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("함수 { 1 ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("함수 { 1 2 ", "3"),
+                TokenKind::Number(3.0),
+            ),
+            mktoken!(str_loc!("함수 { 1 2 3 ", "}"),
+                TokenKind::RBrace,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 12, vec![
-            mkast!(closure loc 0, 0, 0, 12,
+        mkast!(prog loc str_loc!("", "함수 { 1 2 3 }"), vec![
+            mkast!(closure loc str_loc!("", "함수 { 1 2 3 }"),
                 param vec![],
                 body vec![
-                    mkast!(num 1.0, loc 0, 5, 0, 6),
-                    mkast!(num 2.0, loc 0, 7, 0, 8),
-                    mkast!(num 3.0, loc 0, 9, 0, 10),
+                    mkast!(num 1.0, loc str_loc!("함수 { ", "1")),
+                    mkast!(num 2.0, loc str_loc!("함수 { 1 ", "2")),
+                    mkast!(num 3.0, loc str_loc!("함수 { 1 2 ", "3")),
                 ],
             ),
         ])
@@ -1536,25 +2125,51 @@ mod tests {
     #[case::multiple_parameters_and_multiple_expression(
         // Represents `함수 사과, 오렌지, 바나나 { 1 2 3 }`.
         vec![
-            mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 3, 0, 5),
-            mktoken!(TokenKind::Comma, loc 0, 5, 0, 6),
-            mktoken!(TokenKind::Identifier(String::from("오렌지")), loc 0, 7, 0, 10),
-            mktoken!(TokenKind::Comma, loc 0, 10, 0, 11),
-            mktoken!(TokenKind::Identifier(String::from("바나나")), loc 0, 12, 0, 15),
-            mktoken!(TokenKind::LBrace, loc 0, 16, 0, 17),
-            mktoken!(TokenKind::Number(1.0), loc 0, 18, 0, 19),
-            mktoken!(TokenKind::Number(2.0), loc 0, 20, 0, 21),
-            mktoken!(TokenKind::Number(3.0), loc 0, 22, 0, 23),
-            mktoken!(TokenKind::RBrace, loc 0, 24, 0, 25),
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("함수 사과", ","),
+                TokenKind::Comma,
+            ),
+            mktoken!(str_loc!("함수 사과, ", "오렌지"),
+                TokenKind::Identifier(String::from("오렌지")),
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지", ","),
+                TokenKind::Comma,
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, ", "바나나"),
+                TokenKind::Identifier(String::from("바나나")),
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 { 1 ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 { 1 2 ", "3"),
+                TokenKind::Number(3.0),
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 { 1 2 3 ", "}"),
+                TokenKind::RBrace,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 25, vec![
-            mkast!(closure loc 0, 0, 0, 25,
-                param vec![String::from("사과"), String::from("오렌지"), String::from("바나나")],
+        mkast!(prog loc str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"), vec![
+            mkast!(closure loc str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"),
+                param vec![
+                    String::from("사과"),
+                    String::from("오렌지"),
+                    String::from("바나나"),
+                ],
                 body vec![
-                    mkast!(num 1.0, loc 0, 18, 0, 19),
-                    mkast!(num 2.0, loc 0, 20, 0, 21),
-                    mkast!(num 3.0, loc 0, 22, 0, 23),
+                    mkast!(num 1.0, loc str_loc!("함수 사과, 오렌지, 바나나 { ", "1")),
+                    mkast!(num 2.0, loc str_loc!("함수 사과, 오렌지, 바나나 { 1 ", "2")),
+                    mkast!(num 3.0, loc str_loc!("함수 사과, 오렌지, 바나나 { 1 2 ", "3")),
                 ],
             ),
         ])
@@ -1567,34 +2182,50 @@ mod tests {
     #[case::end_with_keyword(
         // Represents `함수`.
         vec![
-            mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
         ],
-        mkerr!(InvalidFuncParam, Range::from_nums(0, 2, 0, 2))
+        mkerr!(InvalidFuncParam, str_loc!("함수", ""))
     )]
     #[case::invalid_parameters(
         // Represents `함수 +`.
         vec![
-            mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Plus, loc 0, 3, 0, 4),
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "+"),
+                TokenKind::Plus,
+            ),
         ],
-        mkerr!(InvalidFuncParam, Range::from_nums(0, 3, 0, 4))
+        mkerr!(InvalidFuncParam, str_loc!("함수 ", "+"))
     )]
     #[case::empty_body_not_closed(
         // Represents `함수 {`.
         vec![
-            mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "{"),
+                TokenKind::LBrace,
+            ),
         ],
-        mkerr!(FuncBodyNotClosed, Range::from_nums(0, 4, 0, 4))
+        mkerr!(FuncBodyNotClosed, str_loc!("함수 {", ""))
     )]
     #[case::nonempty_body_not_closed(
         // Represents `함수 { 1`.
         vec![
-            mktoken!(TokenKind::Closure, loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LBrace, loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Number(1.0), loc 0, 5, 0, 6),
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("함수 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
         ],
-        mkerr!(FuncBodyNotClosed, Range::from_nums(0, 6, 0, 6))
+        mkerr!(FuncBodyNotClosed, str_loc!("함수 { 1", ""))
     )]
     fn invalid_closure(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -1604,13 +2235,19 @@ mod tests {
     #[case::id_with_no_args(
         // Represents `사과()`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::RParen, loc 0, 3, 0, 4),
+            mktoken!(str_loc!("", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("사과", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("사과(", ")"),
+                TokenKind::RParen,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 4, vec![
-            mkast!(call loc 0, 0, 0, 4,
-                target mkast!(identifier "사과", loc 0, 0, 0, 2),
+        mkast!(prog loc str_loc!("", "사과()"), vec![
+            mkast!(call loc str_loc!("", "사과()"),
+                target mkast!(identifier "사과", loc str_loc!("", "사과")),
                 args vec![],
             ),
         ])
@@ -1618,39 +2255,63 @@ mod tests {
     #[case::id_with_single_arg(
         // Represents `사과(1)`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(1.0), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::RParen, loc 0, 4, 0, 5),
+            mktoken!(str_loc!("", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("사과", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("사과(", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("사과(1", ")"),
+                TokenKind::RParen,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(call loc 0, 0, 0, 5,
-                target mkast!(identifier "사과", loc 0, 0, 0, 2),
+        mkast!(prog loc str_loc!("", "사과(1)"), vec![
+            mkast!(call loc str_loc!("", "사과(1)"),
+                target mkast!(identifier "사과", loc str_loc!("", "사과")),
                 args vec![
-                    mkast!(num 1.0, loc 0, 3, 0, 4),
+                    mkast!(num 1.0, loc str_loc!("사과(", "1")),
                 ],
             ),
         ])
     )]
     #[case::id_with_multiple_args(
-        // Represents `사과(1,2,3)`.
+        // Represents `사과(1, 2, 3)`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(1.0), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Comma, loc 0, 4, 0, 5),
-            mktoken!(TokenKind::Number(2.0), loc 0, 5, 0, 6),
-            mktoken!(TokenKind::Comma, loc 0, 6, 0, 7),
-            mktoken!(TokenKind::Number(3.0), loc 0, 7, 0, 8),
-            mktoken!(TokenKind::RParen, loc 0, 8, 0, 9),
+            mktoken!(str_loc!("", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("사과", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("사과(", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("사과(1 ", ","),
+                TokenKind::Comma,
+            ),
+            mktoken!(str_loc!("사과(1, ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("사과(1, 2", ","),
+                TokenKind::Comma,
+            ),
+            mktoken!(str_loc!("사과(1, 2, ", "3"),
+                TokenKind::Number(3.0),
+            ),
+            mktoken!(str_loc!("사과(1, 2, 3", ")"),
+                TokenKind::RParen,
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 9, vec![
-            mkast!(call loc 0, 0, 0, 9,
-                target mkast!(identifier "사과", loc 0, 0, 0, 2),
+        mkast!(prog loc str_loc!("", "사과(1, 2, 3)"), vec![
+            mkast!(call loc str_loc!("", "사과(1, 2, 3)"),
+                target mkast!(identifier "사과", loc str_loc!("", "사과")),
                 args vec![
-                    mkast!(num 1.0, loc 0, 3, 0, 4),
-                    mkast!(num 2.0, loc 0, 5, 0, 6),
-                    mkast!(num 3.0, loc 0, 7, 0, 8),
+                    mkast!(num 1.0, loc str_loc!("사과(", "1")),
+                    mkast!(num 2.0, loc str_loc!("사과(1, ", "2")),
+                    mkast!(num 3.0, loc str_loc!("사과(1, 2, ", "3")),
                 ],
             ),
         ])
@@ -1663,30 +2324,50 @@ mod tests {
     #[case::end_with_lparen(
         // Represents `사과(`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("사과", "("),
+                TokenKind::LParen,
+            ),
         ],
-        mkerr!(InvalidCallArgs, Range::from_nums(0, 0, 0, 3))
+        mkerr!(InvalidCallArgs, str_loc!("", "사과("))
     )]
     #[case::comma_after_lparen(
         // Represents `사과(,`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Comma, loc 0, 3, 0, 4),
+            mktoken!(str_loc!("", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("사과", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("사과(", ","),
+                TokenKind::Comma,
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 3, 0, 4))
+        mkerr!(InvalidExprStart, str_loc!("사과(", ","))
     )]
     #[case::two_comma_after_arg(
         // Represents `사과(1,,`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::LParen, loc 0, 2, 0, 3),
-            mktoken!(TokenKind::Number(1.0), loc 0, 3, 0, 4),
-            mktoken!(TokenKind::Comma, loc 0, 4, 0, 5),
-            mktoken!(TokenKind::Comma, loc 0, 5, 0, 6),
+            mktoken!(str_loc!("", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("사과", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("사과(", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("사과(1", ","),
+                TokenKind::Comma,
+            ),
+            mktoken!(str_loc!("사과(1,", ","),
+                TokenKind::Comma,
+            ),
         ],
-        mkerr!(InvalidExprStart, Range::from_nums(0, 5, 0, 6))
+        mkerr!(InvalidExprStart, str_loc!("사과(1,", ","))
     )]
     fn invalid_call(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -1696,34 +2377,46 @@ mod tests {
     #[case::two_numbers(
         // Represents `1 2`.
         vec![
-            mktoken!(TokenKind::Number(1.0), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Number(2.0), loc 0, 2, 0, 3),
+            mktoken!(str_loc!("", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("1 ", "2"),
+                TokenKind::Number(2.0),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 3, vec![
-            mkast!(num 1.0, loc 0, 0, 0, 1),
-            mkast!(num 2.0, loc 0, 2, 0, 3),
+        mkast!(prog loc str_loc!("", "1 2"), vec![
+            mkast!(num 1.0, loc str_loc!("", "1")),
+            mkast!(num 2.0, loc str_loc!("1 ", "2")),
         ])
     )]
     #[case::two_bools(
         // Represents `참 거짓`.
         vec![
-            mktoken!(TokenKind::Bool(true), loc 0, 0, 0, 1),
-            mktoken!(TokenKind::Bool(false), loc 0, 2, 0, 4),
+            mktoken!(str_loc!("", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("참 ", "거짓"),
+                TokenKind::Bool(false),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 4, vec![
-            mkast!(boolean true, loc 0, 0, 0, 1),
-            mkast!(boolean false, loc 0, 2, 0, 4),
+        mkast!(prog loc str_loc!("", "참 거짓"), vec![
+            mkast!(boolean true, loc str_loc!("", "참")),
+            mkast!(boolean false, loc str_loc!("참 ", "거짓")),
         ])
     )]
     #[case::two_identifiers(
         // Represents `사과 오렌지`.
         vec![
-            mktoken!(TokenKind::Identifier(String::from("사과")), loc 0, 0, 0, 2),
-            mktoken!(TokenKind::Identifier(String::from("오렌지")), loc 0, 3, 0, 6),
+            mktoken!(str_loc!("", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("사과 ", "오렌지"),
+                TokenKind::Identifier(String::from("오렌지")),
+            ),
         ],
-        mkast!(prog loc 0, 0, 0, 6, vec![
-            mkast!(identifier "사과", loc 0, 0, 0, 2),
-            mkast!(identifier "오렌지", loc 0, 3, 0, 6),
+        mkast!(prog loc str_loc!("", "사과 오렌지"), vec![
+            mkast!(identifier "사과", loc str_loc!("", "사과")),
+            mkast!(identifier "오렌지", loc str_loc!("사과 ", "오렌지")),
         ])
     )]
     fn multiple_tokens(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {

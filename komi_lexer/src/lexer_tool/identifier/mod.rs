@@ -77,13 +77,38 @@ pub fn read_identifier_with_init_seg(scanner: &mut SourceScanner, init_seg: Stri
 mod tests {
     use super::*;
     use komi_syntax::mktoken;
+    use komi_util::str_loc;
     use rstest::rstest;
 
     #[rstest]
-    #[case::read_end(String::from("사과"), "", mktoken!(Kind::Identifier(String::from("오렌지")), loc 0, 0, 0, 3))]
-    #[case::read_invalid_char(String::from("사과"), "+", mktoken!(Kind::Identifier(String::from("오렌지")), loc 0, 0, 0, 3))]
-    #[case::read_until_end(String::from("사과"), "바나나", mktoken!(Kind::Identifier(String::from("사과바나나")), loc 0, 0, 0, 3))]
-    #[case::read_until_invalid_char(String::from("사과"), "바나나+", mktoken!(Kind::Identifier(String::from("사과바나나")), loc 0, 0, 0, 3))]
+    #[case::read_end(
+        String::from("사과"),
+        "",
+        mktoken!(str_loc!("", "오렌지"), // Note that the origin is at the end of `사과`.
+            Kind::Identifier(String::from("오렌지")),
+        )
+    )]
+    #[case::read_invalid_char(
+        String::from("사과"),
+        "+",
+        mktoken!(str_loc!("", "오렌지"),
+            Kind::Identifier(String::from("오렌지")),
+        )
+    )]
+    #[case::read_until_end(
+        String::from("사과"),
+        "바나나",
+        mktoken!(str_loc!("", "바나나"),
+            Kind::Identifier(String::from("사과바나나")),
+        )
+    )]
+    #[case::read_until_invalid_char(
+        String::from("사과"),
+        "바나나+",
+        mktoken!(str_loc!("", "바나나"),
+            Kind::Identifier(String::from("사과바나나")),
+        )
+    )]
     fn test_lex_identifier_with_init_seg_or(#[case] init_seg: String, #[case] source: &str, #[case] expected: Token) {
         let mut scanner = SourceScanner::new(source);
         let first_char = scanner.read();
@@ -105,10 +130,34 @@ mod tests {
     }
 
     #[rstest]
-    #[case::read_end(String::from("사과"), "", mktoken!(Kind::Identifier(String::from("사과")), loc 0, 0, 0, 0))]
-    #[case::read_invalid_char(String::from("사과"), "+", mktoken!(Kind::Identifier(String::from("사과")), loc 0, 0, 0, 0))]
-    #[case::read_until_end(String::from("사과"), "오렌지", mktoken!(Kind::Identifier(String::from("사과오렌지")), loc 0, 0, 0, 3))]
-    #[case::read_until_invalid_char(String::from("사과"), "오렌지+", mktoken!(Kind::Identifier(String::from("사과오렌지")), loc 0, 0, 0, 3))]
+    #[case::read_end(
+        String::from("사과"),
+        "",
+        mktoken!(str_loc!("", ""), // Note that the origin is at the end of `사과`.
+            Kind::Identifier(String::from("사과")),
+        )
+    )]
+    #[case::read_invalid_char(
+        String::from("사과"),
+        "+",
+        mktoken!(str_loc!("", ""),
+            Kind::Identifier(String::from("사과")),
+        )
+    )]
+    #[case::read_until_end(
+        String::from("사과"),
+        "오렌지",
+        mktoken!(str_loc!("", "오렌지"),
+            Kind::Identifier(String::from("사과오렌지")),
+        )
+    )]
+    #[case::read_until_invalid_char(
+        String::from("사과"),
+        "오렌지+",
+        mktoken!(str_loc!("", "오렌지"),
+            Kind::Identifier(String::from("사과오렌지")),
+        )
+    )]
     fn test_lex_identifier_with_init_seg(#[case] init_seg: String, #[case] source: &str, #[case] expected: Token) {
         let mut scanner = SourceScanner::new(source);
 
