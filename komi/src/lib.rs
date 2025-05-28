@@ -4,7 +4,6 @@ pub use err::ExecError;
 use komi_evaluator::Evaluator;
 use komi_lexer::lex;
 use komi_parser::parse;
-pub use komi_representer::EMPTY_REPR;
 use komi_representer::represent;
 
 pub type ExecRes = Result<ExecOut, ExecError>;
