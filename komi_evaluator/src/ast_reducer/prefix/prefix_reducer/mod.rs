@@ -1,10 +1,9 @@
+use crate::ValRes;
 use crate::ast_reducer::util;
 use crate::environment::Environment;
 use crate::err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, Stdout, Value, ValueKind};
 use komi_util::Range;
-
-type ResVal = Result<Value, EvalError>;
 
 /// Reduces the operand `operand` of a numeric prefix operand to a value, with its kind determined by `get_kind`.
 pub fn reduce_num<F>(
@@ -13,7 +12,7 @@ pub fn reduce_num<F>(
     env: &mut Environment,
     stdouts: &mut Stdout,
     get_kind: F,
-) -> ResVal
+) -> ValRes
 where
     F: Fn(f64) -> ValueKind,
 {
@@ -27,7 +26,7 @@ pub fn reduce_bool<F>(
     env: &mut Environment,
     stdouts: &mut Stdout,
     get_kind: F,
-) -> ResVal
+) -> ValRes
 where
     F: Fn(bool) -> ValueKind,
 {
@@ -55,7 +54,7 @@ fn reduce<T, F, G>(
     stdouts: &mut Stdout,
     reduce_operand: F,
     get_kind: G,
-) -> ResVal
+) -> ValRes
 where
     F: Fn(&Box<Ast>, &mut Environment, &mut Stdout) -> Result<T, EvalError>,
     G: Fn(T) -> ValueKind,

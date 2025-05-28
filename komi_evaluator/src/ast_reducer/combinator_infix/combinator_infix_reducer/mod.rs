@@ -1,10 +1,9 @@
 use super::util;
+use crate::ValRes;
 use crate::environment::Environment;
 use crate::err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, Stdout, Value, ValueKind};
 use komi_util::Range;
-
-type ResVal = Result<Value, EvalError>;
 
 /// Reduces the operand `operand` of a numeric infix operand to a value.
 /// Its primitive value and kind are determined by `reduce_infix` and `get_kind`, respectively.
@@ -16,7 +15,7 @@ pub fn reduce_num<F, G>(
     stdouts: &mut Stdout,
     reduce_infix: F,
     get_kind: G,
-) -> ResVal
+) -> ValRes
 where
     F: Fn(f64, f64) -> f64,
     G: Fn(f64) -> ValueKind,
@@ -43,7 +42,7 @@ pub fn reduce_bool<F, G>(
     stdouts: &mut Stdout,
     reduce_infix: F,
     get_kind: G,
-) -> ResVal
+) -> ValRes
 where
     F: Fn(bool, bool) -> bool,
     G: Fn(bool) -> ValueKind,
@@ -84,7 +83,7 @@ fn reduce<T, F, G, H>(
     reduce_operand: F,
     reduce_infix: G,
     get_kind: H,
-) -> ResVal
+) -> ValRes
 where
     F: Fn(&Box<Ast>, &mut Environment, &mut Stdout) -> Result<T, EvalError>,
     G: Fn(T, T) -> T,

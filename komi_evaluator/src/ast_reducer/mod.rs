@@ -6,15 +6,13 @@ mod leaf;
 mod prefix;
 mod util;
 
+use crate::ValRes;
 use crate::environment::Environment;
-use crate::err::EvalError;
 use assignment_infix as assign_infix;
 use combinator_infix as comb_infix;
-use komi_syntax::{Ast, AstKind, Stdout, Value};
+use komi_syntax::{Ast, AstKind, Stdout};
 
-type ResVal = Result<Value, EvalError>;
-
-pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment, stdouts: &mut Stdout) -> ResVal {
+pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment, stdouts: &mut Stdout) -> ValRes {
     // Design principle: once you read something, pass it as an argument.
     // This avoids unnecessary repeated reading in subfunctions.
     // Moreover, if you delay determining the kind of what you read, the decision is only postponed to subfunctions.
@@ -58,9 +56,9 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Environment, stdouts: &mut Stdout) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::EvalErrorKind;
+    use crate::{EvalError, EvalErrorKind};
     use fixtures::*;
-    use komi_syntax::{AstKind, ValueKind, mkast};
+    use komi_syntax::{AstKind, Value, ValueKind, mkast};
     use komi_util::{Range, str_loc};
     use rstest::rstest;
 

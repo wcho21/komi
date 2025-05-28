@@ -1,12 +1,9 @@
+use crate::ValRes;
 use crate::environment::Environment;
 use crate::err::{EvalError, EvalErrorKind};
 use crate::reduce_ast;
-use komi_syntax::{Ast, AstKind, Stdout, Value, ValueKind};
+use komi_syntax::{Ast, AstKind, BuiltinFunc, Stdout, Value, ValueKind};
 use komi_util::Range;
-
-use komi_syntax::BuiltinFunc;
-// TODO: rename type to ValRes and export to publish
-type ResVal = Result<Value, EvalError>;
 
 pub fn evaluate(
     target: &Box<Ast>,
@@ -14,7 +11,7 @@ pub fn evaluate(
     location: &Range,
     env: &mut Environment,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     let target_closure = reduce_ast(target, env, stdouts)?;
 
     match target_closure.kind {
@@ -31,7 +28,7 @@ fn evaluate_builtin_func(
     arguments: &Vec<Box<Ast>>,
     env: &mut Environment,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     let arg_vals_res: Result<Vec<Value>, EvalError> =
         arguments.iter().map(|arg| reduce_ast(arg, env, stdouts)).collect();
     let arg_vals = arg_vals_res?;
@@ -47,7 +44,7 @@ fn evaluate_closure(
     closure_env: Environment,
     location: &Range,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     let arg_vals_res: Result<Vec<Value>, EvalError> = arguments
         .iter()
         .map(|arg| reduce_ast(arg, outer_env, stdouts))

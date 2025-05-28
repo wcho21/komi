@@ -4,14 +4,12 @@
 
 mod assignment_infix_reducer;
 
+use crate::ValRes;
 use crate::ast_reducer::combinator_infix as comb;
 use crate::environment::Environment;
-use crate::err::EvalError;
 use assignment_infix_reducer as reducer;
-use komi_syntax::{Ast, Stdout, Value};
+use komi_syntax::{Ast, Stdout};
 use komi_util::Range;
-
-type ResVal = Result<Value, EvalError>;
 
 /// Reduces the operands `left` and `right` of an equals infix to a value.
 pub fn reduce_equals(
@@ -20,7 +18,7 @@ pub fn reduce_equals(
     location: &Range,
     env: &mut Environment,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     reducer::reduce_equals(left, right, location, env, stdouts)
 }
 
@@ -31,7 +29,7 @@ pub fn reduce_plus_equals(
     location: &Range,
     env: &mut Environment,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     let comb_reduced = comb::reduce_plus(left, right, location, env, stdouts)?;
 
     reducer::reduce_equals_with_right_value(left, comb_reduced, location, env)
@@ -44,7 +42,7 @@ pub fn reduce_minus_equals(
     location: &Range,
     env: &mut Environment,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     let comb_reduced = comb::reduce_minus(left, right, location, env, stdouts)?;
 
     reducer::reduce_equals_with_right_value(left, comb_reduced, location, env)
@@ -57,7 +55,7 @@ pub fn reduce_asterisk_equals(
     location: &Range,
     env: &mut Environment,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     let comb_reduced = comb::reduce_asterisk(left, right, location, env, stdouts)?;
 
     reducer::reduce_equals_with_right_value(left, comb_reduced, location, env)
@@ -70,7 +68,7 @@ pub fn reduce_slash_equals(
     location: &Range,
     env: &mut Environment,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     let comb_reduced = comb::reduce_slash(left, right, location, env, stdouts)?;
 
     reducer::reduce_equals_with_right_value(left, comb_reduced, location, env)
@@ -83,7 +81,7 @@ pub fn reduce_percent_equals(
     location: &Range,
     env: &mut Environment,
     stdouts: &mut Stdout,
-) -> ResVal {
+) -> ValRes {
     let comb_reduced = comb::reduce_percent(left, right, location, env, stdouts)?;
 
     reducer::reduce_equals_with_right_value(left, comb_reduced, location, env)

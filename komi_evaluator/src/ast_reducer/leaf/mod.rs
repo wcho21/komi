@@ -1,12 +1,11 @@
+use crate::ValRes;
 use crate::environment::Environment;
 use crate::err::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, Value, ValueKind};
 use komi_util::Range;
 
-type ResVal = Result<Value, EvalError>;
-
 /// Returns the evaluated result, from name `name` and its location `location`.
-pub fn evaluate_identifier(name: &String, location: &Range, env: &Environment) -> ResVal {
+pub fn evaluate_identifier(name: &String, location: &Range, env: &Environment) -> ValRes {
     let Some(x) = env.get(name) else {
         return Err(EvalError::new(EvalErrorKind::UndefinedIdentifier, *location));
     };
@@ -27,12 +26,12 @@ pub fn evaluate_identifier(name: &String, location: &Range, env: &Environment) -
 }
 
 /// Returns the evaluated numeric result, from number `num` and its location `location`.
-pub fn evaluate_num(num: f64, location: &Range) -> ResVal {
+pub fn evaluate_num(num: f64, location: &Range) -> ValRes {
     Ok(Value::new(ValueKind::Number(num), *location))
 }
 
 /// Returns the evaluated boolean result, from boolean `boolean` and its location `location`.
-pub fn evaluate_bool(boolean: bool, location: &Range) -> ResVal {
+pub fn evaluate_bool(boolean: bool, location: &Range) -> ValRes {
     Ok(Value::new(ValueKind::Bool(boolean), *location))
 }
 
@@ -41,7 +40,7 @@ pub fn evaluate_closure(
     body: &Vec<Box<Ast>>,
     location: &Range,
     env: &mut Environment,
-) -> ResVal {
+) -> ValRes {
     Ok(Value::new(
         ValueKind::Closure {
             parameters: parameters.clone(),
