@@ -34,17 +34,15 @@ impl Value {
 pub type Stdout = Vec<String>;
 pub type BuiltinFunc = fn(&Vec<Value>, &mut Stdout) -> Value;
 
+#[macro_export]
+macro_rules! mkval {
+    ($val:expr, $loc:expr) => {
+        Value::new($val, $loc)
+    };
+}
+
 impl Value {
     pub const fn new(kind: ValueKind, location: Range) -> Self {
         Value { kind, location }
-    }
-
-    // TODO: change from-function into macro
-    pub fn from_num(num: f64, location: Range) -> Self {
-        Value::new(ValueKind::Number(num), location)
-    }
-
-    pub fn from_bool(boolean: bool, location: Range) -> Self {
-        Value::new(ValueKind::Bool(boolean), location)
     }
 }

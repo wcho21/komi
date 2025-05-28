@@ -62,7 +62,7 @@ mod tests {
     use super::*;
     use crate::{EvalError, EvalErrorKind};
     use fixtures::*;
-    use komi_syntax::{AstKind, Value, ValueKind, mkast};
+    use komi_syntax::{AstKind, Value, ValueKind, mkast, mkval};
     use komi_util::{Range, str_loc};
     use rstest::rstest;
 
@@ -146,7 +146,7 @@ mod tests {
                 ),
             ]),
             root_empty_env(),
-            Value::from_num(1.0, str_loc!("", "함수 { 1 }()")),
+            mkval!(ValueKind::Number(1.0), str_loc!("", "함수 { 1 }()")),
         )]
         #[case::call_call(
             // Represents `함수 { 함수 { 1 } }()()`.
@@ -170,7 +170,7 @@ mod tests {
                 ),
             ]),
             root_empty_env(),
-            Value::from_num(1.0, str_loc!("", "함수 { 함수 { 1 } }()()")),
+            mkval!(ValueKind::Number(1.0), str_loc!("", "함수 { 함수 { 1 } }()()")),
         )]
         #[case::call_id(
             // Represents `사과()`.
@@ -188,7 +188,7 @@ mod tests {
                 ],
                 env: Env::new(),
             }, range())),
-            Value::from_num(1.0, str_loc!("", "사과()")),
+            mkval!(ValueKind::Number(1.0), str_loc!("", "사과()")),
         )]
         #[case::call_with_args(
             // Represents `사과(1, 2)`.
@@ -215,7 +215,7 @@ mod tests {
                 ],
                 env: Env::new(),
             }, range())),
-            Value::from_num(3.0, str_loc!("", "사과(1, 2)")),
+            mkval!(ValueKind::Number(3.0), str_loc!("", "사과(1, 2)")),
         )]
         fn call(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
@@ -259,8 +259,8 @@ mod tests {
                 mkast!(identifier "사과", loc str_loc!("", "사과")),
             ]),
             // Represents a binding for `사과` to `1.0`.
-            root_env("사과", &Value::from_num(1.0, range())),
-            Value::from_num(1.0, str_loc!("", "사과")),
+            root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
+            mkval!(ValueKind::Number(1.0), str_loc!("", "사과")),
         )]
         #[case::bool(
             // Represents `사과`.
@@ -268,8 +268,8 @@ mod tests {
                 mkast!(identifier "사과", loc str_loc!("", "사과")),
             ]),
             // Represents a binding for `사과` to `참`.
-            root_env("사과", &Value::from_bool(true, range())),
-            Value::from_bool(true, str_loc!("", "사과")),
+            root_env("사과", &mkval!(ValueKind::Bool(true), range())),
+            mkval!(ValueKind::Bool(true), str_loc!("", "사과")),
         )]
         #[case::closure(
             // Represents `사과`.
@@ -317,14 +317,14 @@ mod tests {
             mkast!(prog loc str_loc!("", "1"), vec![
                 mkast!(num 1.0, loc str_loc!("", "1")),
             ]),
-            Value::from_num(1.0, str_loc!("", "1"))
+            mkval!(ValueKind::Number(1.0), str_loc!("", "1"))
         )]
         #[case::bool(
             // Represents `참`.
             mkast!(prog loc str_loc!("", "참"), vec![
                 mkast!(boolean true, loc str_loc!("", "참")),
             ]),
-            Value::from_bool(true, str_loc!("", "참"))
+            mkval!(ValueKind::Bool(true), str_loc!("", "참"))
         )]
         #[case::closure(
             // Represents `함수 사과, 오렌지, 바나나 { 1 2 3 }`.
@@ -409,7 +409,7 @@ mod tests {
                     operand mkast!(num 1.0, loc str_loc!("+", "1")),
                 ),
             ]),
-            Value::from_num(1.0, str_loc!("", "+1"))
+            mkval!(ValueKind::Number(1.0), str_loc!("", "+1"))
         )]
         #[case::minus_prefix(
             // Represents `-1`
@@ -418,7 +418,7 @@ mod tests {
                     operand mkast!(num 1.0, loc str_loc!("-", "1")),
                 ),
             ]),
-            Value::from_num(-1.0, str_loc!("", "-1"))
+            mkval!(ValueKind::Number(-1.0), str_loc!("", "-1"))
         )]
         #[case::two_plus_prefixes(
             // Represents `++1`
@@ -429,7 +429,7 @@ mod tests {
                     ),
                 ),
             ]),
-            Value::from_num(1.0, str_loc!("", "++1"))
+            mkval!(ValueKind::Number(1.0), str_loc!("", "++1"))
         )]
         #[case::two_minus_prefixes(
             // Represents `--1`
@@ -440,7 +440,7 @@ mod tests {
                     ),
                 ),
             ]),
-            Value::from_num(1.0, str_loc!("", "--1"))
+            mkval!(ValueKind::Number(1.0), str_loc!("", "--1"))
         )]
         fn num_prefix(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
@@ -454,7 +454,7 @@ mod tests {
                     operand mkast!(boolean true, loc str_loc!("!", "참")),
                 ),
             ]),
-            Value::from_bool(false, str_loc!("", "!참"))
+            mkval!(ValueKind::Bool(false), str_loc!("", "!참"))
         )]
         #[case::two_bangs_bool(
             // Represents `!!참`
@@ -465,7 +465,7 @@ mod tests {
                     ),
                 ),
             ]),
-            Value::from_bool(true, str_loc!("", "!!참"))
+            mkval!(ValueKind::Bool(true), str_loc!("", "!!참"))
         )]
         fn bool_prefix(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
@@ -516,7 +516,7 @@ mod tests {
                     right mkast!(num 4.0, loc str_loc!("6+", "4")),
                 ),
             ]),
-            Value::from_num(10.0, str_loc!("", "6+4"))
+            mkval!(ValueKind::Number(10.0), str_loc!("", "6+4"))
         )]
         #[case::subtraction(
             // Represents `6-4`.
@@ -526,7 +526,7 @@ mod tests {
                     right mkast!(num 4.0, loc str_loc!("6-", "4")),
                 ),
             ]),
-            Value::from_num(2.0, str_loc!("", "6-4"))
+            mkval!(ValueKind::Number(2.0), str_loc!("", "6-4"))
         )]
         #[case::multiplication(
             // Represents `6*4`.
@@ -536,7 +536,7 @@ mod tests {
                     right mkast!(num 4.0, loc str_loc!("6*", "4")),
                 ),
             ]),
-            Value::from_num(24.0, str_loc!("", "6*4"))
+            mkval!(ValueKind::Number(24.0), str_loc!("", "6*4"))
         )]
         #[case::division(
             // Represents `6/4`.
@@ -546,7 +546,7 @@ mod tests {
                     right mkast!(num 4.0, loc str_loc!("6/", "4")),
                 ),
             ]),
-            Value::from_num(1.5, str_loc!("", "6/4"))
+            mkval!(ValueKind::Number(1.5), str_loc!("", "6/4"))
         )]
         #[case::modular(
             // Represents `6%4`.
@@ -556,7 +556,7 @@ mod tests {
                     right mkast!(num 4.0, loc str_loc!("6%", "4")),
                 ),
             ]),
-            Value::from_num(2.0, str_loc!("", "6%4"))
+            mkval!(ValueKind::Number(2.0), str_loc!("", "6%4"))
         )]
         fn arithmetic_infix(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
@@ -584,7 +584,7 @@ mod tests {
                     ),
                 ),
             ]),
-            Value::from_num(-2.75, str_loc!("", "9 * 8 % 7 - 6 + 5 / 4"))
+            mkval!(ValueKind::Number(-2.75), str_loc!("", "9 * 8 % 7 - 6 + 5 / 4"))
         )]
         fn arithmetic_compound(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
@@ -599,7 +599,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("참 그리고 ", "참")),
                 ),
             ]),
-            Value::from_bool(true, str_loc!("", "참 그리고 참"))
+            mkval!(ValueKind::Bool(true), str_loc!("", "참 그리고 참"))
         )]
         #[case::conjunction_on_true_false(
             // Represents `참 그리고 거짓`.
@@ -609,7 +609,7 @@ mod tests {
                     right mkast!(boolean false, loc str_loc!("참 그리고 ", "거짓")),
                 ),
             ]),
-            Value::from_bool(false, str_loc!("", "참 그리고 거짓"))
+            mkval!(ValueKind::Bool(false), str_loc!("", "참 그리고 거짓"))
         )]
         #[case::conjunction_on_false_true(
             // Represents `거짓 그리고 참`.
@@ -619,7 +619,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("거짓 그리고 ", "참")),
                 ),
             ]),
-            Value::from_bool(false, str_loc!("", "거짓 그리고 참"))
+            mkval!(ValueKind::Bool(false), str_loc!("", "거짓 그리고 참"))
         )]
         #[case::conjunction_on_false_false(
             // Represents `거짓 그리고 거짓`.
@@ -629,7 +629,7 @@ mod tests {
                     right mkast!(boolean false, loc str_loc!("거짓 그리고 ", "거짓")),
                 ),
             ]),
-            Value::from_bool(false, str_loc!("", "거짓 그리고 거짓"))
+            mkval!(ValueKind::Bool(false), str_loc!("", "거짓 그리고 거짓"))
         )]
         #[case::disjunction_on_true_true(
             // Represents `참 또는 참`.
@@ -639,7 +639,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("참 또는 ", "참")),
                 ),
             ]),
-            Value::from_bool(true, str_loc!("", "참 또는 참"))
+            mkval!(ValueKind::Bool(true), str_loc!("", "참 또는 참"))
         )]
         #[case::disjunction_on_true_false(
             // Represents `참 또는 거짓`.
@@ -649,7 +649,7 @@ mod tests {
                     right mkast!(boolean false, loc str_loc!("참 또는 ", "거짓")),
                 ),
             ]),
-            Value::from_bool(true, str_loc!("", "참 또는 거짓"))
+            mkval!(ValueKind::Bool(true), str_loc!("", "참 또는 거짓"))
         )]
         #[case::disjunction_on_false_true(
             // Represents `거짓 또는 참`.
@@ -659,7 +659,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("거짓 또는 ", "참")),
                 ),
             ]),
-            Value::from_bool(true, str_loc!("", "거짓 또는 참"))
+            mkval!(ValueKind::Bool(true), str_loc!("", "거짓 또는 참"))
         )]
         #[case::disjunction_on_false_false(
             // Represents `거짓 또는 거짓`.
@@ -669,7 +669,7 @@ mod tests {
                     right mkast!(boolean false, loc str_loc!("거짓 또는 ", "거짓")),
                 ),
             ]),
-            Value::from_bool(false, str_loc!("", "거짓 또는 거짓"))
+            mkval!(ValueKind::Bool(false), str_loc!("", "거짓 또는 거짓"))
         )]
         fn connective_infix(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
@@ -838,7 +838,7 @@ mod tests {
                     right mkast!(num 1.0, loc str_loc!("사과 = ", "1")),
                 ),
             ]),
-            Value::from_num(1.0, str_loc!("", "사과 = 1"))
+            mkval!(ValueKind::Number(1.0), str_loc!("", "사과 = 1"))
         )]
         #[case::id_equals_bool(
             // Represents `사과 = 참`.
@@ -848,7 +848,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("사과 = ", "참")),
                 ),
             ]),
-            Value::from_bool(true, str_loc!("", "사과 = 참"))
+            mkval!(ValueKind::Bool(true), str_loc!("", "사과 = 참"))
         )]
         fn equals(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
@@ -864,8 +864,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `6`.
-            root_env("사과", &Value::from_num(6.0, range())),
-            Value::from_num(10.0, str_loc!("", "사과 += 4"))
+            root_env("사과", &mkval!(ValueKind::Number(6.0), range())),
+            mkval!(ValueKind::Number(10.0), str_loc!("", "사과 += 4"))
         )]
         #[case::id_minus_equals_num(
             // Represents `사과 -= 4`.
@@ -876,8 +876,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `6`.
-            root_env("사과", &Value::from_num(6.0, range())),
-            Value::from_num(2.0, str_loc!("", "사과 -= 4"))
+            root_env("사과", &mkval!(ValueKind::Number(6.0), range())),
+            mkval!(ValueKind::Number(2.0), str_loc!("", "사과 -= 4"))
         )]
         #[case::id_asterisk_equals_num(
             // Represents `사과 *= 4`.
@@ -888,8 +888,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `6`.
-            root_env("사과", &Value::from_num(6.0, range())),
-            Value::from_num(24.0, str_loc!("", "사과 *= 4"))
+            root_env("사과", &mkval!(ValueKind::Number(6.0), range())),
+            mkval!(ValueKind::Number(24.0), str_loc!("", "사과 *= 4"))
         )]
         #[case::id_slash_equals_num(
             // Represents `사과 /= 4`.
@@ -900,8 +900,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `6`.
-            root_env("사과", &Value::from_num(6.0, range())),
-            Value::from_num(1.5, str_loc!("", "사과 /= 4"))
+            root_env("사과", &mkval!(ValueKind::Number(6.0), range())),
+            mkval!(ValueKind::Number(1.5), str_loc!("", "사과 /= 4"))
         )]
         #[case::id_percent_equals_num(
             // Represents `사과 %= 4`.
@@ -912,8 +912,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `6`.
-            root_env("사과", &Value::from_num(6.0, range())),
-            Value::from_num(2.0, str_loc!("", "사과 %= 4"))
+            root_env("사과", &mkval!(ValueKind::Number(6.0), range())),
+            mkval!(ValueKind::Number(2.0), str_loc!("", "사과 %= 4"))
         )]
         fn combinating_equals(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
@@ -929,7 +929,7 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `1`.
-            root_env("사과", &Value::from_num(1.0, range())),
+            root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
             mkerr!(InvalidNumInfixOperand, str_loc!("사과 += ", "참")),
         )]
         #[case::num_id_minus_equals_bool(
@@ -941,7 +941,7 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `1`.
-            root_env("사과", &Value::from_num(1.0, range())),
+            root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
             mkerr!(InvalidNumInfixOperand, str_loc!("사과 -= ", "참")),
         )]
         #[case::num_id_asterisk_equals_bool(
@@ -953,7 +953,7 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `1`.
-            root_env("사과", &Value::from_num(1.0, range())),
+            root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
             mkerr!(InvalidNumInfixOperand, str_loc!("사과 *= ", "참")),
         )]
         #[case::num_id_slash_equals_bool(
@@ -965,7 +965,7 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `1`.
-            root_env("사과", &Value::from_num(1.0, range())),
+            root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
             mkerr!(InvalidNumInfixOperand, str_loc!("사과 /= ", "참")),
         )]
         #[case::num_id_percent_equals_bool(
@@ -977,7 +977,7 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `1`.
-            root_env("사과", &Value::from_num(1.0, range())),
+            root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
             mkerr!(InvalidNumInfixOperand, str_loc!("사과 %= ", "참")),
         )]
         fn combinating_equals_with_wrong_type(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] error: EvalError) {
@@ -998,8 +998,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `6.0`.
-            root_env("사과", &Value::from_num(6.0, range())),
-            Value::from_num(10.0, str_loc!("", "사과 + 4"))
+            root_env("사과", &mkval!(ValueKind::Number(6.0), range())),
+            mkval!(ValueKind::Number(10.0), str_loc!("", "사과 + 4"))
         )]
         #[case::num_plus_id(
             // Represents `6 + 사과`.
@@ -1010,8 +1010,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `4.0`.
-            root_env("사과", &Value::from_num(4.0, range())),
-            Value::from_num(10.0, str_loc!("", "6 + 사과"))
+            root_env("사과", &mkval!(ValueKind::Number(4.0), range())),
+            mkval!(ValueKind::Number(10.0), str_loc!("", "6 + 사과"))
         )]
         #[case::id_minus_num(
             // Represents `사과 - 4`.
@@ -1022,8 +1022,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `6.0`.
-            root_env("사과", &Value::from_num(6.0, range())),
-            Value::from_num(2.0, str_loc!("", "사과 - 4"))
+            root_env("사과", &mkval!(ValueKind::Number(6.0), range())),
+            mkval!(ValueKind::Number(2.0), str_loc!("", "사과 - 4"))
         )]
         #[case::num_minus_id(
             // Represents `6 - 사과`.
@@ -1034,8 +1034,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `4.0`.
-            root_env("사과", &Value::from_num(4.0, range())),
-            Value::from_num(2.0, str_loc!("", "6 - 사과"))
+            root_env("사과", &mkval!(ValueKind::Number(4.0), range())),
+            mkval!(ValueKind::Number(2.0), str_loc!("", "6 - 사과"))
         )]
         #[case::id_asterisk_num(
             // Represents `사과 * 4`.
@@ -1046,8 +1046,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `6.0`.
-            root_env("사과", &Value::from_num(6.0, range())),
-            Value::from_num(24.0, str_loc!("", "사과 * 4"))
+            root_env("사과", &mkval!(ValueKind::Number(6.0), range())),
+            mkval!(ValueKind::Number(24.0), str_loc!("", "사과 * 4"))
         )]
         #[case::num_asterisk_id(
             // Represents `6 * 사과`.
@@ -1058,8 +1058,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `4.0`.
-            root_env("사과", &Value::from_num(4.0, range())),
-            Value::from_num(24.0, str_loc!("", "6 * 사과"))
+            root_env("사과", &mkval!(ValueKind::Number(4.0), range())),
+            mkval!(ValueKind::Number(24.0), str_loc!("", "6 * 사과"))
         )]
         #[case::id_slash_num(
             // Represents `사과 / 4`.
@@ -1070,8 +1070,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `6.0`.
-            root_env("사과", &Value::from_num(6.0, range())),
-            Value::from_num(1.5, str_loc!("", "사과 / 4"))
+            root_env("사과", &mkval!(ValueKind::Number(6.0), range())),
+            mkval!(ValueKind::Number(1.5), str_loc!("", "사과 / 4"))
         )]
         #[case::num_slash_id(
             // Represents `6 / 사과`.
@@ -1082,8 +1082,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `4.0`.
-            root_env("사과", &Value::from_num(4.0, range())),
-            Value::from_num(1.5, str_loc!("", "6 / 사과"))
+            root_env("사과", &mkval!(ValueKind::Number(4.0), range())),
+            mkval!(ValueKind::Number(1.5), str_loc!("", "6 / 사과"))
         )]
         #[case::id_percent_num(
             // Represents `사과 % 4`.
@@ -1094,8 +1094,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `6.0`.
-            root_env("사과", &Value::from_num(6.0, range())),
-            Value::from_num(2.0, str_loc!("", "사과 % 4"))
+            root_env("사과", &mkval!(ValueKind::Number(6.0), range())),
+            mkval!(ValueKind::Number(2.0), str_loc!("", "사과 % 4"))
         )]
         #[case::num_percent_id(
             // Represents `6 % 사과`.
@@ -1106,8 +1106,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `4.0`.
-            root_env("사과", &Value::from_num(4.0, range())),
-            Value::from_num(2.0, str_loc!("", "6 % 사과"))
+            root_env("사과", &mkval!(ValueKind::Number(4.0), range())),
+            mkval!(ValueKind::Number(2.0), str_loc!("", "6 % 사과"))
         )]
         #[case::id_conjunct_bool(
             // Represents `사과 그리고 참`.
@@ -1118,8 +1118,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `참`.
-            root_env("사과", &Value::from_bool(true, range())),
-            Value::from_bool(true, str_loc!("", "사과 그리고 참"))
+            root_env("사과", &mkval!(ValueKind::Bool(true), range())),
+            mkval!(ValueKind::Bool(true), str_loc!("", "사과 그리고 참"))
         )]
         #[case::bool_conjunct_id(
             // Represents `참 그리고 사과`.
@@ -1130,8 +1130,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `참`.
-            root_env("사과", &Value::from_bool(true, range())),
-            Value::from_bool(true, str_loc!("", "참 그리고 사과"))
+            root_env("사과", &mkval!(ValueKind::Bool(true), range())),
+            mkval!(ValueKind::Bool(true), str_loc!("", "참 그리고 사과"))
         )]
         #[case::id_disjunct_bool(
             // Represents `사과 그리고 거짓`.
@@ -1142,8 +1142,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `거짓`.
-            root_env("사과", &Value::from_bool(false, range())),
-            Value::from_bool(false, str_loc!("", "사과 그리고 거짓"))
+            root_env("사과", &mkval!(ValueKind::Bool(false), range())),
+            mkval!(ValueKind::Bool(false), str_loc!("", "사과 그리고 거짓"))
         )]
         #[case::bool_disjunct_id(
             // Represents `거짓 그리고 사과`.
@@ -1154,8 +1154,8 @@ mod tests {
                 ),
             ]),
             // Represents a binding for `사과` to `거짓`.
-            root_env("사과", &Value::from_bool(false, range())),
-            Value::from_bool(false, str_loc!("", "거짓 그리고 사과"))
+            root_env("사과", &mkval!(ValueKind::Bool(false), range())),
+            mkval!(ValueKind::Bool(false), str_loc!("", "거짓 그리고 사과"))
         )]
         fn expression(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
@@ -1170,7 +1170,7 @@ mod tests {
             mkast!(num 2.0, loc str_loc!("1 ", "2")),
         ]),
         // Expect the evaluated result of a multiple-expression program to be the value of the last expression.
-        Value::from_num(2.0, str_loc!("", "1 2"))
+        mkval!(ValueKind::Number(2.0), str_loc!("", "1 2"))
     )]
     #[case::assignment_and_identifier(
         // Represents `사과 = 1 사과`.
@@ -1181,7 +1181,7 @@ mod tests {
             ),
             mkast!(identifier "사과", loc str_loc!("사과 = 1 ", "사과")),
         ]),
-        Value::from_num(1.0, str_loc!("", "사과 = 1 사과"))
+        mkval!(ValueKind::Number(1.0), str_loc!("", "사과 = 1 사과"))
     )]
     fn multiple_expressions_program(#[case] ast: Box<Ast>, #[case] expected: Value) {
         assert_eval!(&ast, expected);
