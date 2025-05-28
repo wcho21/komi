@@ -108,12 +108,21 @@ mod tests {
         }};
     }
 
+    /// Makes a `EvalError`.
+    /// The first argument is the error kind `EvalErrorKind`.
+    /// The second argument is the error location `Range`.
+    macro_rules! mkerr {
+        ($kind:ident, $range:expr) => {
+            EvalError::new(EvalErrorKind::$kind, $range)
+        };
+    }
+
     #[test]
     fn empty() {
         // Represents ``.
         assert_eval_fail!(
             &mkast!(prog loc 0, 0, 0, 0, vec![]),
-            EvalError::new(EvalErrorKind::NoExpressions, Range::from_nums(0, 0, 0, 0)),
+            mkerr!(NoExpressions, Range::from_nums(0, 0, 0, 0)),
         );
     }
 
@@ -217,7 +226,7 @@ mod tests {
                 ),
             ]),
             root_empty_env(),
-            EvalError::new(EvalErrorKind::InvalidCallTarget, Range::from_nums(0, 0, 0, 1)),
+            mkerr!(InvalidCallTarget, Range::from_nums(0, 0, 0, 1)),
         )]
         #[case::call_bool(
             // Represents `참()`.
@@ -228,7 +237,7 @@ mod tests {
                 ),
             ]),
             root_empty_env(),
-            EvalError::new(EvalErrorKind::InvalidCallTarget, Range::from_nums(0, 0, 0, 1)),
+            mkerr!(InvalidCallTarget, Range::from_nums(0, 0, 0, 1)),
         )]
         fn invalid_call(#[case] ast: Box<Ast>, #[case] mut env: Environment, #[case] error: EvalError) {
             assert_eval_fail!(&ast, &mut env, error);
@@ -287,7 +296,7 @@ mod tests {
             mkast!(prog loc 0, 0, 0, 2, vec![
                 mkast!(identifier "사과", loc 0, 0, 0, 2),
             ]),
-            EvalError::new(EvalErrorKind::UndefinedIdentifier, Range::from_nums(0, 0, 0, 2)),
+            mkerr!(UndefinedIdentifier, Range::from_nums(0, 0, 0, 2)),
         )]
         fn single_undefined_identifier(#[case] ast: Box<Ast>, #[case] error: EvalError) {
             assert_eval_fail!(&ast, error);
@@ -455,7 +464,7 @@ mod tests {
                     operand mkast!(boolean true, loc 0, 1, 0, 2),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumPrefixOperand, Range::from_nums(0, 1, 0, 2)),
+            mkerr!(InvalidNumPrefixOperand, Range::from_nums(0, 1, 0, 2)),
         )]
         #[case::minus_bool(
             // Represents `-참`
@@ -464,7 +473,7 @@ mod tests {
                     operand mkast!(boolean true, loc 0, 1, 0, 2),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumPrefixOperand, Range::from_nums(0, 1, 0, 2)),
+            mkerr!(InvalidNumPrefixOperand, Range::from_nums(0, 1, 0, 2)),
         )]
         #[case::bang_num(
             // Represents `!1`
@@ -473,7 +482,7 @@ mod tests {
                     operand mkast!(num 1.0, loc 0, 1, 0, 2),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidBoolPrefixOperand, Range::from_nums(0, 1, 0, 2)),
+            mkerr!(InvalidBoolPrefixOperand, Range::from_nums(0, 1, 0, 2)),
         )]
         fn wrong_type_prefix(#[case] ast: Box<Ast>, #[case] error: EvalError) {
             assert_eval_fail!(&ast, error);
@@ -660,7 +669,7 @@ mod tests {
                     right mkast!(num 1.0, loc 0, 2, 0, 3),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 0, 0, 1)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 0, 0, 1)),
         )]
         #[case::right_bool_addition(
             // Represents `1+참`.
@@ -670,7 +679,7 @@ mod tests {
                     right mkast!(boolean true, loc 0, 2, 0, 3),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 2, 0, 3)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 2, 0, 3)),
         )]
         #[case::left_bool_subtraction(
             // Represents `참-1`.
@@ -680,7 +689,7 @@ mod tests {
                     right mkast!(num 1.0, loc 0, 2, 0, 3),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 0, 0, 1)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 0, 0, 1)),
         )]
         #[case::right_bool_subtraction(
             // Represents `1-참`.
@@ -690,7 +699,7 @@ mod tests {
                     right mkast!(boolean true, loc 0, 2, 0, 3),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 2, 0, 3)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 2, 0, 3)),
         )]
         #[case::left_bool_multiplication(
             // Represents `참*1`.
@@ -700,7 +709,7 @@ mod tests {
                     right mkast!(num 1.0, loc 0, 2, 0, 3),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 0, 0, 1)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 0, 0, 1)),
         )]
         #[case::right_bool_multiplication(
             // Represents `1*참`.
@@ -710,7 +719,7 @@ mod tests {
                     right mkast!(boolean true, loc 0, 2, 0, 3),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 2, 0, 3)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 2, 0, 3)),
         )]
         #[case::left_bool_division(
             // Represents `참/1`.
@@ -720,7 +729,7 @@ mod tests {
                     right mkast!(num 1.0, loc 0, 2, 0, 3),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 0, 0, 1)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 0, 0, 1)),
         )]
         #[case::right_bool_division(
             // Represents `1/참`.
@@ -730,7 +739,7 @@ mod tests {
                     right mkast!(boolean true, loc 0, 2, 0, 3),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 2, 0, 3)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 2, 0, 3)),
         )]
         #[case::left_bool_modular(
             // Represents `참%1`.
@@ -740,7 +749,7 @@ mod tests {
                     right mkast!(num 1.0, loc 0, 2, 0, 3),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 0, 0, 1)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 0, 0, 1)),
         )]
         #[case::right_bool_modular(
             // Represents `1%참`.
@@ -750,7 +759,7 @@ mod tests {
                     right mkast!(boolean true, loc 0, 2, 0, 3),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 2, 0, 3)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 2, 0, 3)),
         )]
         fn arithmetic_infix_with_wrong_type_operand(#[case] ast: Box<Ast>, #[case] error: EvalError) {
             assert_eval_fail!(&ast, error);
@@ -765,7 +774,7 @@ mod tests {
                     right mkast!(boolean true, loc 0, 6, 0, 7),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidBoolInfixOperand, Range::from_nums(0, 0, 0, 1)),
+            mkerr!(InvalidBoolInfixOperand, Range::from_nums(0, 0, 0, 1)),
         )]
         #[case::right_num_conjunction(
             // Represents `참 그리고 1`.
@@ -775,7 +784,7 @@ mod tests {
                     right mkast!(num 1.0, loc 0, 6, 0, 7),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidBoolInfixOperand, Range::from_nums(0, 6, 0, 7)),
+            mkerr!(InvalidBoolInfixOperand, Range::from_nums(0, 6, 0, 7)),
         )]
         #[case::left_num_disjunction(
             // Represents `1 또는 참`.
@@ -785,7 +794,7 @@ mod tests {
                     right mkast!(boolean true, loc 0, 5, 0, 6),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidBoolInfixOperand, Range::from_nums(0, 0, 0, 1)),
+            mkerr!(InvalidBoolInfixOperand, Range::from_nums(0, 0, 0, 1)),
         )]
         #[case::right_num_disjunction(
             // Represents `참 또는 1`.
@@ -795,7 +804,7 @@ mod tests {
                     right mkast!(num 1.0, loc 0, 5, 0, 6),
                 ),
             ]),
-            EvalError::new(EvalErrorKind::InvalidBoolInfixOperand, Range::from_nums(0, 5, 0, 6)),
+            mkerr!(InvalidBoolInfixOperand, Range::from_nums(0, 5, 0, 6)),
         )]
         fn connective_infix_with_wrong_type_operand(#[case] ast: Box<Ast>, #[case] error: EvalError) {
             assert_eval_fail!(&ast, error);
@@ -906,7 +915,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &Value::from_num(1.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
         )]
         #[case::num_id_minus_equals_bool(
             // Represents `사과 += 참`.
@@ -918,7 +927,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &Value::from_num(1.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
         )]
         #[case::num_id_asterisk_equals_bool(
             // Represents `사과 += 참`.
@@ -930,7 +939,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &Value::from_num(1.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
         )]
         #[case::num_id_slash_equals_bool(
             // Represents `사과 += 참`.
@@ -942,7 +951,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &Value::from_num(1.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
         )]
         #[case::num_id_percent_equals_bool(
             // Represents `사과 += 참`.
@@ -954,7 +963,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &Value::from_num(1.0, Range::from_nums(0, 2, 0, 3))), // TODO: what is the meaning of the location of values?
-            EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
+            mkerr!(InvalidNumInfixOperand, Range::from_nums(0, 6, 0, 7)),
         )]
         fn combinating_equals_with_wrong_type(
             #[case] ast: Box<Ast>,
