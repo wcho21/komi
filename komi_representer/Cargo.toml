@@ -1,9 +1,0 @@
-[package]
-name = "komi_representer"
-version = "0.0.0-local"
-publish = false
-edition = "2024"
-
-[dependencies]
-komi_util = { path = "../komi_util" }
-komi_syntax = { path = "../komi_syntax" }

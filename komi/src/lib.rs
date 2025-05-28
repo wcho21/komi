@@ -4,7 +4,6 @@ pub use err::ExecError;
 use komi_evaluator::Evaluator;
 use komi_lexer::lex;
 use komi_parser::parse;
-use komi_representer::represent;
 
 pub type ExecRes = Result<ExecOut, ExecError>;
 
@@ -26,7 +25,7 @@ pub fn execute(source: &str) -> ExecRes {
 
     let mut evaluator = Evaluator::new(&ast);
     let value = evaluator.eval()?;
-    let representation = represent(&value);
+    let representation = value.represent();
     let stdout = evaluator.flush();
 
     let exec_out = ExecOut::new(representation, stdout);
