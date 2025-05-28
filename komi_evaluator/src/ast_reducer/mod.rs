@@ -137,7 +137,7 @@ mod tests {
             mkast!(prog loc str_loc!("", "함수 { 1 }()"), vec![
                 mkast!(call loc str_loc!("", "함수 { 1 }()"),
                     target mkast!(closure loc str_loc!("", "함수 { 1 }"),
-                        param vec![],
+                        params vec![],
                         body vec![
                             mkast!(num 1.0, loc str_loc!("함수 { ", "1")),
                         ],
@@ -154,10 +154,10 @@ mod tests {
                 mkast!(call loc str_loc!("", "함수 { 함수 { 1 } }()()"),
                     target mkast!(call loc str_loc!("", "함수 { 함수 { 1 } }()"),
                         target mkast!(closure loc str_loc!("", "함수 { 함수 { 1 } }"),
-                            param vec![],
+                            params vec![],
                             body vec![
                                 mkast!(closure loc str_loc!("함수 { ", "함수 { 1 }"),
-                                    param vec![],
+                                    params vec![],
                                     body vec![
                                         mkast!(num 1.0, loc str_loc!("함수 { 함수 { ", "1")),
                                     ]
@@ -330,7 +330,7 @@ mod tests {
             // Represents `함수 사과, 오렌지, 바나나 { 1 2 3 }`.
             mkast!(prog loc str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"), vec![
                 mkast!(closure loc str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"),
-                    param vec![
+                    params vec![
                         String::from("사과"),
                         String::from("오렌지"),
                         String::from("바나나"),
@@ -356,12 +356,12 @@ mod tests {
             // Represents `함수 사과 { 함수 오렌지 { 사과 + 오렌지 } }`.
             mkast!(prog loc str_loc!("", "함수 사과 { 함수 오렌지 { 사과 + 오렌지 } }"), vec![
                 mkast!(closure loc str_loc!("", "함수 사과 { 함수 오렌지 { 사과 + 오렌지 } }"),
-                    param vec![
+                    params vec![
                         String::from("사과"),
                     ],
                     body vec![
                         mkast!(closure loc str_loc!("함수 사과 { ", "함수 오렌지 { 사과 + 오렌지 }"),
-                            param vec![String::from("오렌지")],
+                            params vec![String::from("오렌지")],
                             body vec![
                                 mkast!(infix InfixPlus, loc str_loc!("함수 사과 { 함수 오렌지 { ", "사과 + 오렌지"),
                                     left mkast!(identifier "사과", loc str_loc!("함수 사과 { 함수 오렌지 { ", "사과")),
@@ -379,7 +379,7 @@ mod tests {
                 body: vec![
                     // Should contain the same AST with the closure body
                     mkast!(closure loc str_loc!("함수 사과 { ", "함수 오렌지 { 사과 + 오렌지 }"),
-                        param vec![
+                        params vec![
                             String::from("오렌지"),
                         ],
                         body vec![

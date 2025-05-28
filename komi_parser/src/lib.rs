@@ -2009,7 +2009,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 {}"), vec![
             mkast!(closure loc str_loc!("", "함수 {}"),
-                param vec![],
+                params vec![],
                 body vec![],
             ),
         ])
@@ -2032,7 +2032,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 사과 {}"), vec![
             mkast!(closure loc str_loc!("", "함수 사과 {}"),
-                param vec![String::from("사과")],
+                params vec![String::from("사과")],
                 body vec![],
             ),
         ])
@@ -2067,7 +2067,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 사과, 오렌지, 바나나 {}"), vec![
             mkast!(closure loc str_loc!("", "함수 사과, 오렌지, 바나나 {}"),
-                param vec![
+                params vec![
                     String::from("사과"),
                     String::from("오렌지"),
                     String::from("바나나"),
@@ -2094,7 +2094,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 { 1 }"), vec![
             mkast!(closure loc str_loc!("", "함수 { 1 }"),
-                param vec![],
+                params vec![],
                 body vec![
                     mkast!(num 1.0, loc str_loc!("함수 { ", "1")),
                 ],
@@ -2125,7 +2125,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 { 1 2 3 }"), vec![
             mkast!(closure loc str_loc!("", "함수 { 1 2 3 }"),
-                param vec![],
+                params vec![],
                 body vec![
                     mkast!(num 1.0, loc str_loc!("함수 { ", "1")),
                     mkast!(num 2.0, loc str_loc!("함수 { 1 ", "2")),
@@ -2173,7 +2173,7 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"), vec![
             mkast!(closure loc str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"),
-                param vec![
+                params vec![
                     String::from("사과"),
                     String::from("오렌지"),
                     String::from("바나나"),
