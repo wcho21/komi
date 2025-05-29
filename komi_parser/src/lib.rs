@@ -190,14 +190,14 @@ impl<'a> Parser<'a> {
             TokenKind::SlashEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixSlashEquals),
             TokenKind::PercentEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixPercentEquals),
             TokenKind::LParen => self.read_right_and_make_call_ast(left),
-            _ => panic!("todo"), // NOTE: this undetermined cases came from calling of the parse_expression(), and bp says nothing about the token kinds explicitly
+            _ => Err(ParseError::new(ParseErrorKind::UnexpectedExprInfix, infix.location)),
         }
     }
 
     fn parse_grouped_expression(&mut self, first_token: &'a Token) -> AstRes {
         let mut grouped_ast = match self.scanner.read_and_advance() {
             Some(x) => self.parse_expression(x, &Bp::LOWEST),
-            None => Err(ParseError::new(ParseErrorKind::LParenNotClosed, first_token.location)),
+            None => Err(ParseError::new(ParseErrorKind::GroupNotClosed, first_token.location)),
         }?;
 
         let rparen_location = self.scanner.locate();
@@ -209,7 +209,7 @@ impl<'a> Parser<'a> {
             }
             _ => {
                 let location = Range::new(first_token.location.begin, rparen_location.end);
-                Err(ParseError::new(ParseErrorKind::LParenNotClosed, location))
+                Err(ParseError::new(ParseErrorKind::GroupNotClosed, location))
             }
         }
     }
@@ -236,7 +236,7 @@ impl<'a> Parser<'a> {
         // Return an error if end
         let Some(token) = self.scanner.read_and_advance() else {
             let location = Range::new(left.location.begin, self.scanner.locate().end);
-            return Err(ParseError::new(ParseErrorKind::InvalidCallArgs, location));
+            return Err(ParseError::new(ParseErrorKind::CallArgsNotClosed, location));
         };
 
         let arguments = self.read_call_arguments(token)?;
@@ -268,14 +268,13 @@ impl<'a> Parser<'a> {
 
             // Return error if invalid syntax due to a missing comma
             if token.kind != TokenKind::Comma {
-                // TODO: return more specific error like `NoCommaCallArgs`
-                return Err(ParseError::new(ParseErrorKind::InvalidCallArgs, token.location));
+                return Err(ParseError::new(ParseErrorKind::MissingCommaCallArgs, token.location));
             }
 
             // Return error if end of source while reading arguments
             let next_token_location = self.scanner.locate();
             let Some(next_token) = self.scanner.read_and_advance() else {
-                return Err(ParseError::new(ParseErrorKind::InvalidCallArgs, next_token_location));
+                return Err(ParseError::new(ParseErrorKind::CallArgsNotClosed, next_token_location));
             };
 
             let arg = self.parse_expression(next_token, &Bp::LOWEST)?;
@@ -1239,7 +1238,7 @@ mod tests {
                 TokenKind::LParen,
             )
         ],
-        mkerr!(LParenNotClosed, str_loc!("", "("))
+        mkerr!(GroupNotClosed, str_loc!("", "("))
     )]
     #[case::rparen(
         // Represents `)`.
@@ -1954,7 +1953,7 @@ mod tests {
                 TokenKind::Number(2.0),
             ),
         ],
-        mkerr!(LParenNotClosed, str_loc!("", "(1 + 2"))
+        mkerr!(GroupNotClosed, str_loc!("", "(1 + 2"))
     )]
     #[case::lparen_not_closed_and_something(
         // Represents `(1 + 2 3`.
@@ -1975,7 +1974,7 @@ mod tests {
                 TokenKind::Number(2.0),
             ),
         ],
-        mkerr!(LParenNotClosed, str_loc!("", "(1 + 2 3"))
+        mkerr!(GroupNotClosed, str_loc!("", "(1 + 2 3"))
     )]
     fn unmatched_parenthesis(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -2323,7 +2322,7 @@ mod tests {
     }
 
     #[rstest]
-    #[case::end_with_lparen(
+    #[case::rparen_and_end(
         // Represents `사과(`.
         vec![
             mktoken!(str_loc!("", "사과"),
@@ -2333,7 +2332,7 @@ mod tests {
                 TokenKind::LParen,
             ),
         ],
-        mkerr!(InvalidCallArgs, str_loc!("", "사과("))
+        mkerr!(CallArgsNotClosed, str_loc!("", "사과("))
     )]
     #[case::comma_after_lparen(
         // Represents `사과(,`.
@@ -2350,8 +2349,31 @@ mod tests {
         ],
         mkerr!(InvalidExprStart, str_loc!("사과(", ","))
     )]
+    /* TODO
+    #[case::args_and_no_rparen(
+        // Represents `사과(1, 2`.
+        vec![
+            mktoken!(str_loc!("", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("사과", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("사과(", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("사과(1", ","),
+                TokenKind::Comma,
+            ),
+            mktoken!(str_loc!("사과(1, ", "2"),
+                TokenKind::Number(2.0),
+            ),
+        ],
+        mkerr!(InvalidCallArgs, str_loc!("", "사과(1, 2"))
+    )]
+    */
     #[case::two_comma_after_arg(
-        // Represents `사과(1,,`.
+        // Represents `사과(1,,)`.
         vec![
             mktoken!(str_loc!("", "사과"),
                 TokenKind::Identifier(String::from("사과")),
@@ -2368,8 +2390,32 @@ mod tests {
             mktoken!(str_loc!("사과(1,", ","),
                 TokenKind::Comma,
             ),
+            mktoken!(str_loc!("사과(1,,", ")"),
+                TokenKind::RParen,
+            ),
         ],
         mkerr!(InvalidExprStart, str_loc!("사과(1,", ","))
+    )]
+    #[case::two_args_without_no_comma(
+        // Represents `사과(1 2)`.
+        vec![
+            mktoken!(str_loc!("", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("사과", "("),
+                TokenKind::LParen,
+            ),
+            mktoken!(str_loc!("사과(", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("사과(1 ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("사과(1 2", ")"),
+                TokenKind::RParen,
+            ),
+        ],
+        mkerr!(MissingCommaCallArgs, str_loc!("사과(1 ", "2"))
     )]
     fn invalid_call(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);

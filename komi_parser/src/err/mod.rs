@@ -11,16 +11,18 @@ pub enum ParseErrorKind {
     NoPrefixOperand,
     /// No infix right operand, such as `1+`.
     NoInfixRightOperand,
-    /// A left parenthesis `(` not closed, such as `(1+2`.
-    LParenNotClosed,
+    /// A left parenthesis `(` not closed for grouping, such as `(1+2`.
+    GroupNotClosed,
     /// Invalid tokens in closure parameters, such as `함수 +`.
     InvalidClosureParam,
     /// A closure body beginning with `{` is not closed, such as `함수 {`
     ClosureBodyNotClosed,
-    /// Invalid tokens in call arguments, such as `사과(`.
-    InvalidCallArgs,
-    /// An internal error impossible to occur if parsed as expected.
-    Unexpected,
+    /// A left parenthesis `(` not closed for call arguments, such as `사과(` or `사과(1,`.
+    CallArgsNotClosed,
+    /// Something else appears where the comma would be, such as `2` in `사과(1 2)`.
+    MissingCommaCallArgs,
+    /// An unexpected error due to incorrect expression parsing. Should not occur.
+    UnexpectedExprInfix,
 }
 
 pub type ParseError = EngineError<ParseErrorKind>;
@@ -29,13 +31,14 @@ impl fmt::Display for ParseErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self {
             ParseErrorKind::InvalidExprStart => "InvalidExprStart",
-            ParseErrorKind::LParenNotClosed => "LParenNotClosed",
+            ParseErrorKind::GroupNotClosed => "GroupNotClosed",
             ParseErrorKind::NoInfixRightOperand => "NoInfixRightOperand",
             ParseErrorKind::NoPrefixOperand => "NoPrefixOperand",
             ParseErrorKind::InvalidClosureParam => "InvalidClosureParam",
             ParseErrorKind::ClosureBodyNotClosed => "ClosureBodyNotClosed",
-            ParseErrorKind::InvalidCallArgs => "InvalidCallArgs",
-            ParseErrorKind::Unexpected => "Unexpected",
+            ParseErrorKind::CallArgsNotClosed => "CallArgsNotClosed",
+            ParseErrorKind::MissingCommaCallArgs => "MissingCommaCallArgs",
+            ParseErrorKind::UnexpectedExprInfix => "UnexpectedExprInfix",
         };
         write!(f, "{}", s)
     }
