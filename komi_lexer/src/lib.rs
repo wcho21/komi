@@ -704,11 +704,19 @@ mod tests {
             )
         ]
     )]
-    #[case::mixed_multiple_chars(
-        "a가a가",
+    #[case::single_underbar_char(
+        "_",
         vec![
-            mktoken!(str_loc!("", "a가a가"),
-                Kind::Identifier(String::from("a가a가")),
+            mktoken!(str_loc!("", "_"),
+                Kind::Identifier(String::from("_")),
+            )
+        ]
+    )]
+    #[case::mixed_multiple_chars(
+        "_a가_a가",
+        vec![
+            mktoken!(str_loc!("", "_a가_a가"),
+                Kind::Identifier(String::from("_a가_a가")),
             )
         ]
     )]

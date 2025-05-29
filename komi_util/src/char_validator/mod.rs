@@ -18,9 +18,12 @@ pub fn is_whitespace_char(s: &str) -> bool {
 /// Specifically, it includes:
 /// - ASCII alphabets and number characters.
 /// - Hangul, from `U+AC00` (`가`) to `U+D7A3` (`힣`)
-// TODO: include underbar (`_`)
 pub fn is_char_in_identifier_domain(s: &str) -> bool {
-    is_char_ascii_alphanumeric(s) || is_char_in_hangul_identifier_domain(s)
+    is_underbar(s) || is_char_ascii_alphanumeric(s) || is_char_in_hangul_identifier_domain(s)
+}
+
+fn is_underbar(s: &str) -> bool {
+    s == "_"
 }
 
 fn is_char_ascii_alphanumeric(s: &str) -> bool {
@@ -73,9 +76,11 @@ mod tests {
     #[case::hangul_na("나", true)]
     #[case::hangul_da("다", true)]
     #[case::hangul_hit("힣", true)]
+    #[case::underbar("_", true)]
     #[case::two_nums("12", false)]
     #[case::two_alphabet("ab", false)]
     #[case::two_hanguls("가나", false)]
+    #[case::two_underbars("__", false)]
     #[case::space(" ", false)]
     #[case::cr("\r", false)]
     #[case::lf("\n", false)]
