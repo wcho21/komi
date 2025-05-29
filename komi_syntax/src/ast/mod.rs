@@ -1,4 +1,5 @@
 use komi_util::Range;
+pub use komi_util::{StrSegment, StrSegmentKind};
 
 /// Kinds of AST produced during parsing.
 /// Serves as the interface between a parser and its user.
@@ -7,6 +8,7 @@ pub enum AstKind {
     Program { expressions: Vec<Box<Ast>> },
     Number(f64),
     Bool(bool),
+    Str(Vec<StrSegment>),
     Identifier(String),
     PrefixPlus { operand: Box<Ast> },
     PrefixMinus { operand: Box<Ast> },
@@ -110,6 +112,9 @@ macro_rules! mkast {
     };
     (boolean $val:expr, loc $range:expr) => {
         Box::new(Ast::new(AstKind::Bool($val), $range))
+    };
+    (string loc $range:expr, $val:expr $(,)?) => {
+        Box::new(Ast::new(AstKind::Str($val), $range))
     };
 }
 

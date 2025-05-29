@@ -408,6 +408,10 @@ mod tests {
 
     // Should fail to lex illegal str literals.
     #[rstest]
+    #[case::no_closing_quote(
+        "\"사과",
+        mkerr!(NoClosingQuoteInStr, str_loc!("", "\"사과")))
+    ]
     #[case::lbrace_not_closed_with_immediate_end(
         "\"{",
         mkerr!(NoClosingBraceInInterpolation, str_loc!("\"", "{")))
