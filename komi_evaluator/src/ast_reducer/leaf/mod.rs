@@ -54,8 +54,8 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
-    #[case::root_env(root_env(), id_name(), ID_VALUE, ID_RANGE)]
-    #[case::inner_env(inner_env(), id_name(), ID_VALUE, ID_RANGE)]
+    #[case::root_env(root_env(), id_name(), id_value(), id_range())]
+    #[case::inner_env(inner_env(), id_name(), id_value(), id_range())]
     fn identifier_evaluated(
         #[case] env: Env,
         #[case] id_name: String,
@@ -68,8 +68,8 @@ mod tests {
     }
 
     #[rstest]
-    #[case::root_env(root_env(), undefined_id_name(), ID_RANGE)]
-    #[case::inner_env(inner_env(), undefined_id_name(), ID_RANGE)]
+    #[case::root_env(root_env(), undefined_id_name(), id_range())]
+    #[case::inner_env(inner_env(), undefined_id_name(), id_range())]
     fn identifier_undefined(#[case] env: Env, #[case] id_name: String, #[case] location: Range) {
         let evaluated = evaluate_identifier(&id_name, &location, &env);
 
@@ -79,13 +79,47 @@ mod tests {
         );
     }
 
-    // TODO(?): test other functions
+    #[test]
+    fn num() {
+        let evaluated = evaluate_num(1.0, &range());
+
+        assert_eq!(evaluated, Ok(Value::new(ValueKind::Number(1.0), range())));
+    }
+
+    #[test]
+    fn bool() {
+        let evaluated = evaluate_bool(true, &range());
+
+        assert_eq!(evaluated, Ok(Value::new(ValueKind::Bool(true), range())));
+    }
+
+    #[test]
+    fn closure() {
+        let evaluated = evaluate_closure(&vec![String::from("foo")], &vec![], &range(), &mut root_env());
+
+        assert_eq!(
+            evaluated,
+            Ok(Value::new(
+                ValueKind::Closure {
+                    parameters: vec![String::from("foo")],
+                    body: vec![],
+                    env: root_env()
+                },
+                range()
+            ))
+        );
+    }
 
     mod fixtures {
         use super::*;
 
-        pub const ID_RANGE: Range = Range::from_nums(0, 0, 0, 3);
-        pub const ID_VALUE: Value = Value::new(ValueKind::Number(1.0), ID_RANGE);
+        pub fn id_range() -> Range {
+            Range::from_nums(0, 0, 0, 3) // "foo" or "bar"
+        }
+
+        pub fn id_value() -> Value {
+            Value::new(ValueKind::Number(1.0), id_range())
+        }
 
         pub fn id_name() -> String {
             "foo".to_string()
@@ -98,7 +132,7 @@ mod tests {
         /// Simulates a root scope, whose environment has no outer environment any more.
         pub fn root_env() -> Env {
             let mut env = Env::new();
-            env.set(&id_name(), &ID_VALUE);
+            env.set(&id_name(), &id_value());
 
             env
         }
@@ -106,10 +140,14 @@ mod tests {
         /// Simulates an inner scope, whose environment has an outer environment.
         pub fn inner_env() -> Env {
             let mut outer_env = Env::new();
-            outer_env.set(&id_name(), &ID_VALUE);
+            outer_env.set(&id_name(), &id_value());
 
             let env = Env::from_outer(outer_env);
             env
+        }
+
+        pub fn range() -> Range {
+            Range::ORIGIN
         }
     }
 }
