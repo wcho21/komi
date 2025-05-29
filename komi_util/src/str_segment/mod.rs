@@ -1,5 +1,10 @@
-//! StrSegment
-//! A segment of a string.
+//! A segment of a string for syntax modules.
+//!
+//! A module to express string interpolations.
+//! See [`token`] and [`ast`] modules.
+//!
+//! [`token`]: ../../komi_syntax/token/struct.StrSegment.html
+//! [`ast`]: ../../komi_syntax/ast/struct.StrSegment.html
 
 use crate::Range;
 
@@ -19,9 +24,9 @@ impl StrSegment {
 /// A kind of string segment in a string token.
 #[derive(Debug, PartialEq, Clone)]
 pub enum StrSegmentKind {
-    /// A string segment, such as `사과` in "`사과{오렌지}`".
+    /// A string segment, such as `사과` in `"사과{오렌지}"`.
     Str(String),
-    /// An interpolated identifier, such as `오렌지` in "`사과{오렌지}`".
+    /// An interpolated identifier, such as `오렌지` in `"사과{오렌지}"`.
     Identifier(String),
 }
 

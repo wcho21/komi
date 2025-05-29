@@ -1,6 +1,6 @@
 use crate::Range;
 
-/// Reading units one by one with spanning the location.
+/// Represents a structure that reads units one by one with spanning the location.
 pub trait Scanner {
     type Item;
 

@@ -1,3 +1,5 @@
+//! A single coordinate.
+
 /// A position representing the coordinate of a character in multi-line text.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Spot {
