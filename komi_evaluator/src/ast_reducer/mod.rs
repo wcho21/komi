@@ -479,7 +479,7 @@ mod tests {
                     operand mkast!(boolean true, loc str_loc!("+", "참")),
                 ),
             ]),
-            mkerr!(InvalidNumPrefixOperand, str_loc!("+", "참")),
+            mkerr!(NonNumPrefixOperand, str_loc!("+", "참")),
         )]
         #[case::minus_bool(
             // Represents `-참`
@@ -488,7 +488,7 @@ mod tests {
                     operand mkast!(boolean true, loc str_loc!("-", "참")),
                 ),
             ]),
-            mkerr!(InvalidNumPrefixOperand, str_loc!("-", "참")),
+            mkerr!(NonNumPrefixOperand, str_loc!("-", "참")),
         )]
         #[case::bang_num(
             // Represents `!1`
@@ -497,7 +497,7 @@ mod tests {
                     operand mkast!(num 1.0, loc str_loc!("!", "1")),
                 ),
             ]),
-            mkerr!(InvalidBoolPrefixOperand, str_loc!("!", "1")),
+            mkerr!(NonBoolPrefixOperand, str_loc!("!", "1")),
         )]
         fn wrong_type_prefix(#[case] ast: Box<Ast>, #[case] error: EvalError) {
             assert_eval_fail!(&ast, error);
@@ -684,7 +684,7 @@ mod tests {
                     right mkast!(num 1.0, loc str_loc!("참 + ", "1")),
                 ),
             ]),
-            mkerr!(InvalidNumInfixOperand, str_loc!("", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("", "참")),
         )]
         #[case::right_bool_addition(
             // Represents `1 + 참`.
@@ -694,7 +694,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("1 + ", "참")),
                 ),
             ]),
-            mkerr!(InvalidNumInfixOperand, str_loc!("1 + ", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("1 + ", "참")),
         )]
         #[case::left_bool_subtraction(
             // Represents `참 - 1`.
@@ -704,7 +704,7 @@ mod tests {
                     right mkast!(num 1.0, loc str_loc!("참 - ", "1")),
                 ),
             ]),
-            mkerr!(InvalidNumInfixOperand, str_loc!("", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("", "참")),
         )]
         #[case::right_bool_subtraction(
             // Represents `1 - 참`.
@@ -714,7 +714,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("1 - ", "참")),
                 ),
             ]),
-            mkerr!(InvalidNumInfixOperand, str_loc!("1 - ", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("1 - ", "참")),
         )]
         #[case::left_bool_multiplication(
             // Represents `참 * 1`.
@@ -724,7 +724,7 @@ mod tests {
                     right mkast!(num 1.0, loc str_loc!("참 * ", "1")),
                 ),
             ]),
-            mkerr!(InvalidNumInfixOperand, str_loc!("", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("", "참")),
         )]
         #[case::right_bool_multiplication(
             // Represents `1 * 참`.
@@ -734,7 +734,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("1 * ", "참")),
                 ),
             ]),
-            mkerr!(InvalidNumInfixOperand, str_loc!("1 * ", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("1 * ", "참")),
         )]
         #[case::left_bool_division(
             // Represents `참 / 1`.
@@ -744,7 +744,7 @@ mod tests {
                     right mkast!(num 1.0, loc str_loc!("참 / ", "1")),
                 ),
             ]),
-            mkerr!(InvalidNumInfixOperand, str_loc!("", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("", "참")),
         )]
         #[case::right_bool_division(
             // Represents `1 / 참`.
@@ -754,7 +754,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("1 / ", "참")),
                 ),
             ]),
-            mkerr!(InvalidNumInfixOperand, str_loc!("1 / ", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("1 / ", "참")),
         )]
         #[case::left_bool_modular(
             // Represents `참 % 1`.
@@ -764,7 +764,7 @@ mod tests {
                     right mkast!(num 1.0, loc str_loc!("참 % ", "1")),
                 ),
             ]),
-            mkerr!(InvalidNumInfixOperand, str_loc!("", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("", "참")),
         )]
         #[case::right_bool_modular(
             // Represents `1 % 참`.
@@ -774,7 +774,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("1 % ", "참")),
                 ),
             ]),
-            mkerr!(InvalidNumInfixOperand, str_loc!("1 % ", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("1 % ", "참")),
         )]
         fn arithmetic_infix_with_wrong_type_operand(#[case] ast: Box<Ast>, #[case] error: EvalError) {
             assert_eval_fail!(&ast, error);
@@ -789,7 +789,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("1 그리고 ", "참")),
                 ),
             ]),
-            mkerr!(InvalidBoolInfixOperand, str_loc!("", "1")),
+            mkerr!(NonBoolInfixOperand, str_loc!("", "1")),
         )]
         #[case::right_num_conjunction(
             // Represents `참 그리고 1`.
@@ -799,7 +799,7 @@ mod tests {
                     right mkast!(num 1.0, loc str_loc!("참 그리고 ", "1")),
                 ),
             ]),
-            mkerr!(InvalidBoolInfixOperand, str_loc!("참 그리고 ", "1")),
+            mkerr!(NonBoolInfixOperand, str_loc!("참 그리고 ", "1")),
         )]
         #[case::left_num_disjunction(
             // Represents `1 또는 참`.
@@ -809,7 +809,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("1 또는 ", "참")),
                 ),
             ]),
-            mkerr!(InvalidBoolInfixOperand, str_loc!("", "1")),
+            mkerr!(NonBoolInfixOperand, str_loc!("", "1")),
         )]
         #[case::right_num_disjunction(
             // Represents `참 또는 1`.
@@ -819,7 +819,7 @@ mod tests {
                     right mkast!(num 1.0, loc str_loc!("참 또는 ", "1")),
                 ),
             ]),
-            mkerr!(InvalidBoolInfixOperand, str_loc!("참 또는 ", "1")),
+            mkerr!(NonBoolInfixOperand, str_loc!("참 또는 ", "1")),
         )]
         fn connective_infix_with_wrong_type_operand(#[case] ast: Box<Ast>, #[case] error: EvalError) {
             assert_eval_fail!(&ast, error);
@@ -930,7 +930,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
-            mkerr!(InvalidNumInfixOperand, str_loc!("사과 += ", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("사과 += ", "참")),
         )]
         #[case::num_id_minus_equals_bool(
             // Represents `사과 -= 참`.
@@ -942,7 +942,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
-            mkerr!(InvalidNumInfixOperand, str_loc!("사과 -= ", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("사과 -= ", "참")),
         )]
         #[case::num_id_asterisk_equals_bool(
             // Represents `사과 *= 참`.
@@ -954,7 +954,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
-            mkerr!(InvalidNumInfixOperand, str_loc!("사과 *= ", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("사과 *= ", "참")),
         )]
         #[case::num_id_slash_equals_bool(
             // Represents `사과 /= 참`.
@@ -966,7 +966,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
-            mkerr!(InvalidNumInfixOperand, str_loc!("사과 /= ", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("사과 /= ", "참")),
         )]
         #[case::num_id_percent_equals_bool(
             // Represents `사과 %= 참`.
@@ -978,7 +978,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
-            mkerr!(InvalidNumInfixOperand, str_loc!("사과 %= ", "참")),
+            mkerr!(NonNumInfixOperand, str_loc!("사과 %= ", "참")),
         )]
         fn combinating_equals_with_wrong_type(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] error: EvalError) {
             assert_eval_fail!(&ast, &mut env, error);

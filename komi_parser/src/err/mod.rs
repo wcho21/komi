@@ -15,7 +15,7 @@ pub enum ParseErrorKind {
     NoClosingParenInGroup,
     /// No closure parameters but the source ends with the closure keyword, such as `함수`.
     NoClosureParams,
-    /// No closure body but the source ends with closure parameters, such as `함수 사과` or `함수 사과, 오렌지.
+    /// No closure body but the source ends with closure parameters, such as `함수 사과` or `함수 사과, 오렌지`.
     NoClosureBody,
     /// Non-identifier closure parameters, such as `함수 1`.
     NonIdClosureParams,
