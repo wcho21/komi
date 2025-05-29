@@ -117,6 +117,11 @@ impl<'a> Parser<'a> {
         if token.is_none() || token.unwrap().kind != TokenKind::RBrace {
             return Err(ParseError::new(ParseErrorKind::ClosureBodyNotClosed, token_location));
         }
+        // Check if the body is empty here, to locate the closure.
+        if body.len() == 0 {
+            let closure_location = Range::new(keyword_location.begin, token_location.end);
+            return Err(ParseError::new(ParseErrorKind::EmptyClosureBody, closure_location));
+        }
 
         let closure_location = Range::new(keyword_location.begin, token_location.end);
         self.make_closure_ast(parameters, body, &closure_location)
@@ -124,6 +129,8 @@ impl<'a> Parser<'a> {
 
     /// Should be called after the scanner has advanced past a left brace.
     /// Stops at the end or a right brace.
+    ///
+    /// It possibly returns an empty vector for parsed expressions.
     fn parse_closure_expression_body(&mut self) -> ExprsRes {
         let mut expressions: Exprs = vec![];
 
@@ -1982,89 +1989,6 @@ mod tests {
 
     // TODO: test ending with parameter, comma and double comma in parameter list without body
     #[rstest]
-    // TODO: closure cannot have the empty body, should be an error
-    #[case::no_parameters_and_empty_body(
-        // Represents `함수 {}`.
-        vec![
-            mktoken!(str_loc!("", "함수"),
-                TokenKind::Closure,
-            ),
-            mktoken!(str_loc!("함수 ", "{"),
-                TokenKind::LBrace,
-            ),
-            mktoken!(str_loc!("함수 {", "}"),
-                TokenKind::RBrace,
-            ),
-        ],
-        mkast!(prog loc str_loc!("", "함수 {}"), vec![
-            mkast!(closure loc str_loc!("", "함수 {}"),
-                params vec![],
-                body vec![],
-            ),
-        ])
-    )]
-    #[case::single_parameter_and_empty_body(
-        // Represents `함수 사과 {}`.
-        vec![
-            mktoken!(str_loc!("", "함수"),
-                TokenKind::Closure,
-            ),
-            mktoken!(str_loc!("함수 ", "사과"),
-                TokenKind::Identifier(String::from("사과")),
-            ),
-            mktoken!(str_loc!("함수 사과 ", "{"),
-                TokenKind::LBrace,
-            ),
-            mktoken!(str_loc!("함수 사과 {", "}"),
-                TokenKind::RBrace,
-            ),
-        ],
-        mkast!(prog loc str_loc!("", "함수 사과 {}"), vec![
-            mkast!(closure loc str_loc!("", "함수 사과 {}"),
-                params vec![String::from("사과")],
-                body vec![],
-            ),
-        ])
-    )]
-    #[case::multiple_parameters_and_empty_body(
-        // Represents `함수 사과, 오렌지, 바나나 {}`.
-        vec![
-            mktoken!(str_loc!("", "함수"),
-                TokenKind::Closure,
-            ),
-            mktoken!(str_loc!("함수 ", "사과"),
-                TokenKind::Identifier(String::from("사과")),
-            ),
-            mktoken!(str_loc!("함수 사과", ","),
-                TokenKind::Comma,
-            ),
-            mktoken!(str_loc!("함수 사과, ", "오렌지"),
-                TokenKind::Identifier(String::from("오렌지")),
-            ),
-            mktoken!(str_loc!("함수 사과, 오렌지", ","),
-                TokenKind::Comma,
-            ),
-            mktoken!(str_loc!("함수 사과, 오렌지, ", "바나나"),
-                TokenKind::Identifier(String::from("바나나")),
-            ),
-            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 ", "{"),
-                TokenKind::LBrace,
-            ),
-            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 {", "}"),
-                TokenKind::RBrace,
-            ),
-        ],
-        mkast!(prog loc str_loc!("", "함수 사과, 오렌지, 바나나 {}"), vec![
-            mkast!(closure loc str_loc!("", "함수 사과, 오렌지, 바나나 {}"),
-                params vec![
-                    String::from("사과"),
-                    String::from("오렌지"),
-                    String::from("바나나"),
-                ],
-                body vec![],
-            ),
-        ])
-    )]
     #[case::no_parameters_and_single_expression(
         // Represents `함수 { 1 }`.
         vec![
@@ -2227,6 +2151,69 @@ mod tests {
             ),
         ],
         mkerr!(ClosureBodyNotClosed, str_loc!("함수 { 1", ""))
+    )]
+    #[case::no_parameters_and_empty_body(
+        // Represents `함수 {}`.
+        vec![
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("함수 {", "}"),
+                TokenKind::RBrace,
+            ),
+        ],
+        mkerr!(EmptyClosureBody, str_loc!("", "함수 {}"))
+    )]
+    #[case::single_parameter_and_empty_body(
+        // Represents `함수 사과 {}`.
+        vec![
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("함수 사과 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("함수 사과 {", "}"),
+                TokenKind::RBrace,
+            ),
+        ],
+        mkerr!(EmptyClosureBody, str_loc!("", "함수 사과 {}"))
+    )]
+    #[case::multiple_parameters_and_empty_body(
+        // Represents `함수 사과, 오렌지, 바나나 {}`.
+        vec![
+            mktoken!(str_loc!("", "함수"),
+                TokenKind::Closure,
+            ),
+            mktoken!(str_loc!("함수 ", "사과"),
+                TokenKind::Identifier(String::from("사과")),
+            ),
+            mktoken!(str_loc!("함수 사과", ","),
+                TokenKind::Comma,
+            ),
+            mktoken!(str_loc!("함수 사과, ", "오렌지"),
+                TokenKind::Identifier(String::from("오렌지")),
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지", ","),
+                TokenKind::Comma,
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, ", "바나나"),
+                TokenKind::Identifier(String::from("바나나")),
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("함수 사과, 오렌지, 바나나 {", "}"),
+                TokenKind::RBrace,
+            ),
+        ],
+        mkerr!(EmptyClosureBody, str_loc!("", "함수 사과, 오렌지, 바나나 {}"))
     )]
     fn invalid_closure(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);

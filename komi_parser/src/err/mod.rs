@@ -21,6 +21,8 @@ pub enum ParseErrorKind {
     CallArgsNotClosed,
     /// Something else appears where the comma would be, such as `2` in `사과(1 2)`.
     MissingCommaCallArgs,
+    /// A closure body is empty, which should not, such as `함수 {}`.
+    EmptyClosureBody,
     /// An unexpected error due to incorrect expression parsing. Should not occur.
     UnexpectedExprInfix,
 }
@@ -38,6 +40,7 @@ impl fmt::Display for ParseErrorKind {
             ParseErrorKind::ClosureBodyNotClosed => "ClosureBodyNotClosed",
             ParseErrorKind::CallArgsNotClosed => "CallArgsNotClosed",
             ParseErrorKind::MissingCommaCallArgs => "MissingCommaCallArgs",
+            ParseErrorKind::EmptyClosureBody => "EmptyClosureBody",
             ParseErrorKind::UnexpectedExprInfix => "UnexpectedExprInfix",
         };
         write!(f, "{}", s)
