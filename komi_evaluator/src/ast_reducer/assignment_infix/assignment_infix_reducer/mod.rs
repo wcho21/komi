@@ -13,7 +13,7 @@ pub fn reduce_equals(
     stdouts: &mut Stdout,
 ) -> ValRes {
     let AstKind::Identifier(id_name) = &left.kind else {
-        return Err(EvalError::new(EvalErrorKind::InvalidAssignmentLeftValue, left.location));
+        return Err(EvalError::new(EvalErrorKind::NonIdLeftValInAssign, left.location));
     };
 
     let right_val = reduce_ast(right, env, stdouts)?;
@@ -25,7 +25,7 @@ pub fn reduce_equals(
 
 pub fn reduce_equals_with_right_value(left: &Box<Ast>, right: Value, location: &Range, env: &mut Env) -> ValRes {
     let AstKind::Identifier(id_name) = &left.kind else {
-        return Err(EvalError::new(EvalErrorKind::InvalidAssignmentLeftValue, left.location));
+        return Err(EvalError::new(EvalErrorKind::NonIdLeftValInAssign, left.location));
     };
 
     env.set(id_name, &right);

@@ -60,11 +60,11 @@ where
 }
 
 fn get_num_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<f64, EvalError> {
-    util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidNumInfixOperand, env, stdouts)
+    util::get_num_primitive_or_error(ast, EvalErrorKind::NonNumInfixOperand, env, stdouts)
 }
 
 fn get_bool_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<bool, EvalError> {
-    util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidBoolInfixOperand, env, stdouts)
+    util::get_bool_primitive_or_error(ast, EvalErrorKind::NonBoolInfixOperand, env, stdouts)
 }
 
 /// Reduces the operand `operand` of an infix to a value.

@@ -190,7 +190,7 @@ mod tests {
             test_exec!(division_assignment, "사과=6 사과/=4 사과", "1.5", "");
             test_exec!(modular_assignment, "사과=6 사과%=4 사과", "2", "");
 
-            test_error!(mixed_type, "사과=참 사과+=1", "EvalError", "InvalidNumInfixOperand", loc str_loc!("사과=참 ", "사과"));
+            test_error!(mixed_type, "사과=참 사과+=1", "EvalError", "NonNumInfixOperand", loc str_loc!("사과=참 ", "사과"));
         }
 
         mod call {
@@ -244,11 +244,11 @@ mod tests {
 
             test_error!(call_num, "1()", "EvalError", "InvalidCallTarget", loc str_loc!("", "1"));
             test_error!(undefined_identifier, "사과", "EvalError", "UndefinedIdentifier", loc str_loc!("", "사과"));
-            test_error!(invalid_assignment_left, "1=1", "EvalError", "InvalidAssignmentLeftValue", loc str_loc!("", "1"));
-            test_error!(invalid_num_infix_operand, "참+1", "EvalError", "InvalidNumInfixOperand", loc str_loc!("", "참"));
-            test_error!(invalid_bool_infix_operand, "1 그리고 참", "EvalError", "InvalidBoolInfixOperand", loc str_loc!("", "1"));
-            test_error!(invalid_num_prefix_operand, "+참", "EvalError", "InvalidNumPrefixOperand", loc str_loc!("+", "참"));
-            test_error!(invalid_bool_prefix_operand, "!1", "EvalError", "InvalidBoolPrefixOperand", loc str_loc!("!", "1"));
+            test_error!(invalid_assignment_left, "1=1", "EvalError", "NonIdLeftValInAssign", loc str_loc!("", "1"));
+            test_error!(invalid_num_infix_operand, "참+1", "EvalError", "NonNumInfixOperand", loc str_loc!("", "참"));
+            test_error!(invalid_bool_infix_operand, "1 그리고 참", "EvalError", "NonBoolInfixOperand", loc str_loc!("", "1"));
+            test_error!(invalid_num_prefix_operand, "+참", "EvalError", "NonNumPrefixOperand", loc str_loc!("+", "참"));
+            test_error!(invalid_bool_prefix_operand, "!1", "EvalError", "NonBoolPrefixOperand", loc str_loc!("!", "1"));
             test_error!(invalid_call_target, "1()", "EvalError", "InvalidCallTarget", loc str_loc!("", "1"));
         }
     }

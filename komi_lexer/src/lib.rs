@@ -410,19 +410,19 @@ mod tests {
     #[rstest]
     #[case::lbrace_not_closed_with_immediate_end(
         "\"{",
-        mkerr!(InterpolationNotClosed, str_loc!("\"", "{")))
+        mkerr!(NoClosingBraceInInterpolation, str_loc!("\"", "{")))
     ]
     #[case::lbrace_not_closed_with_not_immediate_end(
         "\"{사과",
-        mkerr!(InterpolationNotClosed, str_loc!("\"", "{사과")))
+        mkerr!(NoClosingBraceInInterpolation, str_loc!("\"", "{사과")))
     ]
     #[case::rbrace_in_str(
         "\"}",
-        mkerr!(IllegalRBraceInStr, str_loc!("\"", "}")))
+        mkerr!(IllegalClosingBraceInStr, str_loc!("\"", "}")))
     ]
     #[case::empty_identifier(
         "\"{}\"",
-        mkerr!(NoInterpolatedIdentifier, str_loc!("\"", "{}")))
+        mkerr!(NoIdentifierInInterpolation, str_loc!("\"", "{}")))
     ]
     #[case::illegal_identifier_char_at_first(
         "\"{+}\"",
@@ -434,7 +434,7 @@ mod tests {
     ]
     #[case::lbrace_not_closed_with_some_chars(
         "\"{사과",
-        mkerr!(InterpolationNotClosed, str_loc!("\"", "{사과")))
+        mkerr!(NoClosingBraceInInterpolation, str_loc!("\"", "{사과")))
     ]
     fn illegal_string_segment(#[case] source: &str, #[case] error: LexError) {
         assert_lex_fail!(source, error);
