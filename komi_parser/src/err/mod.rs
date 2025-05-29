@@ -5,19 +5,19 @@ use std::fmt;
 /// Serves as the interface between a parser and its user.
 #[derive(Debug, PartialEq)]
 pub enum ParseErrorKind {
-    // An invalid token at the start of an expression, such as `*2` and `/3.
+    /// An invalid token at the start of an expression, such as `*2` and `/3.
     InvalidExprStart,
-    // No prefix operand, such as `+`.
+    /// No prefix operand, such as `+`.
     NoPrefixOperand,
-    // No infix right operand, such as `1+`.
+    /// No infix right operand, such as `1+`.
     NoInfixRightOperand,
-    // A left parenthesis `(` not closed, such as `(1+2`.
+    /// A left parenthesis `(` not closed, such as `(1+2`.
     LParenNotClosed,
-    // Invalid tokens in closure parameters, such as `함수 +`.
+    /// Invalid tokens in closure parameters, such as `함수 +`.
     InvalidClosureParam,
-    // A closure body beginning with `{` is not closed, such as `함수 {`
+    /// A closure body beginning with `{` is not closed, such as `함수 {`
     ClosureBodyNotClosed,
-    // Invalid tokens in call arguments, such as `사과(`.
+    /// Invalid tokens in call arguments, such as `사과(`.
     InvalidCallArgs,
     /// An internal error impossible to occur if parsed as expected.
     Unexpected,
