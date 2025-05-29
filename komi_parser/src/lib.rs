@@ -324,7 +324,6 @@ impl<'a> Parser<'a> {
             if token.kind != TokenKind::Comma {
                 return Err(ParseError::new(ParseErrorKind::NoCommaInCallArgs, token.location));
             }
-            // TODO: merge advance to above read
             self.scanner.advance(); // Advance past the comma.
 
             // Second part: Expect an argument
