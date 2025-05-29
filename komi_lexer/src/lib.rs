@@ -11,7 +11,7 @@ mod utf8_tape;
 pub use err::{LexError, LexErrorKind};
 use komi_syntax::{Token, TokenKind as Kind};
 use komi_util::{Range, Scanner, Spot, char_validator};
-use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, lex_str, skip_comment};
+use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, lex_str};
 use source_scanner::SourceScanner;
 
 type Tokens = Vec<Token>;
