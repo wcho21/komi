@@ -74,7 +74,7 @@ impl<'a> Lexer<'a> {
                 }
                 s if char_validator::is_digit_char(s) => lexer_tool::lex_num(&mut self.scanner, location, char)?,
                 // Lexing an identifier must come after attempting to lex a number
-                s if char_validator::is_in_identifier_domain(s) => {
+                s if char_validator::is_char_in_identifier_domain(s) => {
                     lex_identifier_with_init_seg(&mut self.scanner, String::from(s), location)?
                 }
                 s if char_validator::is_whitespace_char(s) => {
