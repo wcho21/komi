@@ -3,7 +3,7 @@ use crate::ast_reducer::{Exprs, Params};
 use crate::environment::Environment as Env;
 use crate::err::{EvalError, EvalErrorKind};
 use komi_syntax::{Value, ValueKind};
-use komi_util::Range;
+use komi_util::{Range, StrSegment, StrSegmentKind};
 
 /// Returns the evaluated result, from name `name` and its location `location`.
 pub fn evaluate_identifier(name: &String, location: &Range, env: &Env) -> ValRes {
@@ -14,6 +14,7 @@ pub fn evaluate_identifier(name: &String, location: &Range, env: &Env) -> ValRes
     match &x.kind {
         ValueKind::Bool(x) => Ok(Value::new(ValueKind::Bool(*x), *location)),
         ValueKind::Number(x) => Ok(Value::new(ValueKind::Number(*x), *location)),
+        ValueKind::Str(x) => Ok(Value::new(ValueKind::Str(x.clone()), *location)),
         ValueKind::Closure { parameters, body, env } => Ok(Value::new(
             ValueKind::Closure {
                 parameters: parameters.clone(),
@@ -34,6 +35,21 @@ pub fn evaluate_num(num: f64, location: &Range) -> ValRes {
 /// Returns the evaluated boolean result, from boolean `boolean` and its location `location`.
 pub fn evaluate_bool(boolean: bool, location: &Range) -> ValRes {
     Ok(Value::new(ValueKind::Bool(boolean), *location))
+}
+
+/// Returns the evaluated string result, from string `string` and its location `location`.
+pub fn evaluate_str(segments: &Vec<StrSegment>, location: &Range, env: &Env) -> ValRes {
+    let mut str_val = String::new();
+
+    for seg in segments {
+        let seg_val = match &seg.kind {
+            StrSegmentKind::Str(s) => s,
+            StrSegmentKind::Identifier(id) => &evaluate_identifier(&id, &seg.location, env)?.represent(),
+        };
+        str_val.push_str(seg_val);
+    }
+
+    Ok(Value::new(ValueKind::Str(str_val), *location))
 }
 
 pub fn evaluate_closure(parameters: &Params, body: &Exprs, location: &Range, env: &mut Env) -> ValRes {

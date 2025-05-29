@@ -18,7 +18,8 @@ pub fn lex_str(scanner: &mut SourceScanner, first_location: Range) -> TokenRes {
         // Return error if end of source
         let first_char_location = scanner.locate();
         let Some(first_char) = scanner.read_and_advance() else {
-            return Err(LexError::new(LexErrorKind::NoClosingQuoteInStr, seg_location));
+            let str_location = Range::new(first_location.begin, first_char_location.end);
+            return Err(LexError::new(LexErrorKind::NoClosingQuoteInStr, str_location));
         };
 
         // Break if end of string literal

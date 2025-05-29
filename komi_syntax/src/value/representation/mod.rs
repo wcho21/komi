@@ -14,6 +14,7 @@ impl Representer {
         match &val.kind {
             ValueKind::Number(n) => Self::represent_number(*n),
             ValueKind::Bool(b) => Self::represent_bool(*b),
+            ValueKind::Str(s) => Self::represent_str(s),
             ValueKind::Closure { parameters: p, .. } => Self::represent_closure(p),
             ValueKind::BuiltinFunc(_) => Self::represent_builtin_func(),
         }
@@ -28,6 +29,10 @@ impl Representer {
             true => Self::TRUE.to_string(),
             false => Self::FALSE.to_string(),
         }
+    }
+
+    fn represent_str(string: &String) -> String {
+        string.clone()
     }
 
     fn represent_closure(parameters: &Vec<String>) -> String {

@@ -88,6 +88,7 @@ mod tests {
     #[case::number_with_decimal("12.25", "12.25")]
     #[case::bool_true("참", "참")]
     #[case::bool_false("거짓", "거짓")]
+    #[case::str_without_interploation("\"사과 오렌지\"", "사과 오렌지")]
     #[case::closure("함수 사과, 오렌지, 바나나 { 1 }", "함수 사과, 오렌지, 바나나 { ... }")]
     fn single_literal(#[case] source: &str, #[case] expected: String) {
         assert_out!(source, expected, "");
@@ -336,6 +337,14 @@ mod tests {
     fn assignment_with_wrong_type(#[case] source: &str, #[case] error: ExecError) {
         assert_fail!(source, error);
     }
+
+    #[rstest]
+    #[case::curring_call("사과 = 42 오렌지 = 참 \"{사과}{오렌지}\"", "42참")]
+    fn string_interpolation(#[case] source: &str, #[case] expected: String) {
+        assert_out!(source, expected, "");
+    }
+
+    // TODO: test closure captures
 
     #[rstest]
     #[case::immediate_closure_call("함수{1}()", "1")]

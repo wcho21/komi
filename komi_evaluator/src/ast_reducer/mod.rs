@@ -28,6 +28,7 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
         AstKind::Identifier(id) => leaf::evaluate_identifier(id, &loc, env),
         AstKind::Number(n) => leaf::evaluate_num(*n, &loc),
         AstKind::Bool(b) => leaf::evaluate_bool(*b, &loc),
+        AstKind::Str(s) => leaf::evaluate_str(s, &loc, env),
         AstKind::Closure { parameters: p, body: b } => leaf::evaluate_closure(p, b, &loc, env),
         AstKind::PrefixPlus { operand: op } => prefix::reduce_plus(&op, &loc, env, stdouts),
         AstKind::PrefixMinus { operand: op } => prefix::reduce_minus(&op, &loc, env, stdouts),
@@ -54,7 +55,6 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
             assign_infix::reduce_percent_equals(&l, &r, &loc, env, stdouts)
         }
         AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env, stdouts),
-        _ => todo!(),
     }
 }
 
@@ -64,7 +64,7 @@ mod tests {
     use crate::{EvalError, EvalErrorKind};
     use fixtures::*;
     use komi_syntax::{AstKind, Value, ValueKind, mkast, mkval};
-    use komi_util::{Range, str_loc};
+    use komi_util::{Range, StrSegment, StrSegmentKind, mkstrseg, str_loc};
     use rstest::rstest;
 
     /// Asserts a given AST to be evaluated into the expected value.
@@ -327,6 +327,15 @@ mod tests {
             ]),
             mkval!(ValueKind::Bool(true), str_loc!("", "참"))
         )]
+        #[case::str_without_interpolation(
+            // Represents `"사과"`.
+            mkast!(prog loc str_loc!("", "\"사과\""), vec![
+                mkast!(string loc str_loc!("", "\"사과\""), vec![
+                    mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                ]),
+            ]),
+            mkval!(ValueKind::Str(String::from("사과")), str_loc!("", "\"사과\""))
+        )]
         #[case::closure(
             // Represents `함수 사과, 오렌지, 바나나 { 1 2 3 }`.
             mkast!(prog loc str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"), vec![
@@ -396,6 +405,44 @@ mod tests {
         )]
         fn single(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
+        }
+
+        #[rstest]
+        #[case::num_id(
+            // Represents `"{사과}"`.
+            mkast!(prog loc str_loc!("", "\"{사과}\""), vec![
+                mkast!(string loc str_loc!("", "\"{사과}\""), vec![
+                    mkstrseg!(Identifier, "사과", str_loc!("\"", "사과")),
+                ]),
+            ]),
+            // Represents a binding for `사과` to `12.25`.
+            root_env("사과", &mkval!(ValueKind::Number(12.25), range())),
+            mkval!(ValueKind::Str(String::from("12.25")), str_loc!("", "\"{사과}\""))
+        )]
+        #[case::bool_id(
+            // Represents `"{사과}"`.
+            mkast!(prog loc str_loc!("", "\"{사과}\""), vec![
+                mkast!(string loc str_loc!("", "\"{사과}\""), vec![
+                    mkstrseg!(Identifier, "사과", str_loc!("\"", "사과")),
+                ]),
+            ]),
+            // Represents a binding for `사과` to `참`.
+            root_env("사과", &mkval!(ValueKind::Bool(true), range())),
+            mkval!(ValueKind::Str(String::from("참")), str_loc!("", "\"{사과}\""))
+        )]
+        #[case::str_id(
+            // Represents `"{사과}"`.
+            mkast!(prog loc str_loc!("", "\"{사과}\""), vec![
+                mkast!(string loc str_loc!("", "\"{사과}\""), vec![
+                    mkstrseg!(Identifier, "사과", str_loc!("\"", "사과")),
+                ]),
+            ]),
+            // Represents a binding for `사과` to `"오렌지"`.
+            root_env("사과", &mkval!(ValueKind::Str(String::from("오렌지")), range())),
+            mkval!(ValueKind::Str(String::from("오렌지")), str_loc!("", "\"{사과}\""))
+        )]
+        fn string_interpolation(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] expected: Value) {
+            assert_eval!(&ast, &mut env, expected);
         }
     }
 
