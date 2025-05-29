@@ -39,3 +39,10 @@ impl StrSegmentKind {
         Self::Identifier(s.into())
     }
 }
+
+#[macro_export]
+macro_rules! mkstrseg {
+    ($kind:ident, $val:expr, $range:expr) => {
+        StrSegment::new(StrSegmentKind::$kind($val.to_owned()), $range)
+    };
+}

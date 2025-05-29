@@ -113,6 +113,9 @@ macro_rules! mkast {
     (boolean $val:expr, loc $range:expr) => {
         Box::new(Ast::new(AstKind::Bool($val), $range))
     };
+    (string loc $range:expr, $val:expr $(,)?) => {
+        Box::new(Ast::new(AstKind::Str($val), $range))
+    };
 }
 
 #[cfg(test)]

@@ -9,7 +9,7 @@ mod util;
 
 pub use err::{ParseError, ParseErrorKind};
 use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
-use komi_util::{Range, Scanner};
+use komi_util::{Range, Scanner, StrSegment};
 use token_scanner::TokenScanner;
 
 type AstRes = Result<Box<Ast>, ParseError>;
@@ -80,6 +80,7 @@ impl<'a> Parser<'a> {
         match &first_token.kind {
             TokenKind::Number(n) => self.make_num_ast(*n, &first_token.location),
             TokenKind::Bool(b) => self.make_bool_ast(*b, &first_token.location),
+            TokenKind::Str(s) => self.make_str_ast(s, &first_token.location),
             TokenKind::Identifier(i) => self.make_identifier_ast(i, &first_token.location),
             TokenKind::Plus => self.parse_plus_prefix_expression(&first_token.location),
             TokenKind::Minus => self.parse_minus_prefix_expression(&first_token.location),
@@ -367,6 +368,10 @@ impl<'a> Parser<'a> {
         Ok(Box::new(Ast::new(AstKind::Bool(boolean), *location)))
     }
 
+    fn make_str_ast(&self, str: &Vec<StrSegment>, location: &Range) -> AstRes {
+        Ok(Box::new(Ast::new(AstKind::Str(str.to_vec()), *location)))
+    }
+
     fn make_identifier_ast(&self, identifier: &str, location: &Range) -> AstRes {
         Ok(Box::new(Ast::new(
             AstKind::Identifier(identifier.to_owned()),
@@ -397,7 +402,7 @@ pub fn parse(tokens: &Vec<Token>) -> AstRes {
 mod tests {
     use super::*;
     use komi_syntax::{AstKind, mkast, mktoken};
-    use komi_util::str_loc;
+    use komi_util::{StrSegment, StrSegmentKind, mkstrseg, str_loc};
     use rstest::rstest;
 
     /// Asserts given tokens to be parsed into the expected AST.
@@ -460,6 +465,23 @@ mod tests {
         ],
         mkast!(prog loc str_loc!("", "참"), vec![
             mkast!(boolean true, loc str_loc!("", "참")),
+        ])
+    )]
+    #[case::str(
+        // Represents `"사과{오렌지}"`.
+        vec![
+            mktoken!(str_loc!("", "\"사과{오렌지}\""),
+                TokenKind::Str(vec![
+                    mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                    mkstrseg!(Identifier, "오렌지", str_loc!("\"사과{", "오렌지")),
+                ]),
+            )
+        ],
+        mkast!(prog loc str_loc!("", "\"사과{오렌지}\""), vec![
+            mkast!(string loc str_loc!("", "\"사과{오렌지}\""), vec![
+                mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                mkstrseg!(Identifier, "오렌지", str_loc!("\"사과{", "오렌지")),
+            ]),
         ])
     )]
     #[case::identifier(
