@@ -55,15 +55,15 @@ pub fn eval(ast: &Box<Ast>) -> ValRes {
 mod tests {
     use super::*;
     use komi_syntax::{Ast, AstKind, ValueKind, mkast};
-    use komi_util::Range;
+    use komi_util::{Range, str_loc};
 
     #[test]
     fn test_stdout_num_without_decimal() {
-        let ast = mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(call loc 0, 0, 0, 5,
-                target mkast!(identifier "쓰기", loc 0, 0, 0, 2),
+        let ast = mkast!(prog loc str_loc!("", "쓰기(42)"), vec![
+            mkast!(call loc str_loc!("", "쓰기(42)"),
+                target mkast!(identifier "쓰기", loc str_loc!("", "쓰기")),
                 args vec![
-                    mkast!(num 1.0, loc 0, 3, 0, 4),
+                    mkast!(num 42.0, loc str_loc!("쓰기(", "42")),
                 ],
             ),
         ]);
@@ -72,20 +72,17 @@ mod tests {
         let repr = evaluator.eval();
         let stdout = evaluator.flush();
 
-        assert_eq!(
-            repr,
-            Ok(Value::new(ValueKind::Number(1.0), Range::from_nums(0, 0, 0, 5))) // TODO: correct location
-        );
-        assert_eq!(stdout, "1");
+        assert_eq!(repr, Ok(Value::new(ValueKind::Number(2.0), str_loc!("", "쓰기(42)")))); // `2` is the length of `42`
+        assert_eq!(stdout, "42");
     }
 
     #[test]
     fn test_stdout_num_with_decimal() {
-        let ast = mkast!(prog loc 0, 0, 0, 5, vec![
-            mkast!(call loc 0, 0, 0, 5,
-                target mkast!(identifier "쓰기", loc 0, 0, 0, 2),
+        let ast = mkast!(prog loc str_loc!("", "쓰기(12.25)"), vec![
+            mkast!(call loc str_loc!("", "쓰기(12.25)"),
+                target mkast!(identifier "쓰기", loc str_loc!("", "쓰기")),
                 args vec![
-                    mkast!(num 12.25, loc 0, 3, 0, 4),
+                    mkast!(num 12.25, loc str_loc!("쓰기(", "12.25")),
                 ],
             ),
         ]);
@@ -96,7 +93,7 @@ mod tests {
 
         assert_eq!(
             repr,
-            Ok(Value::new(ValueKind::Number(5.0), Range::from_nums(0, 0, 0, 5))) // TODO: correct location
+            Ok(Value::new(ValueKind::Number(5.0), str_loc!("", "쓰기(12.25)"))), // `5` is the length of "12.25"
         );
         assert_eq!(stdout, "12.25");
     }

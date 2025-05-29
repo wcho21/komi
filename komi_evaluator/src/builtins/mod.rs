@@ -11,8 +11,6 @@ fn stdout_write(args: &Vec<Value>, stdouts: &mut Stdout) -> Value {
     let joined = strs.join(" ");
     let joined_len = joined.len();
 
-    dbg!(&joined, joined_len);
-
     stdouts.push(joined);
 
     Value::new(ValueKind::Number(joined_len as f64), Range::ORIGIN)
