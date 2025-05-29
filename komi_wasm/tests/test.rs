@@ -116,7 +116,7 @@ mod tests {
 
             test_exec!(
                 closure,
-                "함수 사과, 오렌지, 바나나 {}",
+                "함수 사과, 오렌지, 바나나 { 1 }",
                 "함수 사과, 오렌지, 바나나 { ... }",
                 "",
             );
@@ -227,11 +227,16 @@ mod tests {
             test_error!(arithmetic_asterisk, "*", "ParseError", "InvalidExprStart", loc str_loc!("", "*"));
             test_error!(arithmetic_plus, "+", "ParseError", "NoPrefixOperand", loc str_loc!("", "+"));
             test_error!(no_operand, "1+", "ParseError", "NoInfixRightOperand", loc str_loc!("", "1+"));
-            test_error!(paren_not_closed, "(12+3", "ParseError", "NoClosingParenInGroup", loc str_loc!("", "(12+3"));
-            test_error!(invalid_closure_param, "함수 +", "ParseError", "InvalidClosureParams", loc str_loc!("함수 ", "+"));
+            test_error!(group_not_closed, "(12+3", "ParseError", "NoClosingParenInGroup", loc str_loc!("", "(12+3"));
+            test_error!(no_closure_params, "함수", "ParseError", "NoClosureParams", loc str_loc!("", "함수"));
+            test_error!(no_closure_body, "함수 사과", "ParseError", "NoClosureBody", loc str_loc!("", "함수 사과"));
+            test_error!(invalid_closure_params, "함수 1 { 1 }", "ParseError", "NonIdClosureParams", loc str_loc!("함수 ", "1"));
+            test_error!(missing_comma_in_closure_params, "함수 사과 바나나 { 1 }", "ParseError", "NoCommaInClosureParams", loc str_loc!("함수 사과 ", "바나나"));
             test_error!(closure_body_open_but_end, "함수 {", "ParseError", "NoClosingBraceInClosureBody", loc str_loc!("함수 {", ""));
             test_error!(closure_body_not_closed, "함수 {1", "ParseError", "NoClosingBraceInClosureBody", loc str_loc!("함수 {1", ""));
-            test_error!(invalid_call_not_closed, "함수{1}(", "ParseError", "InvalidCallArgs", loc str_loc!("", "함수(1){"));
+            test_error!(invalid_call_not_closed, "함수 {1}(", "ParseError", "NoClosingParenInCallArgs", loc str_loc!("", "함수 {1}("));
+            test_error!(missing_comma_in_call_args, "함수 {1}(1 2", "ParseError", "NoCommaInCallArgs", loc str_loc!("함수 {1}(1 ", "2"));
+            test_error!(empty_closure_body, "함수 {}", "ParseError", "NoExpressionInClosureBody", loc str_loc!("", "함수 {}"));
         }
 
         mod eval {
