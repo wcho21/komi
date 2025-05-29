@@ -18,24 +18,28 @@ pub fn is_whitespace_char(s: &str) -> bool {
 /// Specifically, it includes:
 /// - ASCII alphabets and number characters.
 /// - Hangul, from `U+AC00` (`가`) to `U+D7A3` (`힣`)
-// TODO: include underbar (`_`)
-pub fn is_in_identifier_domain(s: &str) -> bool {
-    let ascii = s.len() == 1 && s.chars().next().unwrap().is_ascii_alphanumeric();
-    if ascii {
-        return true;
-    }
-    let hangul = s.len() == 3 && is_in_hangul_identifier_domain(s.chars().next().unwrap());
-    if hangul {
-        return true;
-    }
+pub fn is_char_in_identifier_domain(s: &str) -> bool {
+    is_underbar(s) || is_char_ascii_alphanumeric(s) || is_char_in_hangul_identifier_domain(s)
+}
 
-    false
+fn is_underbar(s: &str) -> bool {
+    s == "_"
+}
+
+fn is_char_ascii_alphanumeric(s: &str) -> bool {
+    s.len() == 1 && s.chars().next().unwrap().is_ascii_alphanumeric()
 }
 
 /// Returns true if the given character is within the Unicode range for Hangul (from `U+AC00` to `U+D7AC`); false otherwise.
-fn is_in_hangul_identifier_domain(c: char) -> bool {
-    let u = u32::from(c);
-    0xAC00 <= u && u <= 0xD7A3
+fn is_char_in_hangul_identifier_domain(s: &str) -> bool {
+    // Note that a hangul character takes 3 bytes in utf-8
+    if s.len() != 3 {
+        return false;
+    }
+
+    let char = s.chars().next().unwrap();
+    let codepoint = u32::from(char);
+    0xAC00 <= codepoint && codepoint <= 0xD7A3
 }
 
 #[cfg(test)]
@@ -66,33 +70,37 @@ mod tests {
     }
 
     #[rstest]
+    #[case::num("1", true)]
+    #[case::alphabet("a", true)]
     #[case::hangul_ga("가", true)]
     #[case::hangul_na("나", true)]
     #[case::hangul_da("다", true)]
     #[case::hangul_hit("힣", true)]
-    #[case::numeric("1", true)]
-    #[case::alphabet("a", true)]
+    #[case::underbar("_", true)]
+    #[case::two_nums("12", false)]
+    #[case::two_alphabet("ab", false)]
     #[case::two_hanguls("가나", false)]
+    #[case::two_underbars("__", false)]
     #[case::space(" ", false)]
     #[case::cr("\r", false)]
     #[case::lf("\n", false)]
     #[case::crlf("\r\n", false)]
-    #[case::below_hangul_boundary(&String::from(char::from_u32(0xD7A4).unwrap()), false)]
+    #[case::below_hangul_boundary(&String::from(char::from_u32(0xABFF).unwrap()), false)]
     #[case::above_hangul_boundary(&String::from(char::from_u32(0xD7A4).unwrap()), false)]
     fn test_is_id_domain(#[case] s: &str, #[case] expected: bool) {
-        assert_eq!(is_in_identifier_domain(s), expected);
+        assert_eq!(is_char_in_identifier_domain(s), expected);
     }
 
     #[rstest]
-    #[case::hangul_ga('가', true)]
-    #[case::hangul_na('나', true)]
-    #[case::hangul_da('다', true)]
-    #[case::hangul_hit('힣', true)]
-    #[case::numeric('1', false)]
-    #[case::alphabet('a', false)]
-    #[case::below_hangul_boundary(char::from_u32(0xD7A4).unwrap(), false)]
-    #[case::above_hangul_boundary(char::from_u32(0xD7A4).unwrap(), false)]
-    fn test_is_hangul_identifier_domain(#[case] c: char, #[case] expected: bool) {
-        assert_eq!(is_in_hangul_identifier_domain(c), expected);
+    #[case::hangul_ga("가", true)]
+    #[case::hangul_na("나", true)]
+    #[case::hangul_da("다", true)]
+    #[case::hangul_hit("힣", true)]
+    #[case::numeric("1", false)]
+    #[case::alphabet("a", false)]
+    #[case::below_hangul_boundary(&String::from(char::from_u32(0xABFF).unwrap()), false)]
+    #[case::above_hangul_boundary(&String::from(char::from_u32(0xD7A4).unwrap()), false)]
+    fn test_is_hangul_identifier_domain(#[case] s: &str, #[case] expected: bool) {
+        assert_eq!(is_char_in_hangul_identifier_domain(s), expected);
     }
 }

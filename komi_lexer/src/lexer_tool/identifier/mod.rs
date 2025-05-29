@@ -24,7 +24,7 @@ where
     F: Fn() -> TokenRes,
 {
     match char_read {
-        Some(c) if char_validator::is_in_identifier_domain(c) => {
+        Some(c) if char_validator::is_char_in_identifier_domain(c) => {
             // Pass what the scanner just read to the identifier-lexing function below.
             let init_seg = init_seg.to_owned() + c;
             let char_end = scanner.locate().end;
@@ -61,7 +61,7 @@ pub fn read_identifier_with_init_seg(scanner: &mut SourceScanner, init_seg: Stri
 
     // Read identifier characters one by one
     while let Some(char) = scanner.read() {
-        if !char_validator::is_in_identifier_domain(char) {
+        if !char_validator::is_char_in_identifier_domain(char) {
             break;
         }
 

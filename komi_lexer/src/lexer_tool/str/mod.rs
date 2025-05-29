@@ -59,7 +59,7 @@ pub fn lex_str(scanner: &mut SourceScanner, first_location: Range) -> TokenRes {
                 seg_location.end = second_char_location.end;
                 return Err(LexError::new(LexErrorKind::NoIdentifierInInterpolation, seg_location));
             }
-            if !char_validator::is_in_identifier_domain(second_char) {
+            if !char_validator::is_char_in_identifier_domain(second_char) {
                 return Err(LexError::new(
                     LexErrorKind::IllegalInterpolationChar,
                     second_char_location,
