@@ -60,7 +60,7 @@ impl<'a> Parser<'a> {
         Ok(expressions)
     }
 
-    fn parse_expression(&mut self, first_token: &'a Token, threshold_bp: &Bp) -> AstRes {
+    fn parse_expression(&mut self, first_token: &Token, threshold_bp: &Bp) -> AstRes {
         let mut top = self.parse_expression_start(first_token)?;
 
         while let Some(token) = self.scanner.read() {
@@ -76,7 +76,7 @@ impl<'a> Parser<'a> {
         Ok(top)
     }
 
-    fn parse_expression_start(&mut self, first_token: &'a Token) -> AstRes {
+    fn parse_expression_start(&mut self, first_token: &Token) -> AstRes {
         match &first_token.kind {
             TokenKind::Number(n) => self.make_num_ast(*n, &first_token.location),
             TokenKind::Bool(b) => self.make_bool_ast(*b, &first_token.location),
@@ -95,7 +95,7 @@ impl<'a> Parser<'a> {
 
     /// Parses characters into a closure-expression AST, with the location `keyword_location` of the closure keyword.
     /// Should be called after the scanner has advanced past the closure keyword.
-    fn parse_closure_expression(&mut self, keyword_location: &'a Range) -> AstRes {
+    fn parse_closure_expression(&mut self, keyword_location: &Range) -> AstRes {
         let parameters = self.parse_closure_expression_params(keyword_location)?;
         let body = self.parse_closure_expression_body()?;
 
@@ -140,7 +140,7 @@ impl<'a> Parser<'a> {
         Ok(expressions)
     }
 
-    fn parse_closure_expression_params(&mut self, keyword_location: &'a Range) -> ParamsRes {
+    fn parse_closure_expression_params(&mut self, keyword_location: &Range) -> ParamsRes {
         let Some(first_token) = self.scanner.read_and_advance() else {
             let closure_location = Range::new(keyword_location.begin, self.scanner.locate().end);
             return Err(ParseError::new(ParseErrorKind::NoClosureParams, closure_location));
@@ -193,22 +193,22 @@ impl<'a> Parser<'a> {
         Ok(parameters)
     }
 
-    fn parse_plus_prefix_expression(&mut self, prefix_location: &'a Range) -> AstRes {
+    fn parse_plus_prefix_expression(&mut self, prefix_location: &Range) -> AstRes {
         let get_kind = |operand| AstKind::PrefixPlus { operand };
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_minus_prefix_expression(&mut self, prefix_location: &'a Range) -> AstRes {
+    fn parse_minus_prefix_expression(&mut self, prefix_location: &Range) -> AstRes {
         let get_kind = |operand| AstKind::PrefixMinus { operand };
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_bang_prefix_expression(&mut self, prefix_location: &'a Range) -> AstRes {
+    fn parse_bang_prefix_expression(&mut self, prefix_location: &Range) -> AstRes {
         let get_kind = |operand| AstKind::PrefixBang { operand };
         self.read_operand_and_make_prefix_ast(prefix_location, get_kind)
     }
 
-    fn parse_expression_middle(&mut self, left: Box<Ast>, infix: &'a Token) -> AstRes {
+    fn parse_expression_middle(&mut self, left: Box<Ast>, infix: &Token) -> AstRes {
         // Determine the AST kind by `get_kind` and the binding power of the infix by `bp`.
         match infix.kind {
             TokenKind::Plus => read_right_and_make_infix_ast!(self, left, ADDITIVE, InfixPlus),
@@ -229,7 +229,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_grouped_expression(&mut self, first_token: &'a Token) -> AstRes {
+    fn parse_grouped_expression(&mut self, first_token: &Token) -> AstRes {
         let mut grouped_ast = match self.scanner.read_and_advance() {
             Some(x) => self.parse_expression(x, &Bp::LOWEST),
             None => Err(ParseError::new(
@@ -252,7 +252,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn read_operand_and_make_prefix_ast<F>(&mut self, prefix_location: &'a Range, get_kind: F) -> AstRes
+    fn read_operand_and_make_prefix_ast<F>(&mut self, prefix_location: &Range, get_kind: F) -> AstRes
     where
         F: Fn(Box<Ast>) -> AstKind,
     {
