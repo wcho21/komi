@@ -102,12 +102,18 @@ impl<'a> Parser<'a> {
         let token_location = self.scanner.locate();
         let token = self.scanner.read_and_advance();
         if token.is_none() || token.unwrap().kind != TokenKind::RBrace {
-            return Err(ParseError::new(ParseErrorKind::ClosureBodyNotClosed, token_location));
+            return Err(ParseError::new(
+                ParseErrorKind::NoClosingBraceInClosureBody,
+                token_location,
+            ));
         }
         // Check if the body is empty here, to locate the closure.
         if body.len() == 0 {
             let closure_location = Range::new(keyword_location.begin, token_location.end);
-            return Err(ParseError::new(ParseErrorKind::EmptyClosureBody, closure_location));
+            return Err(ParseError::new(
+                ParseErrorKind::NoExpressionInClosureBody,
+                closure_location,
+            ));
         }
 
         let closure_location = Range::new(keyword_location.begin, token_location.end);
@@ -137,7 +143,7 @@ impl<'a> Parser<'a> {
     fn parse_closure_expression_params(&mut self, keyword_location: &'a Range) -> ParamsRes {
         let Some(first_token) = self.scanner.read_and_advance() else {
             let closure_location = Range::new(keyword_location.begin, self.scanner.locate().end);
-            return Err(ParseError::new(ParseErrorKind::EndWithClosureKeyword, closure_location));
+            return Err(ParseError::new(ParseErrorKind::NoClosureParams, closure_location));
         };
 
         // Return if no parameters
@@ -159,7 +165,7 @@ impl<'a> Parser<'a> {
             // First part: Expect a comma `,` or the left brace `{`
             let Some(token) = self.scanner.read_and_advance() else {
                 let closure_location = Range::new(keyword_location.begin, self.scanner.locate().end);
-                return Err(ParseError::new(ParseErrorKind::EndWithClosureParams, closure_location));
+                return Err(ParseError::new(ParseErrorKind::NoClosureBody, closure_location));
             };
 
             // Successfully break if end of parameters.
@@ -169,16 +175,13 @@ impl<'a> Parser<'a> {
 
             // Return error if comma missing
             if token.kind != TokenKind::Comma {
-                return Err(ParseError::new(
-                    ParseErrorKind::MissingCommaClosureParams,
-                    token.location,
-                ));
+                return Err(ParseError::new(ParseErrorKind::NoCommaInClosureParams, token.location));
             }
 
             // Second part: Expect an identifier as a parameter
             let Some(next_token) = self.scanner.read_and_advance() else {
                 let closure_location = Range::new(keyword_location.begin, self.scanner.locate().end);
-                return Err(ParseError::new(ParseErrorKind::EndWithClosureParams, closure_location));
+                return Err(ParseError::new(ParseErrorKind::NoClosureBody, closure_location));
             };
             let Token { kind: TokenKind::Identifier(param), .. } = next_token else {
                 return Err(ParseError::new(ParseErrorKind::NonIdClosureParams, next_token.location));
@@ -229,7 +232,10 @@ impl<'a> Parser<'a> {
     fn parse_grouped_expression(&mut self, first_token: &'a Token) -> AstRes {
         let mut grouped_ast = match self.scanner.read_and_advance() {
             Some(x) => self.parse_expression(x, &Bp::LOWEST),
-            None => Err(ParseError::new(ParseErrorKind::GroupNotClosed, first_token.location)),
+            None => Err(ParseError::new(
+                ParseErrorKind::NoClosingParenInGroup,
+                first_token.location,
+            )),
         }?;
 
         let rparen_location = self.scanner.locate();
@@ -241,7 +247,7 @@ impl<'a> Parser<'a> {
             }
             _ => {
                 let location = Range::new(first_token.location.begin, rparen_location.end);
-                Err(ParseError::new(ParseErrorKind::GroupNotClosed, location))
+                Err(ParseError::new(ParseErrorKind::NoClosingParenInGroup, location))
             }
         }
     }
@@ -285,7 +291,7 @@ impl<'a> Parser<'a> {
         // Return an error if end
         let Some(first_token) = self.scanner.read() else {
             let call_location = Range::new(call_target_location.begin, self.scanner.locate().end);
-            return Err(ParseError::new(ParseErrorKind::CallArgsNotClosed, call_location));
+            return Err(ParseError::new(ParseErrorKind::NoClosingParenInCallArgs, call_location));
         };
 
         // Return if no arguments
@@ -306,7 +312,7 @@ impl<'a> Parser<'a> {
             // Return error if end of source where the right parenthesis `)` would be
             let Some(token) = self.scanner.read() else {
                 let call_location = Range::new(call_target_location.begin, self.scanner.locate().end);
-                return Err(ParseError::new(ParseErrorKind::CallArgsNotClosed, call_location));
+                return Err(ParseError::new(ParseErrorKind::NoClosingParenInCallArgs, call_location));
             };
 
             // Successfully break if end of arguments
@@ -316,7 +322,7 @@ impl<'a> Parser<'a> {
 
             // Return error if comma missing
             if token.kind != TokenKind::Comma {
-                return Err(ParseError::new(ParseErrorKind::MissingCommaCallArgs, token.location));
+                return Err(ParseError::new(ParseErrorKind::NoCommaInCallArgs, token.location));
             }
             // TODO: merge advance to above read
             self.scanner.advance(); // Advance past the comma.
@@ -326,7 +332,7 @@ impl<'a> Parser<'a> {
             // Return error if end of source while reading arguments
             let Some(next_token) = self.scanner.read_and_advance() else {
                 let call_location = Range::new(call_target_location.begin, self.scanner.locate().end);
-                return Err(ParseError::new(ParseErrorKind::CallArgsNotClosed, call_location));
+                return Err(ParseError::new(ParseErrorKind::NoClosingParenInCallArgs, call_location));
             };
 
             let arg = self.parse_expression(next_token, &Bp::LOWEST)?;
@@ -1290,7 +1296,7 @@ mod tests {
                 TokenKind::LParen,
             )
         ],
-        mkerr!(GroupNotClosed, str_loc!("", "("))
+        mkerr!(NoClosingParenInGroup, str_loc!("", "("))
     )]
     #[case::rparen(
         // Represents `)`.
@@ -2005,7 +2011,7 @@ mod tests {
                 TokenKind::Number(2.0),
             ),
         ],
-        mkerr!(GroupNotClosed, str_loc!("", "(1 + 2"))
+        mkerr!(NoClosingParenInGroup, str_loc!("", "(1 + 2"))
     )]
     #[case::lparen_not_closed_and_something(
         // Represents `(1 + 2 3`.
@@ -2026,7 +2032,7 @@ mod tests {
                 TokenKind::Number(2.0),
             ),
         ],
-        mkerr!(GroupNotClosed, str_loc!("", "(1 + 2 3"))
+        mkerr!(NoClosingParenInGroup, str_loc!("", "(1 + 2 3"))
     )]
     #[case::closed_twice(
         // Represents `(1))`.
@@ -2173,7 +2179,7 @@ mod tests {
                 TokenKind::Closure,
             ),
         ],
-        mkerr!(EndWithClosureKeyword, str_loc!("", "함수"))
+        mkerr!(NoClosureParams, str_loc!("", "함수"))
     )]
     #[case::end_with_single_parameter(
         // Represents `함수 사과`.
@@ -2185,7 +2191,7 @@ mod tests {
                 TokenKind::Identifier(String::from("사과")),
             ),
         ],
-        mkerr!(EndWithClosureParams, str_loc!("", "함수 사과"))
+        mkerr!(NoClosureBody, str_loc!("", "함수 사과"))
     )]
     #[case::end_with_comma_after_single_parameter(
         // Represents `함수 사과,`.
@@ -2200,7 +2206,7 @@ mod tests {
                 TokenKind::Comma,
             ),
         ],
-        mkerr!(EndWithClosureParams, str_loc!("", "함수 사과,"))
+        mkerr!(NoClosureBody, str_loc!("", "함수 사과,"))
     )]
     #[case::end_with_multiple_parameter(
         // Represents `함수 사과, 오렌지`.
@@ -2218,7 +2224,7 @@ mod tests {
                 TokenKind::Identifier(String::from("오렌지")),
             ),
         ],
-        mkerr!(EndWithClosureParams, str_loc!("", "함수 사과, 오렌지"))
+        mkerr!(NoClosureBody, str_loc!("", "함수 사과, 오렌지"))
     )]
     fn incomplete_closure(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -2375,7 +2381,7 @@ mod tests {
                 TokenKind::RBrace,
             ),
         ],
-        mkerr!(MissingCommaClosureParams, str_loc!("함수 사과 ", "오렌지"))
+        mkerr!(NoCommaInClosureParams, str_loc!("함수 사과 ", "오렌지"))
     )]
     fn wrong_comma_in_closure_params(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -2392,7 +2398,7 @@ mod tests {
                 TokenKind::LBrace,
             ),
         ],
-        mkerr!(ClosureBodyNotClosed, str_loc!("함수 {", ""))
+        mkerr!(NoClosingBraceInClosureBody, str_loc!("함수 {", ""))
     )]
     #[case::nonempty_body_not_closed(
         // Represents `함수 { 1`.
@@ -2407,7 +2413,7 @@ mod tests {
                 TokenKind::Number(1.0),
             ),
         ],
-        mkerr!(ClosureBodyNotClosed, str_loc!("함수 { 1", ""))
+        mkerr!(NoClosingBraceInClosureBody, str_loc!("함수 { 1", ""))
     )]
     fn incomplete_body_closure(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -2427,7 +2433,7 @@ mod tests {
                 TokenKind::RBrace,
             ),
         ],
-        mkerr!(EmptyClosureBody, str_loc!("", "함수 {}"))
+        mkerr!(NoExpressionInClosureBody, str_loc!("", "함수 {}"))
     )]
     #[case::single_parameter_and_empty_body(
         // Represents `함수 사과 {}`.
@@ -2445,7 +2451,7 @@ mod tests {
                 TokenKind::RBrace,
             ),
         ],
-        mkerr!(EmptyClosureBody, str_loc!("", "함수 사과 {}"))
+        mkerr!(NoExpressionInClosureBody, str_loc!("", "함수 사과 {}"))
     )]
     #[case::multiple_params_and_empty_body(
         // Represents `함수 사과, 오렌지, 바나나 {}`.
@@ -2475,7 +2481,7 @@ mod tests {
                 TokenKind::RBrace,
             ),
         ],
-        mkerr!(EmptyClosureBody, str_loc!("", "함수 사과, 오렌지, 바나나 {}"))
+        mkerr!(NoExpressionInClosureBody, str_loc!("", "함수 사과, 오렌지, 바나나 {}"))
     )]
     fn empty_body_closure(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -2581,7 +2587,7 @@ mod tests {
                 TokenKind::LParen,
             ),
         ],
-        mkerr!(CallArgsNotClosed, str_loc!("", "사과("))
+        mkerr!(NoClosingParenInCallArgs, str_loc!("", "사과("))
     )]
     #[case::args_and_no_rparen(
         // Represents `사과(1, 2`.
@@ -2602,7 +2608,7 @@ mod tests {
                 TokenKind::Number(2.0),
             ),
         ],
-        mkerr!(CallArgsNotClosed, str_loc!("", "사과(1, 2"))
+        mkerr!(NoClosingParenInCallArgs, str_loc!("", "사과(1, 2"))
     )]
     fn incomplete_call(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -2670,7 +2676,7 @@ mod tests {
                 TokenKind::RParen,
             ),
         ],
-        mkerr!(MissingCommaCallArgs, str_loc!("사과(1 ", "2"))
+        mkerr!(NoCommaInCallArgs, str_loc!("사과(1 ", "2"))
     )]
     fn wrong_comma_call(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);

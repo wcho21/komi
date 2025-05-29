@@ -12,26 +12,23 @@ pub enum ParseErrorKind {
     /// No infix right operand, such as `1+`.
     NoInfixRightOperand,
     /// A left parenthesis `(` not closed for grouping, such as `(1+2`.
-    GroupNotClosed,
-    /// The source ends with closure keyword, such as `함수`.
-    EndWithClosureKeyword,
-    /// The source ends with closure parameters, such as `함수 사과` or `함수 사과, 오렌지.
-    EndWithClosureParams,
+    NoClosingParenInGroup,
+    /// No closure parameters but the source ends with the closure keyword, such as `함수`.
+    NoClosureParams,
+    /// No closure body but the source ends with closure parameters, such as `함수 사과` or `함수 사과, 오렌지.
+    NoClosureBody,
     /// Non-identifier closure parameters, such as `함수 1`.
     NonIdClosureParams,
     /// Something else appears where the comma would be in the closure parameters, such as `함수 사과 바나나`.
-    MissingCommaClosureParams,
-    /// Invalid tokens in closure parameters, such as `함수 +`.
-    // TODO: remove this error (replaced by NonIdentifierClosureParams)
-    InvalidClosureParams,
+    NoCommaInClosureParams,
     /// A closure body beginning with `{` is not closed, such as `함수 {`
-    ClosureBodyNotClosed,
+    NoClosingBraceInClosureBody,
     /// A left parenthesis `(` not closed for call arguments, such as `사과(` or `사과(1,`.
-    CallArgsNotClosed,
+    NoClosingParenInCallArgs,
     /// Something else appears where the comma would be in the call arguments, such as `2` in `사과(1 2)`.
-    MissingCommaCallArgs,
+    NoCommaInCallArgs,
     /// A closure body is empty, which should not, such as `함수 {}`.
-    EmptyClosureBody,
+    NoExpressionInClosureBody,
     /// An unexpected error due to incorrect expression parsing. Should not occur.
     UnexpectedExprInfix,
 }
@@ -42,18 +39,17 @@ impl fmt::Display for ParseErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let s = match self {
             ParseErrorKind::InvalidExprStart => "InvalidExprStart",
-            ParseErrorKind::GroupNotClosed => "GroupNotClosed",
+            ParseErrorKind::NoClosingParenInGroup => "NoClosingParenInGroup",
             ParseErrorKind::NoInfixRightOperand => "NoInfixRightOperand",
             ParseErrorKind::NoPrefixOperand => "NoPrefixOperand",
-            ParseErrorKind::EndWithClosureKeyword => "EndWithClosureKeyword",
-            ParseErrorKind::EndWithClosureParams => "EndWithClosureParams",
+            ParseErrorKind::NoClosureParams => "NoClosureParams",
+            ParseErrorKind::NoClosureBody => "NoClosureBody",
             ParseErrorKind::NonIdClosureParams => "NonIdClosureParams",
-            ParseErrorKind::MissingCommaClosureParams => "MissingCommaClosureParams",
-            ParseErrorKind::InvalidClosureParams => "InvalidClosureParams",
-            ParseErrorKind::ClosureBodyNotClosed => "ClosureBodyNotClosed",
-            ParseErrorKind::CallArgsNotClosed => "CallArgsNotClosed",
-            ParseErrorKind::MissingCommaCallArgs => "MissingCommaCallArgs",
-            ParseErrorKind::EmptyClosureBody => "EmptyClosureBody",
+            ParseErrorKind::NoCommaInClosureParams => "NoCommaInClosureParams",
+            ParseErrorKind::NoClosingBraceInClosureBody => "NoClosingBraceInClosureBody",
+            ParseErrorKind::NoClosingParenInCallArgs => "NoClosingParenInCallArgs",
+            ParseErrorKind::NoCommaInCallArgs => "NoCommaInCallArgs",
+            ParseErrorKind::NoExpressionInClosureBody => "NoExpressionInClosureBody",
             ParseErrorKind::UnexpectedExprInfix => "UnexpectedExprInfix",
         };
         write!(f, "{}", s)
