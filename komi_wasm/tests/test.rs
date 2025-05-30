@@ -1,3 +1,5 @@
+mod res_converter;
+
 use js_sys::{Error, JsString, Number};
 use komi_wasm::execute;
 use komi_wasm::util::js_val::obj::get_property;

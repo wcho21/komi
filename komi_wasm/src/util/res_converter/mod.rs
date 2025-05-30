@@ -10,6 +10,7 @@ macro_rules! unpack_err {
     }};
 }
 
+/// Converts an execution result `exec_out` to a JavaScript value.
 pub fn convert(exec_out: &ExecRes) -> JsRes {
     match exec_out {
         Ok(out) => Ok(convert_out_to_js_val(out)?),
