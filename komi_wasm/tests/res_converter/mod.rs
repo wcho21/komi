@@ -13,7 +13,7 @@ mod tests {
     ///
     /// ```ts
     /// {
-    ///   representation: string;
+    ///   value: string;
     ///   stdout: string;
     /// }
     /// ```
@@ -25,10 +25,10 @@ mod tests {
         // The converted result is expected to be a JavaScript value (`JsValue`)
         let converted = convert(&exec_out)?;
 
-        // `converted` should have `representation` field
-        let converted_repr = obj::get_property(&converted, "representation")?;
-        let expected_repr = JsValue::from_str(&value());
-        assert_eq!(converted_repr, expected_repr);
+        // `converted` should have `value` field
+        let converted_value = obj::get_property(&converted, "value")?;
+        let expected_value = JsValue::from_str(&value());
+        assert_eq!(converted_value, expected_value);
 
         // `converted` should have `stdout` field
         let converted_stdout = obj::get_property(&converted, "stdout")?;
