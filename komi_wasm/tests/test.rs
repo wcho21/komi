@@ -1,3 +1,5 @@
+mod res_converter;
+
 use js_sys::{Error, JsString, Number};
 use komi_wasm::execute;
 use komi_wasm::util::js_val::obj::get_property;
@@ -35,14 +37,14 @@ macro_rules! test_error {
 macro_rules! assert_exec {
     ($src:expr, $expected_repr:expr, $expected_stdout:expr) => {
         let res = execute($src)?;
-        let repr = get_property(&res, "representation")?;
+        let repr = get_property(&res, "value")?;
         let stdout = get_property(&res, "stdout")?;
         dbg!(res);
 
         assert_eq!(
             JsString::from(repr),
             JsString::from($expected_repr),
-            "expected the representation (left), but it isn't (right)"
+            "expected the value (left), but it isn't (right)"
         );
         assert_eq!(
             JsString::from(stdout),

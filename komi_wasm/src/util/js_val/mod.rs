@@ -28,9 +28,11 @@ pub fn convert_range_to_js_object(location: &Range) -> Result<Object, JsValue> {
     Ok(obj)
 }
 
+/// Converts an execution result to a JavaScript object with two fields `value` and `stdout`.
+/// These fields will be the string values from `repr` and `stdout`, respectively.
 pub fn convert_repr_and_stdout_to_js_val(repr: &str, stdout: &str) -> JsRes {
     let obj = Object::new();
-    obj::set_string_property(&obj, "representation", repr)?;
+    obj::set_string_property(&obj, "value", repr)?;
     obj::set_string_property(&obj, "stdout", stdout)?;
 
     Ok(obj.into())

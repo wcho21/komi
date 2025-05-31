@@ -1,6 +1,6 @@
-pub use komi_evaluator::EvalError;
-pub use komi_lexer::LexError;
-pub use komi_parser::ParseError;
+pub use komi_evaluator::{EvalError, EvalErrorKind};
+pub use komi_lexer::{LexError, LexErrorKind};
+pub use komi_parser::{ParseError, ParseErrorKind};
 use std::error::Error;
 use std::fmt;
 

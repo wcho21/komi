@@ -1,6 +1,7 @@
 mod err;
 
-pub use err::ExecError;
+// TODO: move errors to syntax module, since errors are interface among engines.
+pub use err::{EvalError, EvalErrorKind, ExecError, LexError, LexErrorKind, ParseError, ParseErrorKind};
 use komi_evaluator::Evaluator;
 use komi_lexer::lex;
 use komi_parser::parse;
