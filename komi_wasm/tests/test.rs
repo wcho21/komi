@@ -39,7 +39,6 @@ macro_rules! assert_exec {
         let res = execute($src)?;
         let repr = get_property(&res, "value")?;
         let stdout = get_property(&res, "stdout")?;
-        dbg!(res);
 
         assert_eq!(
             JsString::from(repr),
