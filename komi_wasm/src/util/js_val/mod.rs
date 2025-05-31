@@ -1,6 +1,5 @@
 pub mod obj;
 
-use crate::JsRes;
 use js_sys::{Error, Object};
 use komi_util::unpacker::unpack_spot;
 use komi_util::{Range, Spot};
@@ -30,7 +29,7 @@ pub fn convert_range_to_js_object(location: &Range) -> Result<Object, JsValue> {
 
 /// Converts an execution result to a JavaScript object with two fields `value` and `stdout`.
 /// These fields will be the string values from `repr` and `stdout`, respectively.
-pub fn convert_repr_and_stdout_to_js_val(repr: &str, stdout: &str) -> JsRes {
+pub fn convert_repr_and_stdout_to_js_val(repr: &str, stdout: &str) -> Result<JsValue, JsValue> {
     let obj = Object::new();
     obj::set_string_property(&obj, "value", repr)?;
     obj::set_string_property(&obj, "stdout", stdout)?;
@@ -38,7 +37,11 @@ pub fn convert_repr_and_stdout_to_js_val(repr: &str, stdout: &str) -> JsRes {
     Ok(obj.into())
 }
 
-pub fn convert_str_and_location_to_js_val(name: &str, message: &str, cause_location: &Range) -> JsRes {
+pub fn convert_str_and_location_to_js_val(
+    name: &str,
+    message: &str,
+    cause_location: &Range,
+) -> Result<JsValue, JsValue> {
     let cause = Object::new();
     let js_range_obj = convert_range_to_js_object(cause_location)?;
     obj::set_object_property(&cause, "location", &js_range_obj)?;
