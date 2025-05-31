@@ -1,6 +1,6 @@
 [package]
 name = "komi_wasm"
-version = "0.1.0-beta9"
+version = "0.1.0-beta10"
 edition = "2024"
 
 [dependencies]

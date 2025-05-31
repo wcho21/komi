@@ -1,15 +1,15 @@
 mod res_converter;
 
 use js_sys::{Error, JsString, Number};
-use komi_wasm::execute;
 use komi_wasm::util::js_val::obj::get_property;
+use komi_wasm::{JsExecError, execute};
 use wasm_bindgen::JsValue;
 use wasm_bindgen_test::*;
 
 macro_rules! test_exec {
     ($name:ident, $src:expr, $expected_value:expr, $expected_stdout:expr $(,)?) => {
         #[wasm_bindgen_test]
-        fn $name() -> Result<(), JsValue> {
+        fn $name() -> Result<(), JsExecError> {
             assert_exec!($src, $expected_value, $expected_stdout);
             Ok(())
         }
@@ -19,7 +19,7 @@ macro_rules! test_exec {
 macro_rules! test_error {
     ($name:ident, $src:expr, $err_name:literal, $err_msg:literal, loc $range:expr $(,)?) => {
         #[wasm_bindgen_test]
-        fn $name() -> Result<(), JsValue> {
+        fn $name() -> Result<(), JsExecError> {
             assert_error!(
                 $src,
                 $err_name,
@@ -36,9 +36,9 @@ macro_rules! test_error {
 
 macro_rules! assert_exec {
     ($src:expr, $expected_value:expr, $expected_stdout:expr) => {
-        let res = execute($src)?;
-        let repr = get_property(&res, "value")?;
-        let stdout = get_property(&res, "stdout")?;
+        let res: JsValue = execute($src)?.into();
+        let repr = get_property(&res, "value").unwrap();
+        let stdout = get_property(&res, "stdout").unwrap();
 
         assert_eq!(
             JsString::from(repr),
@@ -55,11 +55,9 @@ macro_rules! assert_exec {
 
 macro_rules! assert_error {
     ($src:expr, $name:expr, $msg:expr, $br:expr, $bc:expr, $er:expr, $ec:expr) => {
-        let res = execute($src);
+        let res: JsValue = execute($src).unwrap_err().into();
+        let err: Error = res.into();
 
-        assert!(res.is_err(), "expected an error, but it isn't.");
-
-        let err = Error::from(res.unwrap_err());
         assert_eq!(
             err.name(),
             JsString::from($name),
@@ -72,14 +70,14 @@ macro_rules! assert_error {
         );
 
         let cause = err.cause();
-        let location = get_property(&cause, "location")?;
-        let begin = get_property(&location, "begin")?;
-        let end = get_property(&location, "end")?;
+        let location = get_property(&cause, "location").unwrap();
+        let begin = get_property(&location, "begin").unwrap();
+        let end = get_property(&location, "end").unwrap();
 
-        let begin_row = get_property(&begin, "row")?;
-        let begin_col = get_property(&begin, "col")?;
-        let end_row = get_property(&end, "row")?;
-        let end_col = get_property(&end, "col")?;
+        let begin_row = get_property(&begin, "row").unwrap();
+        let begin_col = get_property(&begin, "col").unwrap();
+        let end_row = get_property(&end, "row").unwrap();
+        let end_col = get_property(&end, "col").unwrap();
 
         assert_eq!(
             Number::from(begin_row),

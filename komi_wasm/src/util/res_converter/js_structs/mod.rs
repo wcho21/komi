@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen(getter_with_clone, js_name = "ExecOut")]
+#[derive(Debug)]
 pub struct JsExecOut {
     #[wasm_bindgen(readonly)]
     pub value: String,
@@ -9,6 +10,7 @@ pub struct JsExecOut {
 }
 
 #[wasm_bindgen(getter_with_clone, js_name = "ExecError")]
+#[derive(Debug)]
 pub struct JsExecError {
     #[wasm_bindgen(readonly)]
     pub name: String,
@@ -19,14 +21,14 @@ pub struct JsExecError {
 }
 
 #[wasm_bindgen(getter_with_clone, js_name = "ExecErrorCause")]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct JsExecErrorCause {
     #[wasm_bindgen(getter_with_clone, readonly)]
     pub location: JsRange,
 }
 
 #[wasm_bindgen(getter_with_clone, js_name = "Range")]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct JsRange {
     #[wasm_bindgen(getter_with_clone, readonly)]
     pub begin: JsSpot,
@@ -35,7 +37,7 @@ pub struct JsRange {
 }
 
 #[wasm_bindgen(getter_with_clone, js_name = "Spot")]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct JsSpot {
     #[wasm_bindgen(readonly)]
     pub row: u32,

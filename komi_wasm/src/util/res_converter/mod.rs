@@ -1,6 +1,5 @@
 mod js_structs;
 
-use crate::JsRes;
 pub use js_structs::{JsExecError, JsExecOut};
 use js_structs::{JsExecErrorCause, JsRange, JsSpot};
 use komi::{ExecError, ExecOut, ExecRes};
@@ -17,10 +16,10 @@ macro_rules! unpack_err {
 pub struct JsConverter {}
 
 impl JsConverter {
-    pub fn convert(exec_res: ExecRes) -> JsRes {
+    pub fn convert(exec_res: ExecRes) -> Result<JsExecOut, JsExecError> {
         match exec_res {
-            Ok(exec_out) => Ok(Self::convert_exec_out(exec_out).into()),
-            Err(exec_error) => Err(Self::convert_exec_error(exec_error).into()),
+            Ok(exec_out) => Ok(Self::convert_exec_out(exec_out)),
+            Err(exec_error) => Err(Self::convert_exec_error(exec_error)),
         }
     }
 

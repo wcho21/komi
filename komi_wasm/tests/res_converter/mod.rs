@@ -16,7 +16,7 @@ mod tests {
         let exec_out = Ok(ExecOut::new(value(), stdout()));
 
         // The converted result is expected to be a JavaScript value (`JsValue`)
-        let converted = JsConverter::convert(exec_out)?;
+        let converted: JsValue = JsConverter::convert(exec_out)?.into();
 
         // `converted` should have `value` field
         let converted_value = obj::get_property(&converted, "value")?;
@@ -35,12 +35,13 @@ mod tests {
     /// For the specific interface, refer to `build/komi.d.ts` file in this crate.
     #[wasm_bindgen_test]
     fn test_convert_err() -> Result<(), JsValue> {
-        let exec_out = Err(exec_err());
+        let exec_res = Err(exec_err());
 
-        let converted = JsConverter::convert(exec_out);
+        let converted_res: JsValue = JsConverter::convert(exec_res).unwrap_err().into();
+        let converted_err: Error = converted_res.into();
 
         // `converted` should have `cause` field (according to the JavaScript Error class)
-        let converted_cause = Error::from(converted.unwrap_err()).cause();
+        let converted_cause = converted_err.cause();
 
         // The `cause` field should have `location` field
         let converted_location = obj::get_property(&converted_cause, "location")?;
