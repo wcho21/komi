@@ -7,10 +7,10 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen_test::*;
 
 macro_rules! test_exec {
-    ($name:ident, $src:expr, $expected_repr:expr, $expected_stdout:expr $(,)?) => {
+    ($name:ident, $src:expr, $expected_value:expr, $expected_stdout:expr $(,)?) => {
         #[wasm_bindgen_test]
         fn $name() -> Result<(), JsValue> {
-            assert_exec!($src, $expected_repr, $expected_stdout);
+            assert_exec!($src, $expected_value, $expected_stdout);
             Ok(())
         }
     };
@@ -35,14 +35,14 @@ macro_rules! test_error {
 }
 
 macro_rules! assert_exec {
-    ($src:expr, $expected_repr:expr, $expected_stdout:expr) => {
+    ($src:expr, $expected_value:expr, $expected_stdout:expr) => {
         let res = execute($src)?;
         let repr = get_property(&res, "value")?;
         let stdout = get_property(&res, "stdout")?;
 
         assert_eq!(
             JsString::from(repr),
-            JsString::from($expected_repr),
+            JsString::from($expected_value),
             "expected the value (left), but it isn't (right)"
         );
         assert_eq!(
