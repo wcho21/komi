@@ -10,6 +10,7 @@ use representation::Representer;
 pub enum ValueKind {
     Number(f64),
     Bool(bool),
+    Str(String),
     Closure {
         parameters: Vec<String>,
         body: Vec<Box<Ast>>,

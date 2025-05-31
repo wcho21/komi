@@ -34,11 +34,11 @@ where
 }
 
 fn get_num_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<f64, EvalError> {
-    util::get_num_primitive_or_error(ast, EvalErrorKind::InvalidNumPrefixOperand, env, stdouts)
+    util::get_num_primitive_or_error(ast, EvalErrorKind::NonNumPrefixOperand, env, stdouts)
 }
 
 fn get_bool_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<bool, EvalError> {
-    util::get_bool_primitive_or_error(ast, EvalErrorKind::InvalidBoolPrefixOperand, env, stdouts)
+    util::get_bool_primitive_or_error(ast, EvalErrorKind::NonBoolPrefixOperand, env, stdouts)
 }
 
 /// Reduces the operand `operand` of a prefix to an evaluated result.

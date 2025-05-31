@@ -89,6 +89,7 @@ mod tests {
     #[case::number_with_decimal("12.25", "12.25")]
     #[case::bool_true("참", "참")]
     #[case::bool_false("거짓", "거짓")]
+    #[case::str_without_interploation("\"사과 오렌지\"", "사과 오렌지")]
     #[case::closure("함수 사과, 오렌지, 바나나 { 1 }", "함수 사과, 오렌지, 바나나 { ... }")]
     fn single_literal(#[case] source: &str, #[case] expected: String) {
         assert_out!(source, expected, "");
@@ -296,47 +297,55 @@ mod tests {
     #[rstest]
     #[case::addition_assignment_to_bool_id(
         "a=참 a+=1",
-        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
     )]
     #[case::subtraction_assignment_to_bool_id(
         "a=참 a-=1",
-        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
     )]
     #[case::multiplication_assignment_to_bool_id(
         "a=참 a*=1",
-        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
     )]
     #[case::division_assignment_to_bool_id(
         "a=참 a/=1",
-        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
     )]
     #[case::modular_assignment_to_bool_id(
         "a=참 a%=1",
-        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
     )]
     #[case::addition_assignment_with_bool(
         "a=1 a+=참",
-        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
     )]
     #[case::subtraction_assignment_with_bool(
         "a=1 a-=참",
-        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
     )]
     #[case::multiplication_assignment_with_bool(
         "a=1 a*=참",
-        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
     )]
     #[case::division_assignment_with_bool(
         "a=1 a/=참",
-        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
     )]
     #[case::modular_assignment_with_bool(
         "a=1 a%=참",
-        ExecError::Eval(EvalError::new(EvalErrorKind::InvalidNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
     )]
     fn assignment_with_wrong_type(#[case] source: &str, #[case] error: ExecError) {
         assert_fail!(source, error);
     }
+
+    #[rstest]
+    #[case::curring_call("사과 = 42 오렌지 = 참 \"{사과}{오렌지}\"", "42참")]
+    fn string_interpolation(#[case] source: &str, #[case] expected: String) {
+        assert_out!(source, expected, "");
+    }
+
+    // TODO: test closure captures
 
     #[rstest]
     #[case::immediate_closure_call("함수{1}()", "1")]

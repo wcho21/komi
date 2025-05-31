@@ -130,6 +130,7 @@ mod tests {
             test_exec!(num, "12.25", "12.25", "");
             test_exec!(the_true, "참", "참", "");
             test_exec!(the_false, "거짓", "거짓", "");
+            test_exec!(string_without_interpolation, "\"사과\"", "사과", "");
         }
 
         mod prefixes {
@@ -192,7 +193,14 @@ mod tests {
             test_exec!(division_assignment, "사과=6 사과/=4 사과", "1.5", "");
             test_exec!(modular_assignment, "사과=6 사과%=4 사과", "2", "");
 
-            test_error!(mixed_type, "사과=참 사과+=1", "EvalError", "InvalidNumInfixOperand", loc str_loc!("사과=참 ", "사과"));
+            test_error!(mixed_type, "사과=참 사과+=1", "EvalError", "NonNumInfixOperand", loc str_loc!("사과=참 ", "사과"));
+
+            test_exec!(
+                string_with_interpolation,
+                "사과=42 오렌지=참 \"{사과}{오렌지}바나나\"",
+                "42참바나나",
+                ""
+            );
         }
 
         mod call {
@@ -221,6 +229,10 @@ mod tests {
             test_error!(only_comment, "# comment", "LexError", "NoSource", loc str_loc!("", "# comment"));
             test_error!(illegal_char, "^", "LexError", "IllegalChar", loc str_loc!("", "^")); // `^` represents an illegal char.
             test_error!(arithmetic_plus, "12.", "LexError", "IllegalNumLiteral", loc str_loc!("", "12."));
+            test_error!(no_closing_quote_str, "\"사과 오렌지", "LexError", "NoClosingQuoteInStr", loc str_loc!("", "\"사과 오렌지"));
+            test_error!(no_closing_brace_str, "\"{사과}{오렌지", "LexError", "NoClosingBraceInInterpolation", loc str_loc!("\"{사과}", "{오렌지"));
+            test_error!(empty_interpolation, "\"{사과}{}", "LexError", "NoIdentifierInInterpolation", loc str_loc!("\"{사과}", "{}"));
+            test_error!(illegal_interpolation, "\"{사+", "LexError", "IllegalInterpolationChar", loc str_loc!("\"{사", "+"));
         }
 
         mod parse {
@@ -246,11 +258,11 @@ mod tests {
 
             test_error!(call_num, "1()", "EvalError", "InvalidCallTarget", loc str_loc!("", "1"));
             test_error!(undefined_identifier, "사과", "EvalError", "UndefinedIdentifier", loc str_loc!("", "사과"));
-            test_error!(invalid_assignment_left, "1=1", "EvalError", "InvalidAssignmentLeftValue", loc str_loc!("", "1"));
-            test_error!(invalid_num_infix_operand, "참+1", "EvalError", "InvalidNumInfixOperand", loc str_loc!("", "참"));
-            test_error!(invalid_bool_infix_operand, "1 그리고 참", "EvalError", "InvalidBoolInfixOperand", loc str_loc!("", "1"));
-            test_error!(invalid_num_prefix_operand, "+참", "EvalError", "InvalidNumPrefixOperand", loc str_loc!("+", "참"));
-            test_error!(invalid_bool_prefix_operand, "!1", "EvalError", "InvalidBoolPrefixOperand", loc str_loc!("!", "1"));
+            test_error!(invalid_assignment_left, "1=1", "EvalError", "NonIdLeftValInAssign", loc str_loc!("", "1"));
+            test_error!(invalid_num_infix_operand, "참+1", "EvalError", "NonNumInfixOperand", loc str_loc!("", "참"));
+            test_error!(invalid_bool_infix_operand, "1 그리고 참", "EvalError", "NonBoolInfixOperand", loc str_loc!("", "1"));
+            test_error!(invalid_num_prefix_operand, "+참", "EvalError", "NonNumPrefixOperand", loc str_loc!("+", "참"));
+            test_error!(invalid_bool_prefix_operand, "!1", "EvalError", "NonBoolPrefixOperand", loc str_loc!("!", "1"));
             test_error!(invalid_call_target, "1()", "EvalError", "InvalidCallTarget", loc str_loc!("", "1"));
         }
     }

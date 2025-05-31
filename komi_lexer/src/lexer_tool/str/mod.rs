@@ -18,7 +18,8 @@ pub fn lex_str(scanner: &mut SourceScanner, first_location: Range) -> TokenRes {
         // Return error if end of source
         let first_char_location = scanner.locate();
         let Some(first_char) = scanner.read_and_advance() else {
-            return Err(LexError::new(LexErrorKind::StrQuoteNotClosed, seg_location));
+            let str_location = Range::new(first_location.begin, first_char_location.end);
+            return Err(LexError::new(LexErrorKind::NoClosingQuoteInStr, str_location));
         };
 
         // Break if end of string literal
@@ -35,7 +36,7 @@ pub fn lex_str(scanner: &mut SourceScanner, first_location: Range) -> TokenRes {
             let second_char_location = scanner.locate();
             seg_location.end = second_char_location.end;
             let Some("}") = scanner.read_and_advance() else {
-                return Err(LexError::new(LexErrorKind::IllegalRBraceInStr, seg_location));
+                return Err(LexError::new(LexErrorKind::IllegalClosingBraceInStr, seg_location));
             };
 
             seg.push_str(first_char);
@@ -47,7 +48,7 @@ pub fn lex_str(scanner: &mut SourceScanner, first_location: Range) -> TokenRes {
             let second_char_location = scanner.locate();
             let Some(second_char) = scanner.read_and_advance() else {
                 seg_location.end = second_char_location.end;
-                return Err(LexError::new(LexErrorKind::InterpolationNotClosed, seg_location));
+                return Err(LexError::new(LexErrorKind::NoClosingBraceInInterpolation, seg_location));
             };
             // Push a single left brace "{" if an escaped left brace "{{" encountered
             if second_char == "{" {
@@ -57,9 +58,9 @@ pub fn lex_str(scanner: &mut SourceScanner, first_location: Range) -> TokenRes {
             }
             if second_char == "}" {
                 seg_location.end = second_char_location.end;
-                return Err(LexError::new(LexErrorKind::NoInterpolatedIdentifier, seg_location));
+                return Err(LexError::new(LexErrorKind::NoIdentifierInInterpolation, seg_location));
             }
-            if !char_validator::is_in_identifier_domain(second_char) {
+            if !char_validator::is_char_in_identifier_domain(second_char) {
                 return Err(LexError::new(
                     LexErrorKind::IllegalInterpolationChar,
                     second_char_location,
@@ -76,7 +77,7 @@ pub fn lex_str(scanner: &mut SourceScanner, first_location: Range) -> TokenRes {
             let last_char_location = scanner.locate();
             let Some(last_char) = scanner.read_and_advance() else {
                 let location = Range::new(first_char_location.begin, last_char_location.end);
-                return Err(LexError::new(LexErrorKind::InterpolationNotClosed, location));
+                return Err(LexError::new(LexErrorKind::NoClosingBraceInInterpolation, location));
             };
             if last_char != "}" {
                 return Err(LexError::new(

@@ -74,7 +74,7 @@ impl<'a> Lexer<'a> {
                 }
                 s if char_validator::is_digit_char(s) => lexer_tool::lex_num(&mut self.scanner, location, char)?,
                 // Lexing an identifier must come after attempting to lex a number
-                s if char_validator::is_in_identifier_domain(s) => {
+                s if char_validator::is_char_in_identifier_domain(s) => {
                     lex_identifier_with_init_seg(&mut self.scanner, String::from(s), location)?
                 }
                 s if char_validator::is_whitespace_char(s) => {
@@ -408,21 +408,25 @@ mod tests {
 
     // Should fail to lex illegal str literals.
     #[rstest]
+    #[case::no_closing_quote(
+        "\"사과",
+        mkerr!(NoClosingQuoteInStr, str_loc!("", "\"사과")))
+    ]
     #[case::lbrace_not_closed_with_immediate_end(
         "\"{",
-        mkerr!(InterpolationNotClosed, str_loc!("\"", "{")))
+        mkerr!(NoClosingBraceInInterpolation, str_loc!("\"", "{")))
     ]
     #[case::lbrace_not_closed_with_not_immediate_end(
         "\"{사과",
-        mkerr!(InterpolationNotClosed, str_loc!("\"", "{사과")))
+        mkerr!(NoClosingBraceInInterpolation, str_loc!("\"", "{사과")))
     ]
     #[case::rbrace_in_str(
         "\"}",
-        mkerr!(IllegalRBraceInStr, str_loc!("\"", "}")))
+        mkerr!(IllegalClosingBraceInStr, str_loc!("\"", "}")))
     ]
     #[case::empty_identifier(
         "\"{}\"",
-        mkerr!(NoInterpolatedIdentifier, str_loc!("\"", "{}")))
+        mkerr!(NoIdentifierInInterpolation, str_loc!("\"", "{}")))
     ]
     #[case::illegal_identifier_char_at_first(
         "\"{+}\"",
@@ -434,7 +438,7 @@ mod tests {
     ]
     #[case::lbrace_not_closed_with_some_chars(
         "\"{사과",
-        mkerr!(InterpolationNotClosed, str_loc!("\"", "{사과")))
+        mkerr!(NoClosingBraceInInterpolation, str_loc!("\"", "{사과")))
     ]
     fn illegal_string_segment(#[case] source: &str, #[case] error: LexError) {
         assert_lex_fail!(source, error);
@@ -704,11 +708,19 @@ mod tests {
             )
         ]
     )]
-    #[case::mixed_multiple_chars(
-        "a가a가",
+    #[case::single_underbar_char(
+        "_",
         vec![
-            mktoken!(str_loc!("", "a가a가"),
-                Kind::Identifier(String::from("a가a가")),
+            mktoken!(str_loc!("", "_"),
+                Kind::Identifier(String::from("_")),
+            )
+        ]
+    )]
+    #[case::mixed_multiple_chars(
+        "_a가_a가",
+        vec![
+            mktoken!(str_loc!("", "_a가_a가"),
+                Kind::Identifier(String::from("_a가_a가")),
             )
         ]
     )]
