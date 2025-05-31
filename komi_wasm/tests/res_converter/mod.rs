@@ -4,26 +4,19 @@ mod tests {
     use js_sys::{Error, Number};
     use komi::ExecOut;
     use komi_wasm::util::js_val::obj;
-    use komi_wasm::util::res_converter::convert;
+    use komi_wasm::util::res_converter::JsConverter;
     use wasm_bindgen::JsValue;
     use wasm_bindgen_test::*;
 
     /// The converted result is expected to be a JavaScript value (`JsValue`), which is a JavaScript object.
-    /// The interface will be as below, in TypeScript syntax:
-    ///
-    /// ```ts
-    /// {
-    ///   value: string;
-    ///   stdout: string;
-    /// }
-    /// ```
+    /// For the specific interface, refer to `build/komi.d.ts` file in this crate.
     #[wasm_bindgen_test]
     fn test_convert_ok() -> Result<(), JsValue> {
         // Suppose the execution returns Ok
         let exec_out = Ok(ExecOut::new(value(), stdout()));
 
         // The converted result is expected to be a JavaScript value (`JsValue`)
-        let converted = convert(&exec_out)?;
+        let converted = JsConverter::convert(exec_out)?;
 
         // `converted` should have `value` field
         let converted_value = obj::get_property(&converted, "value")?;
@@ -39,35 +32,12 @@ mod tests {
     }
 
     /// The converted error is expected to be a JavaScript value (`JsValue`), which is a JavaScript `Error` object.
-    /// The interface of the `Error` will be as below, in TypeScript syntax:
-    ///
-    /// ```ts
-    /// {
-    ///   name: string;
-    ///   message: string;
-    ///   cause: {
-    ///     location: {
-    ///       begin: {
-    ///         col: number;
-    ///         row: number;
-    ///       },
-    ///       end: {
-    ///         col: number;
-    ///         row: number;
-    ///       },
-    ///     };
-    ///   };
-    /// }
-    /// ```
-    ///
-    /// For the details of JavaScript `Error`, see [MDN documentation].
-    ///
-    /// [MDN documentation]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error
+    /// For the specific interface, refer to `build/komi.d.ts` file in this crate.
     #[wasm_bindgen_test]
     fn test_convert_err() -> Result<(), JsValue> {
         let exec_out = Err(exec_err());
 
-        let converted = convert(&exec_out);
+        let converted = JsConverter::convert(exec_out);
 
         // `converted` should have `cause` field (according to the JavaScript Error class)
         let converted_cause = Error::from(converted.unwrap_err()).cause();

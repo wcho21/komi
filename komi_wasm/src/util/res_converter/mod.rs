@@ -1,36 +1,49 @@
+mod js_structs;
+
 use crate::JsRes;
-use crate::util::js_val;
+pub use js_structs::{JsExecError, JsExecOut};
+use js_structs::{JsExecErrorCause, JsRange, JsSpot};
 use komi::{ExecError, ExecOut, ExecRes};
+use komi_util::Range;
 use komi_util::unpacker::unpack_engine_error;
 
 macro_rules! unpack_err {
     ($name:literal, $exec_err:ident) => {{
         let (kind, location) = unpack_engine_error($exec_err);
-        ($name, format!("{}", kind), location)
+        (String::from($name), format!("{}", kind), location)
     }};
 }
 
-/// Converts an execution result `exec_out` to a JavaScript value.
-pub fn convert(exec_out: &ExecRes) -> JsRes {
-    match exec_out {
-        Ok(out) => Ok(convert_out_to_js_val(out)?),
-        Err(e) => Err(convert_err_to_js_val(&e)?),
+pub struct JsConverter {}
+
+impl JsConverter {
+    pub fn convert(exec_res: ExecRes) -> JsRes {
+        match exec_res {
+            Ok(exec_out) => Ok(Self::convert_exec_out(exec_out).into()),
+            Err(exec_error) => Err(Self::convert_exec_error(exec_error).into()),
+        }
     }
-}
 
-fn convert_out_to_js_val(out: &ExecOut) -> JsRes {
-    let repr = &out.representation;
-    let stdout = &out.stdout;
+    fn convert_exec_out(out: ExecOut) -> JsExecOut {
+        let value = out.representation;
+        let stdout = out.stdout;
+        JsExecOut { value, stdout }
+    }
 
-    js_val::convert_repr_and_stdout_to_js_val(&repr, &stdout)
-}
+    fn convert_exec_error(err: ExecError) -> JsExecError {
+        let (name, kind, location) = match &err {
+            ExecError::Lex(e) => unpack_err!("LexError", e),
+            ExecError::Parse(e) => unpack_err!("ParseError", e),
+            ExecError::Eval(e) => unpack_err!("EvalError", e),
+        };
+        let cause = JsExecErrorCause { location: Self::convert_range(location) };
+        JsExecError { name, message: kind, cause }
+    }
 
-fn convert_err_to_js_val(err: &ExecError) -> JsRes {
-    let (name, kind, location) = match err {
-        ExecError::Lex(e) => unpack_err!("LexError", e),
-        ExecError::Parse(e) => unpack_err!("ParseError", e),
-        ExecError::Eval(e) => unpack_err!("EvalError", e),
-    };
-
-    js_val::convert_str_and_location_to_js_val(name, &kind, location)
+    fn convert_range(range: &Range) -> JsRange {
+        JsRange {
+            begin: JsSpot { row: range.begin.row, col: range.begin.col },
+            end: JsSpot { row: range.end.row, col: range.end.col },
+        }
+    }
 }
