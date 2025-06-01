@@ -1,4 +1,4 @@
-use komi_syntax::Token;
+use komi_syntax::token::Token;
 use komi_util::location::Range;
 use komi_util::scanner::Scanner;
 
@@ -52,7 +52,7 @@ impl<'a> Scanner for TokenScanner<'a> {
 mod tests {
     use super::*;
     use fixtures::*;
-    use komi_syntax::TokenKind;
+    use komi_syntax::token::TokenKind;
 
     #[test]
     fn test_read_for_empty() {

@@ -8,7 +8,8 @@ use super::util;
 use crate::ValRes;
 use crate::environment::Environment as Env;
 use combinator_infix_reducer as reducer;
-use komi_syntax::{Ast, Stdout, ValueKind};
+use komi_syntax::ast::Ast;
+use komi_syntax::value::{Stdout, ValueKind};
 use komi_util::location::Range;
 
 /// Reduces the operands `left` and `right` of a plus infix to a value.

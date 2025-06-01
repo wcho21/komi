@@ -1,7 +1,8 @@
 use super::reduce_ast;
 use crate::environment::Environment as Env;
+use komi_syntax::ast::Ast;
 use komi_syntax::error::{EvalError, EvalErrorKind};
-use komi_syntax::{Ast, Stdout, ValueKind};
+use komi_syntax::value::{Stdout, ValueKind};
 
 /// Reduces the AST `ast` to an evaluated result, and map it with `op`.
 ///

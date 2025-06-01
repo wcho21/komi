@@ -10,7 +10,8 @@ use crate::ValRes;
 use crate::environment::Environment as Env;
 use assignment_infix as assign_infix;
 use combinator_infix as comb_infix;
-use komi_syntax::{Ast, AstKind, Stdout};
+use komi_syntax::ast::{Ast, AstKind};
+use komi_syntax::value::Stdout;
 
 type Args = Vec<Box<Ast>>;
 type Params = Vec<String>;
@@ -62,8 +63,10 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
 mod tests {
     use super::*;
     use fixtures::*;
+    use komi_syntax::ast::AstKind;
     use komi_syntax::error::{EvalError, EvalErrorKind};
-    use komi_syntax::{AstKind, Value, ValueKind, mkast, mkval};
+    use komi_syntax::value::{Value, ValueKind};
+    use komi_syntax::{mkast, mkval};
     use komi_util::location::Range;
     use komi_util::str_segment::{StrSegment, StrSegmentKind};
     use komi_util::{mkstrseg, str_loc};

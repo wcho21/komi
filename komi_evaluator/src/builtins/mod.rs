@@ -1,5 +1,5 @@
 use crate::Environment as Env;
-use komi_syntax::{Stdout, Value, ValueKind};
+use komi_syntax::value::{Stdout, Value, ValueKind};
 use komi_util::location::Range;
 
 pub fn bind(env: &mut Env) -> () {

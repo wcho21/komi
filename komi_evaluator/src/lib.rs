@@ -10,8 +10,9 @@ mod environment;
 
 use crate::environment::Environment;
 use ast_reducer::reduce_ast;
+use komi_syntax::ast::Ast;
 use komi_syntax::error::EvalError;
-use komi_syntax::{Ast, Stdout, Value};
+use komi_syntax::value::{Stdout, Value};
 
 pub type ValRes = Result<Value, EvalError>;
 pub type ValsRes = Result<Vec<Value>, EvalError>;
@@ -53,7 +54,9 @@ pub fn eval(ast: &Box<Ast>) -> ValRes {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use komi_syntax::{Ast, AstKind, ValueKind, mkast};
+    use komi_syntax::ast::AstKind;
+    use komi_syntax::mkast;
+    use komi_syntax::value::ValueKind;
     use komi_util::location::Range;
     use komi_util::str_loc;
 
