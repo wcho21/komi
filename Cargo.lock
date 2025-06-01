@@ -199,6 +199,7 @@ dependencies = [
  "const_format",
  "js-sys",
  "komi",
+ "komi_syntax",
  "komi_util",
  "wasm-bindgen",
  "wasm-bindgen-test",
