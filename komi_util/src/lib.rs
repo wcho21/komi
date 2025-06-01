@@ -6,5 +6,3 @@ pub mod scanner;
 pub mod str_segment;
 pub mod tape;
 pub mod unpacker;
-
-pub use environment::Environment;
