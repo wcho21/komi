@@ -1,4 +1,4 @@
-use komi_syntax::Value;
+use komi_syntax::value::Value;
 use komi_util;
 
 pub type Environment = komi_util::environment::Environment<Value>;
@@ -7,7 +7,7 @@ pub type Environment = komi_util::environment::Environment<Value>;
 mod tests {
     use super::Environment;
     use fixtures::*;
-    use komi_syntax::{Value, ValueKind};
+    use komi_syntax::value::{Value, ValueKind};
     use komi_util::location::Range;
     use rstest::rstest;
 

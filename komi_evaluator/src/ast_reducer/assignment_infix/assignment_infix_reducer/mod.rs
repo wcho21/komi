@@ -3,7 +3,7 @@ use crate::ast_reducer::reduce_ast;
 use crate::environment::Environment as Env;
 use komi_syntax::ast::{Ast, AstKind};
 use komi_syntax::error::{EvalError, EvalErrorKind};
-use komi_syntax::{Stdout, Value};
+use komi_syntax::value::{Stdout, Value};
 use komi_util::location::Range;
 
 pub fn reduce_equals(

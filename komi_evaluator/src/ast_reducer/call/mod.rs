@@ -3,7 +3,7 @@ use crate::environment::Environment as Env;
 use crate::{ValRes, ValsRes, reduce_ast};
 use komi_syntax::ast::{Ast, AstKind};
 use komi_syntax::error::{EvalError, EvalErrorKind};
-use komi_syntax::{BuiltinFunc, Stdout, ValueKind};
+use komi_syntax::value::{BuiltinFunc, Stdout, ValueKind};
 use komi_util::location::Range;
 
 pub fn evaluate(target: &Box<Ast>, arguments: &Args, location: &Range, env: &mut Env, stdouts: &mut Stdout) -> ValRes {

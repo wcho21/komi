@@ -3,7 +3,7 @@ use crate::ValRes;
 use crate::environment::Environment as Env;
 use komi_syntax::ast::Ast;
 use komi_syntax::error::{EvalError, EvalErrorKind};
-use komi_syntax::{Stdout, Value, ValueKind};
+use komi_syntax::value::{Stdout, Value, ValueKind};
 use komi_util::location::Range;
 
 /// Reduces the operand `operand` of a numeric infix operand to a value.
