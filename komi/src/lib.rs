@@ -37,7 +37,6 @@ pub fn execute(source: &str) -> ExecRes {
 mod tests {
     use super::*;
     use komi_evaluator::{EvalError, EvalErrorKind};
-    use komi_lexer::{LexError, LexErrorKind};
     use komi_parser::{ParseError, ParseErrorKind};
     use komi_util::Range;
     use rstest::rstest;
