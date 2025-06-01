@@ -9,7 +9,7 @@ pub fn bind(env: &mut Env) -> () {
 fn stdout_write(args: &Vec<Value>, stdouts: &mut Stdout) -> Value {
     let strs: Vec<String> = args.iter().map(|arg| arg.represent()).collect();
     let joined = strs.join(" ");
-    let joined_len = joined.len();
+    let joined_len = joined.chars().count();
 
     stdouts.push(joined);
 
