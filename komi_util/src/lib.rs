@@ -14,4 +14,3 @@ pub use location::range::Range;
 pub use location::spot::Spot;
 pub use scanner::Scanner;
 pub use str_segment::{StrSegment, StrSegmentKind};
-pub use tape::Tape;

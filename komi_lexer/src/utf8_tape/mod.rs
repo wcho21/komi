@@ -1,4 +1,4 @@
-use komi_util::Tape;
+use komi_util::tape::Tape;
 
 /// A UTF-8 character tape from a string.
 pub struct Utf8Tape<'a> {
