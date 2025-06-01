@@ -8,5 +8,4 @@ pub mod tape;
 pub mod unpacker;
 
 pub use environment::Environment;
-pub use error::EngineError;
 pub use str_segment::{StrSegment, StrSegmentKind};

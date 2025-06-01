@@ -1,4 +1,4 @@
-use komi_util::EngineError;
+use komi_util::error::EngineError;
 use std::fmt;
 
 /// Errors that may occur during the parsing process.

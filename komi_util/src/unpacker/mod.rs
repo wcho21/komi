@@ -1,4 +1,4 @@
-use crate::EngineError;
+use crate::error::EngineError;
 use crate::location::{Range, Spot};
 
 /// Returns `(spot.row, spot.col)` from the `spot`.
