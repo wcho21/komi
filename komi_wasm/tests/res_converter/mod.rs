@@ -65,7 +65,7 @@ mod tests {
     }
 
     mod fixtures {
-        use komi::{ExecError, LexError, LexErrorKind};
+        use komi_syntax::error::{ExecError, LexError, LexErrorKind};
         use komi_util::location::Range;
 
         pub fn value() -> String {

@@ -1,4 +1,4 @@
-pub use komi_syntax::error::{EvalError, EvalErrorKind, LexError, LexErrorKind, ParseError, ParseErrorKind};
+use crate::error::{EvalError, LexError, ParseError};
 use std::error::Error;
 use std::fmt;
 

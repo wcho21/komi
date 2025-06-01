@@ -7,6 +7,7 @@ edition = "2024"
 wasm-bindgen = "0.2.100"
 const_format = "0.2.34"
 komi = { path = "../komi" }
+komi_syntax = { path = "../komi_syntax" }
 komi_util = { path = "../komi_util" }
 js-sys = "0.3.77"
 

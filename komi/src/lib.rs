@@ -1,10 +1,7 @@
-mod err;
-
-// TODO: move errors to syntax module, since errors are interface among engines.
-pub use err::{EvalError, EvalErrorKind, ExecError, LexError, LexErrorKind, ParseError, ParseErrorKind};
 use komi_evaluator::Evaluator;
 use komi_lexer::lex;
 use komi_parser::parse;
+use komi_syntax::error::ExecError;
 
 pub type ExecRes = Result<ExecOut, ExecError>;
 
@@ -36,7 +33,7 @@ pub fn execute(source: &str) -> ExecRes {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use komi_syntax::error::{EvalError, EvalErrorKind};
+    use komi_syntax::error::{EvalError, EvalErrorKind, LexError, LexErrorKind, ParseError, ParseErrorKind};
     use komi_util::location::Range;
     use rstest::rstest;
 
