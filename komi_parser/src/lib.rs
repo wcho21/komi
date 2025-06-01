@@ -124,11 +124,16 @@ impl<'a> Parser<'a> {
         self.make_closure_ast(parameters, body, &closure_location)
     }
 
+    fn parse_closure_expression_body(&mut self) -> ExprsRes {
+        let expressions = self.parse_brace_block()?;
+        Ok(expressions)
+    }
+
     /// Should be called after the scanner has advanced past a left brace.
     /// Stops at the end or a right brace `}`, so the caller should validate the end character is `}`.
     ///
-    /// It possibly returns an empty vector for parsed expressions.
-    fn parse_closure_expression_body(&mut self) -> ExprsRes {
+    /// It possibly returns an empty vector for parsed expressions, which is also should be validated by the caller.
+    fn parse_brace_block(&mut self) -> ExprsRes {
         let mut expressions: Exprs = vec![];
 
         while let Some(token) = self.scanner.read() {
