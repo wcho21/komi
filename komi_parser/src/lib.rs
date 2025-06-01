@@ -6,8 +6,9 @@
 mod token_scanner;
 mod util;
 
+use komi_syntax::ast::{Ast, AstKind};
 use komi_syntax::error::{ParseError, ParseErrorKind};
-use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
+use komi_syntax::{Bp, Token, TokenKind};
 use komi_util::location::Range;
 use komi_util::scanner::Scanner;
 use komi_util::str_segment::StrSegment;
@@ -402,7 +403,7 @@ pub fn parse(tokens: &Vec<Token>) -> AstRes {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use komi_syntax::{AstKind, mkast, mktoken};
+    use komi_syntax::{mkast, mktoken};
     use komi_util::str_segment::StrSegmentKind;
     use komi_util::{mkstrseg, str_loc};
     use rstest::rstest;

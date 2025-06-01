@@ -1,6 +1,6 @@
 mod representation;
 
-use crate::Ast;
+use crate::ast::Ast;
 use komi_util::environment::Environment;
 use komi_util::location::Range;
 use representation::Representer;
