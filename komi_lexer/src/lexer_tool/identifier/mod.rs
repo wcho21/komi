@@ -1,6 +1,7 @@
 use crate::{LexError, SourceScanner, TokenRes};
 use komi_syntax::{Token, TokenKind as Kind};
-use komi_util::{Range, Scanner, Spot, char_validator};
+use komi_util::scanner::Scanner;
+use komi_util::{Range, Spot, char_validator};
 
 type StringRes = Result<String, LexError>;
 

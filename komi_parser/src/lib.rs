@@ -8,7 +8,8 @@ mod util;
 
 use komi_syntax::error::{ParseError, ParseErrorKind};
 use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
-use komi_util::{Range, Scanner, StrSegment};
+use komi_util::scanner::Scanner;
+use komi_util::{Range, StrSegment};
 use token_scanner::TokenScanner;
 
 type AstRes = Result<Box<Ast>, ParseError>;

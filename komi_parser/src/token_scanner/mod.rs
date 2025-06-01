@@ -1,5 +1,6 @@
 use komi_syntax::Token;
-use komi_util::{Range, Scanner};
+use komi_util::Range;
+use komi_util::scanner::Scanner;
 
 pub struct TokenScanner<'a> {
     tokens: &'a Vec<Token>,

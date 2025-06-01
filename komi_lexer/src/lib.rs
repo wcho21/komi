@@ -9,7 +9,8 @@ mod utf8_tape;
 
 use komi_syntax::error::{LexError, LexErrorKind};
 use komi_syntax::{Token, TokenKind as Kind};
-use komi_util::{Range, Scanner, Spot, char_validator};
+use komi_util::scanner::Scanner;
+use komi_util::{Range, Spot, char_validator};
 use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, lex_str};
 use source_scanner::SourceScanner;
 
