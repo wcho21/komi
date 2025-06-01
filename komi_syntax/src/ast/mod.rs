@@ -1,33 +1,39 @@
 use komi_util::location::Range;
 use komi_util::str_segment::StrSegment;
 
+type Expr = Box<Ast>;
+type Exprs = Vec<Expr>;
+type Id = String;
+type Ids = Vec<Id>;
+type StrSegments = Vec<StrSegment>;
+
 /// Kinds of AST produced during parsing.
 /// Serves as the interface between a parser and its user.
 #[derive(Debug, PartialEq, Clone)]
 pub enum AstKind {
-    Program { expressions: Vec<Box<Ast>> },
+    Program { expressions: Exprs },
     Number(f64),
     Bool(bool),
-    Str(Vec<StrSegment>),
-    Identifier(String),
-    PrefixPlus { operand: Box<Ast> },
-    PrefixMinus { operand: Box<Ast> },
-    PrefixBang { operand: Box<Ast> },
-    InfixPlus { left: Box<Ast>, right: Box<Ast> },
-    InfixMinus { left: Box<Ast>, right: Box<Ast> },
-    InfixAsterisk { left: Box<Ast>, right: Box<Ast> },
-    InfixSlash { left: Box<Ast>, right: Box<Ast> },
-    InfixPercent { left: Box<Ast>, right: Box<Ast> },
-    InfixConjunct { left: Box<Ast>, right: Box<Ast> },
-    InfixDisjunct { left: Box<Ast>, right: Box<Ast> },
-    InfixEquals { left: Box<Ast>, right: Box<Ast> },
-    InfixPlusEquals { left: Box<Ast>, right: Box<Ast> },
-    InfixMinusEquals { left: Box<Ast>, right: Box<Ast> },
-    InfixAsteriskEquals { left: Box<Ast>, right: Box<Ast> },
-    InfixSlashEquals { left: Box<Ast>, right: Box<Ast> },
-    InfixPercentEquals { left: Box<Ast>, right: Box<Ast> },
-    Closure { parameters: Vec<String>, body: Vec<Box<Ast>> },
-    Call { target: Box<Ast>, arguments: Vec<Box<Ast>> },
+    Str(StrSegments),
+    Identifier(Id),
+    PrefixPlus { operand: Expr },
+    PrefixMinus { operand: Expr },
+    PrefixBang { operand: Expr },
+    InfixPlus { left: Expr, right: Expr },
+    InfixMinus { left: Expr, right: Expr },
+    InfixAsterisk { left: Expr, right: Expr },
+    InfixSlash { left: Expr, right: Expr },
+    InfixPercent { left: Expr, right: Expr },
+    InfixConjunct { left: Expr, right: Expr },
+    InfixDisjunct { left: Expr, right: Expr },
+    InfixEquals { left: Expr, right: Expr },
+    InfixPlusEquals { left: Expr, right: Expr },
+    InfixMinusEquals { left: Expr, right: Expr },
+    InfixAsteriskEquals { left: Expr, right: Expr },
+    InfixSlashEquals { left: Expr, right: Expr },
+    InfixPercentEquals { left: Expr, right: Expr },
+    Closure { parameters: Ids, body: Exprs },
+    Call { target: Expr, arguments: Exprs },
 }
 
 /// An abstract syntax tree, or AST produced during parsing.
