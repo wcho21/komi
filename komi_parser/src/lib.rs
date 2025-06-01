@@ -9,7 +9,7 @@ mod util;
 use komi_syntax::ast::{Ast, AstKind};
 use komi_syntax::bp::Bp;
 use komi_syntax::error::{ParseError, ParseErrorKind};
-use komi_syntax::{Token, TokenKind};
+use komi_syntax::token::{Token, TokenKind};
 use komi_util::location::Range;
 use komi_util::scanner::Scanner;
 use komi_util::str_segment::StrSegment;

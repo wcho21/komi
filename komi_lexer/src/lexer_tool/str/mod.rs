@@ -1,6 +1,6 @@
 use crate::lexer_tool::read_identifier_with_init_seg;
 use crate::{LexError, LexErrorKind, SourceScanner, TokenRes};
-use komi_syntax::{Token, TokenKind as Kind};
+use komi_syntax::token::{Token, TokenKind as Kind};
 use komi_util::char_validator;
 use komi_util::location::Range;
 use komi_util::scanner::Scanner;
