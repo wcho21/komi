@@ -2,8 +2,8 @@ use super::reduce_ast;
 use crate::ValRes;
 use crate::ast_reducer::Exprs;
 use crate::environment::Environment as Env;
-use crate::err::{EvalError, EvalErrorKind};
 use komi_syntax::Stdout;
+use komi_syntax::error::{EvalError, EvalErrorKind};
 use komi_util::Range;
 
 /// Returns the evaluated result of the last AST in the ASTs `expressions`.

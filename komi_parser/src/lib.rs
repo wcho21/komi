@@ -3,11 +3,10 @@
 //! Reads *tokens* and returns *an abstract syntax tree (AST)* as defined in the `komi_syntax` crate.
 //! Designed to be loosely coupled, so it does not rely on the implementation details of the lexer and evaluator.
 
-mod err;
 mod token_scanner;
 mod util;
 
-pub use err::{ParseError, ParseErrorKind};
+use komi_syntax::error::{ParseError, ParseErrorKind};
 use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
 use komi_util::{Range, Scanner, StrSegment};
 use token_scanner::TokenScanner;

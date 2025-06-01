@@ -3,12 +3,11 @@
 //! Reads a source code and returns *tokens* as defined in the `komi_syntax` crate.
 //! Designed to be loosely coupled, so it does not rely on the implementation details of the parser.
 
-mod err;
 mod lexer_tool;
 mod source_scanner;
 mod utf8_tape;
 
-pub use err::{LexError, LexErrorKind};
+use komi_syntax::error::{LexError, LexErrorKind};
 use komi_syntax::{Token, TokenKind as Kind};
 use komi_util::{Range, Scanner, Spot, char_validator};
 use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, lex_str};

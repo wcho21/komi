@@ -61,8 +61,8 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{EvalError, EvalErrorKind};
     use fixtures::*;
+    use komi_syntax::error::{EvalError, EvalErrorKind};
     use komi_syntax::{AstKind, Value, ValueKind, mkast, mkval};
     use komi_util::{Range, StrSegment, StrSegmentKind, mkstrseg, str_loc};
     use rstest::rstest;
