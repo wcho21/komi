@@ -1,5 +1,5 @@
-use komi_util::Range;
-pub use komi_util::{StrSegment, StrSegmentKind};
+use komi_util::location::Range;
+use komi_util::str_segment::StrSegment;
 
 /// A token produced during lexing.
 #[derive(Debug, PartialEq, Clone)]
@@ -101,6 +101,7 @@ macro_rules! mktoken {
 mod tests {
     use super::*;
     use fixtures::*;
+    use komi_util::str_segment::StrSegmentKind;
 
     mod token {
         use super::*;

@@ -1,4 +1,5 @@
-use crate::{EngineError, Range, Spot};
+use crate::error::EngineError;
+use crate::location::{Range, Spot};
 
 /// Returns `(spot.row, spot.col)` from the `spot`.
 pub fn unpack_spot(spot: &Spot) -> (u32, u32) {

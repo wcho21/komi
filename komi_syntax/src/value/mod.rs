@@ -1,7 +1,8 @@
 mod representation;
 
 use crate::Ast;
-use komi_util::{Environment, Range};
+use komi_util::environment::Environment;
+use komi_util::location::Range;
 use representation::Representer;
 
 /// Kinds of values produced during evaluation.

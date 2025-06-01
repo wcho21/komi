@@ -1,5 +1,5 @@
 use crate::Exprs;
-use komi_util::Range;
+use komi_util::location::Range;
 
 pub fn locate_expressions(expressions: &Exprs) -> Range {
     if expressions.len() == 0 {

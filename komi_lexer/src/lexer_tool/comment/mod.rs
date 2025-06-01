@@ -1,5 +1,5 @@
 use crate::SourceScanner;
-use komi_util::Scanner;
+use komi_util::scanner::Scanner;
 
 /// Skips characters until newline characters encountered.
 ///

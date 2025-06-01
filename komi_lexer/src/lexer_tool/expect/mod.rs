@@ -1,7 +1,8 @@
 use crate::lexer_tool::lex_identifier_with_init_seg_or;
 use crate::{SourceScanner, TokenRes};
 use komi_syntax::{Token, TokenKind as Kind};
-use komi_util::{Range, Scanner};
+use komi_util::location::Range;
+use komi_util::scanner::Scanner;
 
 /// Returns a token of the kind `expected_kind` if a `expected` encountered; otherwise, a token of the kind `alt_kind`.
 ///

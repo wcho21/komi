@@ -1,6 +1,8 @@
 use crate::{LexError, LexErrorKind, SourceScanner, TokenRes};
 use komi_syntax::{Token, TokenKind as Kind};
-use komi_util::{Range, Scanner, char_validator};
+use komi_util::char_validator;
+use komi_util::location::Range;
+use komi_util::scanner::Scanner;
 
 /// Returns a number literal token if successfully lexed, or error otherwise.
 ///

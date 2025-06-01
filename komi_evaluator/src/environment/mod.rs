@@ -1,14 +1,14 @@
 use komi_syntax::Value;
 use komi_util;
 
-pub type Environment = komi_util::Environment<Value>;
+pub type Environment = komi_util::environment::Environment<Value>;
 
 #[cfg(test)]
 mod tests {
     use super::Environment;
     use fixtures::*;
     use komi_syntax::{Value, ValueKind};
-    use komi_util::Range;
+    use komi_util::location::Range;
     use rstest::rstest;
 
     #[rstest]

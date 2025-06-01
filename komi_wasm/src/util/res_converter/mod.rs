@@ -3,7 +3,7 @@ mod js_structs;
 pub use js_structs::{JsExecError, JsExecOut};
 use js_structs::{JsExecErrorCause, JsRange, JsSpot};
 use komi::{ExecError, ExecOut, ExecRes};
-use komi_util::Range;
+use komi_util::location::Range;
 use komi_util::unpacker::unpack_engine_error;
 
 macro_rules! unpack_err {

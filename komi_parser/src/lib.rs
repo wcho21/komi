@@ -8,7 +8,9 @@ mod util;
 
 use komi_syntax::error::{ParseError, ParseErrorKind};
 use komi_syntax::{Ast, AstKind, Bp, Token, TokenKind};
-use komi_util::{Range, Scanner, StrSegment};
+use komi_util::location::Range;
+use komi_util::scanner::Scanner;
+use komi_util::str_segment::StrSegment;
 use token_scanner::TokenScanner;
 
 type AstRes = Result<Box<Ast>, ParseError>;
@@ -401,7 +403,8 @@ pub fn parse(tokens: &Vec<Token>) -> AstRes {
 mod tests {
     use super::*;
     use komi_syntax::{AstKind, mkast, mktoken};
-    use komi_util::{StrSegment, StrSegmentKind, mkstrseg, str_loc};
+    use komi_util::str_segment::StrSegmentKind;
+    use komi_util::{mkstrseg, str_loc};
     use rstest::rstest;
 
     /// Asserts given tokens to be parsed into the expected AST.

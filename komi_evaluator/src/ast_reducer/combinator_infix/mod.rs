@@ -9,7 +9,7 @@ use crate::ValRes;
 use crate::environment::Environment as Env;
 use combinator_infix_reducer as reducer;
 use komi_syntax::{Ast, Stdout, ValueKind};
-use komi_util::Range;
+use komi_util::location::Range;
 
 /// Reduces the operands `left` and `right` of a plus infix to a value.
 pub fn reduce_plus(left: &Box<Ast>, right: &Box<Ast>, location: &Range, env: &mut Env, stdouts: &mut Stdout) -> ValRes {

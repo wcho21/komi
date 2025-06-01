@@ -1,5 +1,5 @@
-use komi_util::Range;
-pub use komi_util::{StrSegment, StrSegmentKind};
+use komi_util::location::Range;
+use komi_util::str_segment::StrSegment;
 
 /// Kinds of AST produced during parsing.
 /// Serves as the interface between a parser and its user.

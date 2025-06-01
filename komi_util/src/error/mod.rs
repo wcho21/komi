@@ -1,6 +1,4 @@
-// TODO: error should be in syntax layer, not util layer, since error is an interface among engines.
-
-use super::Range;
+use crate::location::range::Range;
 use std::error::Error;
 use std::fmt;
 
