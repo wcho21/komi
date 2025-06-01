@@ -1,5 +1,5 @@
 use super::utf8_tape::Utf8Tape;
-use komi_util::Range;
+use komi_util::location::Range;
 use komi_util::scanner::Scanner;
 use komi_util::tape::Tape;
 

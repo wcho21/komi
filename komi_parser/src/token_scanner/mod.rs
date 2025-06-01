@@ -1,5 +1,5 @@
 use komi_syntax::Token;
-use komi_util::Range;
+use komi_util::location::Range;
 use komi_util::scanner::Scanner;
 
 pub struct TokenScanner<'a> {
@@ -53,7 +53,6 @@ mod tests {
     use super::*;
     use fixtures::*;
     use komi_syntax::TokenKind;
-    use komi_util::Range;
 
     #[test]
     fn test_read_for_empty() {

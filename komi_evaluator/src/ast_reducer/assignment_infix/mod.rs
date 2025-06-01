@@ -9,7 +9,7 @@ use crate::ast_reducer::combinator_infix as comb;
 use crate::environment::Environment as Env;
 use assignment_infix_reducer as reducer;
 use komi_syntax::{Ast, Stdout};
-use komi_util::Range;
+use komi_util::location::Range;
 
 /// Reduces the operands `left` and `right` of an equals infix to a value.
 pub fn reduce_equals(

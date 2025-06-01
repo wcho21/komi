@@ -54,7 +54,8 @@ pub fn eval(ast: &Box<Ast>) -> ValRes {
 mod tests {
     use super::*;
     use komi_syntax::{Ast, AstKind, ValueKind, mkast};
-    use komi_util::{Range, str_loc};
+    use komi_util::location::Range;
+    use komi_util::str_loc;
 
     #[test]
     fn test_stdout_num_without_decimal() {

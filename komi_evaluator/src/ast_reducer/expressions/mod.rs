@@ -4,7 +4,7 @@ use crate::ast_reducer::Exprs;
 use crate::environment::Environment as Env;
 use komi_syntax::Stdout;
 use komi_syntax::error::{EvalError, EvalErrorKind};
-use komi_util::Range;
+use komi_util::location::Range;
 
 /// Returns the evaluated result of the last AST in the ASTs `expressions`.
 ///

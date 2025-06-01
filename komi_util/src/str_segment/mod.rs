@@ -6,7 +6,7 @@
 //! [`token`]: ../../komi_syntax/token/struct.StrSegment.html
 //! [`ast`]: ../../komi_syntax/ast/struct.StrSegment.html
 
-use crate::Range;
+use crate::location::Range;
 
 /// A string segment in a string token.
 #[derive(Debug, PartialEq, Clone)]

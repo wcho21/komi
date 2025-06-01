@@ -1,8 +1,8 @@
 pub mod obj;
 
 use js_sys::{Error, Object};
+use komi_util::location::{Range, Spot};
 use komi_util::unpacker::unpack_spot;
-use komi_util::{Range, Spot};
 use wasm_bindgen::JsValue;
 
 pub fn convert_spot_to_js_object(spot: &Spot) -> Result<Object, JsValue> {

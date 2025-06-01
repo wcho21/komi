@@ -37,7 +37,7 @@ pub fn execute(source: &str) -> ExecRes {
 mod tests {
     use super::*;
     use komi_syntax::error::{EvalError, EvalErrorKind};
-    use komi_util::Range;
+    use komi_util::location::Range;
     use rstest::rstest;
 
     /// Asserts a given source to be interpreted into the expected result with stdout.

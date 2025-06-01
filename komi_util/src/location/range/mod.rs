@@ -30,7 +30,8 @@ impl Range {
 /// # Examples
 ///
 /// ```
-/// use komi_util::{Range, str_loc};
+/// use komi_util::location::Range;
+/// use komi_util::str_loc;
 ///
 /// // Location of `"bar"` in `"foobar"`.
 /// assert_eq!(str_loc!("foo", "bar"), Range::from_nums(0, 3, 0, 6));

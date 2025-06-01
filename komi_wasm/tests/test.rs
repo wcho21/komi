@@ -105,7 +105,8 @@ macro_rules! assert_error {
 #[allow(dead_code)] // Suppress warnings from #[wasm_bindgen_test] test codes.
 mod tests {
     use super::*;
-    use komi_util::{Range, str_loc};
+    use komi_util::location::Range;
+    use komi_util::str_loc;
 
     mod success {
         use super::*;

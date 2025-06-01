@@ -9,7 +9,4 @@ pub mod unpacker;
 
 pub use environment::Environment;
 pub use error::EngineError;
-pub use location::range;
-pub use location::range::Range;
-pub use location::spot::Spot;
 pub use str_segment::{StrSegment, StrSegmentKind};

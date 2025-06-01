@@ -1,4 +1,4 @@
-use super::Range;
+use crate::location::range::Range;
 use std::error::Error;
 use std::fmt;
 

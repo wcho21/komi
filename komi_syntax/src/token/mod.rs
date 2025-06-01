@@ -1,4 +1,4 @@
-use komi_util::Range;
+use komi_util::location::Range;
 pub use komi_util::{StrSegment, StrSegmentKind};
 
 /// A token produced during lexing.

@@ -64,7 +64,8 @@ mod tests {
     use fixtures::*;
     use komi_syntax::error::{EvalError, EvalErrorKind};
     use komi_syntax::{AstKind, Value, ValueKind, mkast, mkval};
-    use komi_util::{Range, StrSegment, StrSegmentKind, mkstrseg, str_loc};
+    use komi_util::location::Range;
+    use komi_util::{StrSegment, StrSegmentKind, mkstrseg, str_loc};
     use rstest::rstest;
 
     /// Asserts a given AST to be evaluated into the expected value.

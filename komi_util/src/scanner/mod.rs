@@ -1,4 +1,4 @@
-use crate::Range;
+use crate::location::Range;
 
 /// Represents a structure that reads units one by one with spanning the location.
 pub trait Scanner {

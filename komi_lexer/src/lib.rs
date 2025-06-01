@@ -9,8 +9,9 @@ mod utf8_tape;
 
 use komi_syntax::error::{LexError, LexErrorKind};
 use komi_syntax::{Token, TokenKind as Kind};
+use komi_util::char_validator;
+use komi_util::location::{Range, Spot};
 use komi_util::scanner::Scanner;
-use komi_util::{Range, Spot, char_validator};
 use lexer_tool::{expect_or, expect_or_lex_identifier, lex_identifier_with_init_seg, lex_str};
 use source_scanner::SourceScanner;
 
@@ -109,7 +110,7 @@ pub fn lex(source: &str) -> TokensRes {
 mod tests {
     use super::*;
     use komi_syntax::{StrSegment, StrSegmentKind, mktoken};
-    use komi_util::{Range, str_loc};
+    use komi_util::str_loc;
     use rstest::rstest;
 
     /// Asserts a given literal to be lexed into the expected tokens.
