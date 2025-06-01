@@ -34,6 +34,7 @@ pub enum AstKind {
     InfixPercentEquals { left: Expr, right: Expr },
     Closure { parameters: Ids, body: Exprs },
     Call { target: Expr, arguments: Exprs },
+    Branch { predicate: Expr, consequence: Exprs, alternative: Exprs },
 }
 
 /// An abstract syntax tree, or AST produced during parsing.
