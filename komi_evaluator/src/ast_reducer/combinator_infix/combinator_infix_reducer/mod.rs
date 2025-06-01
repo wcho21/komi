@@ -1,7 +1,7 @@
 use super::util;
 use crate::ValRes;
 use crate::environment::Environment as Env;
-use crate::err::{EvalError, EvalErrorKind};
+use komi_syntax::error::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, Stdout, Value, ValueKind};
 use komi_util::Range;
 

@@ -7,11 +7,10 @@
 mod ast_reducer;
 mod builtins;
 mod environment;
-mod err;
 
 use crate::environment::Environment;
 use ast_reducer::reduce_ast;
-pub use err::{EvalError, EvalErrorKind};
+use komi_syntax::error::EvalError;
 use komi_syntax::{Ast, Stdout, Value};
 
 pub type ValRes = Result<Value, EvalError>;

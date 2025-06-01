@@ -1,7 +1,7 @@
 use crate::ast_reducer::{Args, Exprs, Params};
 use crate::environment::Environment as Env;
-use crate::err::{EvalError, EvalErrorKind};
 use crate::{ValRes, ValsRes, reduce_ast};
+use komi_syntax::error::{EvalError, EvalErrorKind};
 use komi_syntax::{Ast, AstKind, BuiltinFunc, Stdout, ValueKind};
 use komi_util::Range;
 

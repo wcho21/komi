@@ -1,5 +1,4 @@
-pub use komi_evaluator::{EvalError, EvalErrorKind};
-pub use komi_syntax::error::{LexError, LexErrorKind, ParseError, ParseErrorKind};
+pub use komi_syntax::error::{EvalError, EvalErrorKind, LexError, LexErrorKind, ParseError, ParseErrorKind};
 use std::error::Error;
 use std::fmt;
 
