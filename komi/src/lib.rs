@@ -360,6 +360,8 @@ mod tests {
     #[rstest]
     #[case::num_without_decimal("쓰기(1)", "1", "1")]
     #[case::num_without_decimal("쓰기(12.25)", "5", "12.25")]
+    #[case::str_ascii("쓰기(\"foo\")", "3", "foo")]
+    #[case::str_hangul("쓰기(\"사과\")", "2", "사과")]
     fn stdout(#[case] source: &str, #[case] expected_repr: String, #[case] expected_stdout: String) {
         assert_out!(source, expected_repr, expected_stdout);
     }
