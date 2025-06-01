@@ -109,8 +109,9 @@ pub fn lex(source: &str) -> TokensRes {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use komi_syntax::{StrSegment, StrSegmentKind, mktoken};
+    use komi_syntax::mktoken;
     use komi_util::str_loc;
+    use komi_util::str_segment::{StrSegment, StrSegmentKind};
     use rstest::rstest;
 
     /// Asserts a given literal to be lexed into the expected tokens.

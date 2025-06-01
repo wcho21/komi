@@ -1,9 +1,10 @@
 use crate::lexer_tool::read_identifier_with_init_seg;
 use crate::{LexError, LexErrorKind, SourceScanner, TokenRes};
-use komi_syntax::{StrSegment, StrSegmentKind, Token, TokenKind as Kind};
+use komi_syntax::{Token, TokenKind as Kind};
 use komi_util::char_validator;
 use komi_util::location::Range;
 use komi_util::scanner::Scanner;
+use komi_util::str_segment::{StrSegment, StrSegmentKind};
 
 /// Returns a sequence of tokens in a string literal if successfully lexed, or an error otherwise.
 ///

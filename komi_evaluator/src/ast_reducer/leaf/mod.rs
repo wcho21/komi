@@ -4,7 +4,7 @@ use crate::environment::Environment as Env;
 use komi_syntax::error::{EvalError, EvalErrorKind};
 use komi_syntax::{Value, ValueKind};
 use komi_util::location::Range;
-use komi_util::{StrSegment, StrSegmentKind};
+use komi_util::str_segment::{StrSegment, StrSegmentKind};
 
 /// Returns the evaluated result, from name `name` and its location `location`.
 pub fn evaluate_identifier(name: &String, location: &Range, env: &Env) -> ValRes {
