@@ -52,6 +52,7 @@ impl Ast {
 
 /// Makes an AST with the kind and the location specified by four numbers.
 /// Helps write an AST declaratively.
+// TODO: remove old version
 #[macro_export]
 macro_rules! mkast {
     (prog loc $br:expr, $bc:expr, $er:expr, $ec: expr, $exprs:expr) => {
@@ -107,6 +108,12 @@ macro_rules! mkast {
     };
     (call loc $range:expr, target $target:expr, args $args:expr $(,)?) => {
         Box::new(Ast::new(AstKind::Call { target: $target, arguments: $args }, $range))
+    };
+    (branch loc $range:expr, pred $pred:expr, conseq $conseq:expr, altern $altern:expr $(,)?) => {
+        Box::new(Ast::new(
+            AstKind::Branch { predicate: $pred, consequence: $conseq, alternative: $altern },
+            $range,
+        ))
     };
     (num $val:expr, loc $br:expr, $bc:expr, $er:expr, $ec: expr) => {
         Box::new(Ast::new(AstKind::Number($val), Range::from_nums($br, $bc, $er, $ec)))

@@ -248,7 +248,7 @@ mod tests {
             test_error!(closure_body_not_closed, "함수 {1", "ParseError", "NoClosingBraceInClosureBody", loc str_loc!("함수 {1", ""));
             test_error!(invalid_call_not_closed, "함수 {1}(", "ParseError", "NoClosingParenInCallArgs", loc str_loc!("", "함수 {1}("));
             test_error!(missing_comma_in_call_args, "함수 {1}(1 2", "ParseError", "NoCommaInCallArgs", loc str_loc!("함수 {1}(1 ", "2"));
-            test_error!(empty_closure_body, "함수 {}", "ParseError", "NoExpressionInClosureBody", loc str_loc!("", "함수 {}"));
+            test_error!(empty_closure_body, "함수 {}", "ParseError", "NoExprInClosureBody", loc str_loc!("", "함수 {}"));
         }
 
         mod eval {
