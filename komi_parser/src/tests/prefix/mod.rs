@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::{assert_parse, parse};
+    use crate::{assert_parse, assert_parse_fail, mkerr, parse};
     use komi_syntax::ast::{Ast, AstKind};
+    use komi_syntax::error::{ParseError, ParseErrorKind};
     use komi_syntax::token::{Token, TokenKind};
     use komi_syntax::{mkast, mktoken};
     use komi_util::location::Range;
@@ -125,6 +126,25 @@ mod tests {
         )]
         fn test(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
             assert_parse!(&tokens, expected);
+        }
+    }
+
+    mod single {
+        use super::*;
+
+        // See the `infix` module for other prefixes, which are covered in there.
+        #[rstest]
+        #[case::bang(
+            // Represents `!`.
+            vec![
+                mktoken!(str_loc!("", "!"),
+                    TokenKind::Bang,
+                )
+            ],
+            mkerr!(NoPrefixOperand, str_loc!("", "!"))
+        )]
+        fn test(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
+            assert_parse_fail!(&tokens, error);
         }
     }
 }
