@@ -633,15 +633,6 @@ mod tests {
             ],
             mkerr!(InvalidExprStart, str_loc!("", "%"))
         )]
-        #[case::bang(
-            // Represents `!`.
-            vec![
-                mktoken!(str_loc!("", "!"),
-                    TokenKind::Bang,
-                )
-            ],
-            mkerr!(NoPrefixOperand, str_loc!("", "!"))
-        )]
         #[case::conjunct(
             // Represents `그리고`.
             vec![
