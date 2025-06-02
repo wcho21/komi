@@ -21,6 +21,8 @@ pub enum EvalErrorKind {
     NonBoolPrefixOperand,
     /// Expected a callble value as a call target, but it isn't, such as `1()`.
     InvalidCallTarget,
+    /// Expected a boolean value as a predicate, but it isn't, such as `1` in `만약 1 { 2 } 아니면 { 3 }`.
+    NonBoolPred,
 }
 
 pub type EvalError = EngineError<EvalErrorKind>;
@@ -36,6 +38,7 @@ impl fmt::Display for EvalErrorKind {
             EvalErrorKind::NonNumPrefixOperand => "NonNumPrefixOperand",
             EvalErrorKind::NonBoolPrefixOperand => "NonBoolPrefixOperand",
             EvalErrorKind::InvalidCallTarget => "InvalidCallTarget",
+            EvalErrorKind::NonBoolPred => "NonBoolPred",
         };
         write!(f, "{}", s)
     }
