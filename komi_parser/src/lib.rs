@@ -90,11 +90,99 @@ impl<'a> Parser<'a> {
             TokenKind::Bang => self.parse_bang_prefix_expression(&first_token.location),
             TokenKind::LParen => self.parse_grouped_expression(first_token),
             TokenKind::Closure => self.parse_closure_expression(&first_token.location),
+            TokenKind::IfBranch => self.parse_branch_expression(&first_token.location),
             _ => {
                 let location = first_token.location;
                 Err(ParseError::new(ParseErrorKind::InvalidExprStart, location))
             }
         }
+    }
+
+    fn parse_branch_expression(&mut self, keyword_location: &Range) -> AstRes {
+        // Parse a predicate
+        let first_location = self.scanner.locate();
+        let Some(first_token) = self.scanner.read_and_advance() else {
+            let branch_location = Range::new(keyword_location.begin, first_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoPredicate, branch_location));
+        };
+        let predicate = self.parse_expression(first_token, &Bp::LOWEST)?;
+
+        // Expect an opening brace
+        let conseq_opening_brace_location = self.scanner.locate();
+        let Some(token) = self.scanner.read_and_advance() else {
+            let branch_location = Range::new(keyword_location.begin, conseq_opening_brace_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoConseqBlock, branch_location));
+        };
+        if token.kind != TokenKind::LBrace {
+            let branch_location = conseq_opening_brace_location;
+            return Err(ParseError::new(ParseErrorKind::NoOpeningBraceInConseq, branch_location));
+        }
+
+        // Parse a consequence
+        let consequence = self.parse_branch_expression_consequence()?;
+
+        // Expect a closing brace
+        let conseq_closing_brace_location = self.scanner.locate();
+        let Some(_token) = self.scanner.read_and_advance() else {
+            let conseq_location = Range::new(conseq_opening_brace_location.begin, conseq_closing_brace_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoClosingBraceInConseq, conseq_location));
+        };
+
+        // Expect a non-empty consequence
+        if consequence.len() == 0 {
+            let conseq_location = Range::new(conseq_opening_brace_location.begin, conseq_closing_brace_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoExprConseq, conseq_location));
+        }
+
+        // Expect a else-branch keyword
+        let else_keyword_location = self.scanner.locate();
+        let Some(token) = self.scanner.read_and_advance() else {
+            let branch_location = Range::new(keyword_location.begin, else_keyword_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoAlternBlock, branch_location));
+        };
+        if token.kind != TokenKind::ElseBranch {
+            return Err(ParseError::new(ParseErrorKind::NoAlternKeyword, else_keyword_location));
+        }
+
+        // Expect an opening brace
+        let altern_opening_brace_location = self.scanner.locate();
+        let Some(token) = self.scanner.read_and_advance() else {
+            let else_location = Range::new(else_keyword_location.begin, altern_opening_brace_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoAlternBlock, else_location));
+        };
+        if token.kind != TokenKind::LBrace {
+            return Err(ParseError::new(ParseErrorKind::NoOpeningBraceInAltern, token.location));
+        }
+
+        // Parse a alternative
+        let alternative = self.parse_branch_expression_alternative()?;
+
+        // Expect a closing brace
+        let altern_closing_brace_location = self.scanner.locate();
+        let Some(_token) = self.scanner.read_and_advance() else {
+            let else_location = Range::new(altern_opening_brace_location.begin, altern_closing_brace_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoClosingBraceInAltern, else_location));
+        };
+
+        // Expect a non-empty alternative
+        if alternative.len() == 0 {
+            let else_location = Range::new(altern_opening_brace_location.begin, altern_closing_brace_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoExprInAltern, else_location));
+        }
+
+        let branch_location = Range::new(keyword_location.begin, altern_closing_brace_location.end);
+        let branch = Ast::new(AstKind::Branch { predicate, consequence, alternative }, branch_location);
+        Ok(Box::new(branch))
+    }
+
+    fn parse_branch_expression_consequence(&mut self) -> ExprsRes {
+        let expressions = self.parse_brace_block()?;
+        Ok(expressions)
+    }
+
+    fn parse_branch_expression_alternative(&mut self) -> ExprsRes {
+        let expressions = self.parse_brace_block()?;
+        Ok(expressions)
     }
 
     /// Parses characters into a closure-expression AST, with the location `keyword_location` of the closure keyword.
@@ -114,10 +202,7 @@ impl<'a> Parser<'a> {
         // Check if the body is empty here, to locate the closure.
         if body.len() == 0 {
             let closure_location = Range::new(keyword_location.begin, token_location.end);
-            return Err(ParseError::new(
-                ParseErrorKind::NoExpressionInClosureBody,
-                closure_location,
-            ));
+            return Err(ParseError::new(ParseErrorKind::NoExprInClosureBody, closure_location));
         }
 
         let closure_location = Range::new(keyword_location.begin, token_location.end);
@@ -127,8 +212,17 @@ impl<'a> Parser<'a> {
     /// Should be called after the scanner has advanced past a left brace.
     /// Stops at the end or a right brace `}`, so the caller should validate the end character is `}`.
     ///
-    /// It possibly returns an empty vector for parsed expressions.
+    /// It possibly returns an empty vector for parsed expressions, which is also should be validated by the caller.
     fn parse_closure_expression_body(&mut self) -> ExprsRes {
+        let expressions = self.parse_brace_block()?;
+        Ok(expressions)
+    }
+
+    /// Should be called after the scanner has advanced past a left brace.
+    /// Stops at the end or a right brace `}`, so the caller should validate the end character is `}`.
+    ///
+    /// It possibly returns an empty vector for parsed expressions, which is also should be validated by the caller.
+    fn parse_brace_block(&mut self) -> ExprsRes {
         let mut expressions: Exprs = vec![];
 
         while let Some(token) = self.scanner.read() {
@@ -2458,7 +2552,7 @@ mod tests {
                 TokenKind::RBrace,
             ),
         ],
-        mkerr!(NoExpressionInClosureBody, str_loc!("", "함수 {}"))
+        mkerr!(NoExprInClosureBody, str_loc!("", "함수 {}"))
     )]
     #[case::single_parameter_and_empty_body(
         // Represents `함수 사과 {}`.
@@ -2476,7 +2570,7 @@ mod tests {
                 TokenKind::RBrace,
             ),
         ],
-        mkerr!(NoExpressionInClosureBody, str_loc!("", "함수 사과 {}"))
+        mkerr!(NoExprInClosureBody, str_loc!("", "함수 사과 {}"))
     )]
     #[case::multiple_params_and_empty_body(
         // Represents `함수 사과, 오렌지, 바나나 {}`.
@@ -2506,7 +2600,7 @@ mod tests {
                 TokenKind::RBrace,
             ),
         ],
-        mkerr!(NoExpressionInClosureBody, str_loc!("", "함수 사과, 오렌지, 바나나 {}"))
+        mkerr!(NoExprInClosureBody, str_loc!("", "함수 사과, 오렌지, 바나나 {}"))
     )]
     fn empty_body_closure(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
@@ -2704,6 +2798,356 @@ mod tests {
         mkerr!(NoCommaInCallArgs, str_loc!("사과(1 ", "2"))
     )]
     fn wrong_comma_call(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
+        assert_parse_fail!(&tokens, error);
+    }
+
+    #[rstest]
+    #[case::conseq_and_altern(
+        // Represents `만약 참 { 1 } 아니면 { 2 }`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 1 ", "}"),
+                TokenKind::RBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } ", "아니면"),
+                TokenKind::ElseBranch,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } 아니면 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } 아니면 { ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } 아니면 { 2 ", "}"),
+                TokenKind::RBrace,
+            ),
+        ],
+        mkast!(prog loc str_loc!("", "만약 참 { 1 } 아니면 { 2 }"), vec![
+            mkast!(branch loc str_loc!("", "만약 참 { 1 } 아니면 { 2 }"),
+                pred mkast!(boolean true, loc str_loc!("만약 ", "참")),
+                conseq vec![
+                    mkast!(num 1.0, loc str_loc!("만약 참 { ", "1")),
+                ],
+                altern vec![
+                    mkast!(num 2.0, loc str_loc!("만약 참 { 1 } 아니면 { ", "2")),
+                ],
+            )
+        ])
+    )]
+    #[case::nested_conseq(
+        // Represents `만약 참 { 만약 참 { 1 } 아니면 { 2 } } 아니면 { 3 }`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { ", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { 1 ", "}"),
+                TokenKind::RBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { 1 } ", "아니면"),
+                TokenKind::ElseBranch,
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { 1 } 아니면 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { 1 } 아니면 { ", "2"),
+                TokenKind::Number(2.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { 1 } 아니면 { 2 ", "}"),
+                TokenKind::RBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { 1 } 아니면 { 2 } ", "}"),
+                TokenKind::RBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { 1 } 아니면 { 2 } } ", "아니면"),
+                TokenKind::ElseBranch,
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { 1 } 아니면 { 2 } } 아니면 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { 1 } 아니면 { 2 } } 아니면 { ", "3"),
+                TokenKind::Number(3.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 만약 참 { 1 } 아니면 { 2 } } 아니면 { 3 ", "}"),
+                TokenKind::RBrace,
+            ),
+        ],
+        mkast!(prog loc str_loc!("", "만약 참 { 만약 참 { 1 } 아니면 { 2 } } 아니면 { 3 }"), vec![
+            mkast!(branch loc str_loc!("", "만약 참 { 만약 참 { 1 } 아니면 { 2 } } 아니면 { 3 }"),
+                pred mkast!(boolean true, loc str_loc!("만약 ", "참")),
+                conseq vec![
+                    mkast!(branch loc str_loc!("만약 참 { ", "만약 참 { 1 } 아니면 { 2 }"),
+                        pred mkast!(boolean true, loc str_loc!("만약 참 { 만약 ", "참")),
+                        conseq vec![
+                            mkast!(num 1.0, loc str_loc!("만약 참 { 만약 참 { ", "1")),
+                        ],
+                        altern vec![
+                            mkast!(num 2.0, loc str_loc!("만약 참 { 만약 참 { 1 } 아니면 { ", "2")),
+                        ],
+                    ),
+                ],
+                altern vec![
+                    mkast!(num 3.0, loc str_loc!("만약 참 { 만약 참 { 1 } 아니면 { 2 } } 아니면 { ", "3")),
+                ],
+            )
+        ])
+    )]
+    fn branch(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
+        assert_parse!(&tokens, expected);
+    }
+
+    #[rstest]
+    #[case::no_predicate(
+        // Represents `만약`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+        ],
+        mkerr!(NoPredicate, str_loc!("", "만약"))
+    )]
+    #[case::no_conseq_block(
+        // Represents `만약 참`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+        ],
+        mkerr!(NoConseqBlock, str_loc!("", "만약 참"))
+    )]
+    #[case::no_conseq_opening_brace(
+        // Represents `만약 참 1`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "1"),
+                TokenKind::Number(1.0),
+            ),
+        ],
+        mkerr!(NoOpeningBraceInConseq, str_loc!("만약 참 ", "1"))
+    )]
+    #[case::no_conseq_closing_brace(
+        // Represents `만약 참 {`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+        ],
+        mkerr!(NoClosingBraceInConseq, str_loc!("만약 참 ", "{"))
+    )]
+    #[case::empty_conseq(
+        // Represents `만약 참 { }`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { ", "}"),
+                TokenKind::RBrace,
+            ),
+        ],
+        mkerr!(NoExprConseq, str_loc!("만약 참 ", "{ }"))
+    )]
+    #[case::no_altern_block(
+        // Represents `만약 참 { 1 }`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 1 ", "}"),
+                TokenKind::RBrace,
+            ),
+        ],
+        mkerr!(NoAlternBlock, str_loc!("", "만약 참 { 1 }"))
+    )]
+    #[case::no_altern_keyword(
+        // Represents `만약 참 { 1 } 1`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 1 ", "}"),
+                TokenKind::RBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } ", "1"),
+                TokenKind::Number(1.0),
+            ),
+        ],
+        mkerr!(NoAlternKeyword, str_loc!("만약 참 { 1 } ", "1"))
+    )]
+    #[case::no_altern_block(
+        // Represents `만약 참 { 1 } 아니면 `.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 1 ", "}"),
+                TokenKind::RBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } ", "아니면"),
+                TokenKind::ElseBranch,
+            ),
+        ],
+        mkerr!(NoAlternBlock, str_loc!("만약 참 { 1 } ", "아니면"))
+    )]
+    #[case::no_altern_opening_brace(
+        // Represents `만약 참 { 1 } 아니면 2`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 1 ", "}"),
+                TokenKind::RBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } ", "아니면"),
+                TokenKind::ElseBranch,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } 아니면 ", "2"),
+                TokenKind::Number(2.0),
+            ),
+        ],
+        mkerr!(NoOpeningBraceInAltern, str_loc!("만약 참 { 1 } 아니면 ", "2"))
+    )]
+    #[case::no_altern_closing_brace(
+        // Represents `만약 참 { 1 } 아니면 {`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 1 ", "}"),
+                TokenKind::RBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } ", "아니면"),
+                TokenKind::ElseBranch,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } 아니면 ", "{"),
+                TokenKind::LBrace,
+            ),
+        ],
+        mkerr!(NoClosingBraceInAltern, str_loc!("만약 참 { 1 } 아니면 ", "{"))
+    )]
+    #[case::empty_altern(
+        // Represents `만약 참 { 1 } 아니면 { }`.
+        vec![
+            mktoken!(str_loc!("", "만약"),
+                TokenKind::IfBranch,
+            ),
+            mktoken!(str_loc!("만약 ", "참"),
+                TokenKind::Bool(true),
+            ),
+            mktoken!(str_loc!("만약 참 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { ", "1"),
+                TokenKind::Number(1.0),
+            ),
+            mktoken!(str_loc!("만약 참 { 1 ", "}"),
+                TokenKind::RBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } ", "아니면"),
+                TokenKind::ElseBranch,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } 아니면 ", "{"),
+                TokenKind::LBrace,
+            ),
+            mktoken!(str_loc!("만약 참 { 1 } 아니면 { ", "}"),
+                TokenKind::RBrace,
+            ),
+        ],
+        mkerr!(NoExprInAltern, str_loc!("만약 참 { 1 } 아니면 ", "{ }"))
+    )]
+    fn invalid_branch(#[case] tokens: Vec<Token>, #[case] error: ParseError) {
         assert_parse_fail!(&tokens, error);
     }
 

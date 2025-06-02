@@ -56,6 +56,7 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
             assign_infix::reduce_percent_equals(&l, &r, &loc, env, stdouts)
         }
         AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env, stdouts),
+        _ => todo!(),
     }
 }
 

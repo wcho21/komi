@@ -28,7 +28,27 @@ pub enum ParseErrorKind {
     /// Something else appears where the comma would be in the call arguments, such as `2` in `사과(1 2)`.
     NoCommaInCallArgs,
     /// A closure body is empty, which should not, such as `함수 {}`.
-    NoExpressionInClosureBody,
+    NoExprInClosureBody,
+    /// No predicate in a branch expression, such as `만약`.
+    NoPredicate,
+    /// No consequence in a branch expression, such as `만약 참`.
+    NoConseqBlock,
+    /// A consequence block does not begin with a opening brace `{`, such as `1` in `만약 참 1`.
+    NoOpeningBraceInConseq,
+    /// A consequence block does not end with a closing brace `}`, such as `만약 참 { 1`.
+    NoClosingBraceInConseq,
+    /// A consequence block is empty, such as `만약 참 {}`.
+    NoExprConseq,
+    /// No alternative in a branch expression, such as `만약 참 { 1 }`.
+    NoAlternBlock,
+    /// No alternative in a branch expression, such as `2` in `만약 참 { 1 } 2`.
+    NoAlternKeyword,
+    /// An alternative block does not begin with a opening brace `{`, such as `2` in `만약 참 { 1 } 아니면 2`.
+    NoOpeningBraceInAltern,
+    /// An alternative block does not closed with a closing brace `}`, such as `만약 참 { 1 } 아니면 { 2`.
+    NoClosingBraceInAltern,
+    /// An alternative block does empty, such as `만약 참 { 1 } 아니면 {}`.
+    NoExprInAltern,
     /// An unexpected error due to incorrect expression parsing. Should not occur.
     UnexpectedExprInfix,
 }
@@ -49,7 +69,17 @@ impl fmt::Display for ParseErrorKind {
             ParseErrorKind::NoClosingBraceInClosureBody => "NoClosingBraceInClosureBody",
             ParseErrorKind::NoClosingParenInCallArgs => "NoClosingParenInCallArgs",
             ParseErrorKind::NoCommaInCallArgs => "NoCommaInCallArgs",
-            ParseErrorKind::NoExpressionInClosureBody => "NoExpressionInClosureBody",
+            ParseErrorKind::NoExprInClosureBody => "NoExprInClosureBody",
+            ParseErrorKind::NoPredicate => "NoPredicate",
+            ParseErrorKind::NoConseqBlock => "NoConseqBlock",
+            ParseErrorKind::NoOpeningBraceInConseq => "NoOpeningBraceInConseq",
+            ParseErrorKind::NoClosingBraceInConseq => "NoClosingBraceInConseq",
+            ParseErrorKind::NoExprConseq => "NoExprConseq",
+            ParseErrorKind::NoAlternBlock => "NoAlternBlock",
+            ParseErrorKind::NoAlternKeyword => "NoAlternKeyword",
+            ParseErrorKind::NoOpeningBraceInAltern => "NoOpeningBraceInAltern",
+            ParseErrorKind::NoClosingBraceInAltern => "NoClosingBraceInAltern",
+            ParseErrorKind::NoExprInAltern => "NoExprInAltern",
             ParseErrorKind::UnexpectedExprInfix => "UnexpectedExprInfix",
         };
         write!(f, "{}", s)
