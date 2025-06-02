@@ -101,13 +101,35 @@ impl<'a> Parser<'a> {
 
     fn parse_branch_expression(&mut self, keyword_location: &Range) -> AstRes {
         // Parse a predicate
+        let predicate = self.parse_branch_expression_predicate(keyword_location)?;
+
+        // Parse a consequence
+        let consequence = self.parse_branch_expression_consequence(keyword_location)?;
+
+        // Parse a alternative
+        let (alternative, altern_location) = self.parse_branch_expression_alternative(keyword_location)?;
+
+        let branch_location = Range::new(keyword_location.begin, altern_location.end);
+        let branch = Ast::new(AstKind::Branch { predicate, consequence, alternative }, branch_location);
+        Ok(Box::new(branch))
+    }
+
+    /// Should be called after the scanner has advanced past the if-branch keyword.
+    /// Stops at the character past the end of a predicate expression.
+    fn parse_branch_expression_predicate(&mut self, keyword_location: &Range) -> AstRes {
         let first_location = self.scanner.locate();
         let Some(first_token) = self.scanner.read_and_advance() else {
             let branch_location = Range::new(keyword_location.begin, first_location.end);
             return Err(ParseError::new(ParseErrorKind::NoPredicate, branch_location));
         };
-        let predicate = self.parse_expression(first_token, &Bp::LOWEST)?;
 
+        let predicate = self.parse_expression(first_token, &Bp::LOWEST)?;
+        Ok(predicate)
+    }
+
+    /// Should be called after the scanner has advanced past the end of a predicate expression.
+    /// Stops at the character past the closing brace `}`.
+    fn parse_branch_expression_consequence(&mut self, keyword_location: &Range) -> ExprsRes {
         // Expect an opening brace
         let conseq_opening_brace_location = self.scanner.locate();
         let Some(token) = self.scanner.read_and_advance() else {
@@ -119,8 +141,7 @@ impl<'a> Parser<'a> {
             return Err(ParseError::new(ParseErrorKind::NoOpeningBraceInConseq, branch_location));
         }
 
-        // Parse a consequence
-        let consequence = self.parse_branch_expression_consequence()?;
+        let consequence = self.parse_brace_block()?;
 
         // Expect a closing brace
         let conseq_closing_brace_location = self.scanner.locate();
@@ -128,13 +149,18 @@ impl<'a> Parser<'a> {
             let conseq_location = Range::new(conseq_opening_brace_location.begin, conseq_closing_brace_location.end);
             return Err(ParseError::new(ParseErrorKind::NoClosingBraceInConseq, conseq_location));
         };
-
         // Expect a non-empty consequence
         if consequence.len() == 0 {
             let conseq_location = Range::new(conseq_opening_brace_location.begin, conseq_closing_brace_location.end);
             return Err(ParseError::new(ParseErrorKind::NoExprConseq, conseq_location));
         }
 
+        Ok(consequence)
+    }
+
+    /// Should be called after the scanner has advanced past the closing brace `}` of a consequence.
+    /// Stops at the character past the closing brace `}`.
+    fn parse_branch_expression_alternative(&mut self, keyword_location: &Range) -> Result<(Exprs, Range), ParseError> {
         // Expect a else-branch keyword
         let else_keyword_location = self.scanner.locate();
         let Some(token) = self.scanner.read_and_advance() else {
@@ -155,8 +181,7 @@ impl<'a> Parser<'a> {
             return Err(ParseError::new(ParseErrorKind::NoOpeningBraceInAltern, token.location));
         }
 
-        // Parse a alternative
-        let alternative = self.parse_branch_expression_alternative()?;
+        let alternative = self.parse_brace_block()?;
 
         // Expect a closing brace
         let altern_closing_brace_location = self.scanner.locate();
@@ -171,19 +196,7 @@ impl<'a> Parser<'a> {
             return Err(ParseError::new(ParseErrorKind::NoExprInAltern, else_location));
         }
 
-        let branch_location = Range::new(keyword_location.begin, altern_closing_brace_location.end);
-        let branch = Ast::new(AstKind::Branch { predicate, consequence, alternative }, branch_location);
-        Ok(Box::new(branch))
-    }
-
-    fn parse_branch_expression_consequence(&mut self) -> ExprsRes {
-        let expressions = self.parse_brace_block()?;
-        Ok(expressions)
-    }
-
-    fn parse_branch_expression_alternative(&mut self) -> ExprsRes {
-        let expressions = self.parse_brace_block()?;
-        Ok(expressions)
+        Ok((alternative, altern_closing_brace_location))
     }
 
     /// Parses characters into a closure-expression AST, with the location `keyword_location` of the closure keyword.
