@@ -352,6 +352,14 @@ mod tests {
     }
 
     #[rstest]
+    #[case::two_way("만약 참 { 1 } 아니면 { 2 }", "1")]
+    #[case::three_way("만약 거짓 { 1 } 아니면 만약 거짓 { 2 } 아니면 { 3 }", "3")]
+    #[case::four_way("만약 거짓 { 1 } 아니면 만약 거짓 { 2 } 아니면 만약 거짓 { 3 } 아니면 { 4 }", "4")]
+    fn branch(#[case] source: &str, #[case] expected: String) {
+        assert_out!(source, expected, "");
+    }
+
+    #[rstest]
     #[case::two_numbers("1 2", "2")] // Evaluated as the value of the last expression.
     fn multiple_expressions(#[case] source: &str, #[case] expected: String) {
         assert_out!(source, expected, "");

@@ -209,6 +209,12 @@ mod tests {
             test_exec!(call_id, "사과=함수{1} 사과()", "1", "");
         }
 
+        mod branch {
+            use super::*;
+
+            test_exec!(branch, "만약 참 { 1 } 아니면 { 2 }", "1", "");
+        }
+
         mod stdout {
             use super::*;
 
@@ -262,6 +268,7 @@ mod tests {
             test_error!(invalid_num_prefix_operand, "+참", "EvalError", "NonNumPrefixOperand", loc str_loc!("+", "참"));
             test_error!(invalid_bool_prefix_operand, "!1", "EvalError", "NonBoolPrefixOperand", loc str_loc!("!", "1"));
             test_error!(invalid_call_target, "1()", "EvalError", "InvalidCallTarget", loc str_loc!("", "1"));
+            test_error!(invalid_predicate, "만약 1 { 2 } 아니면 { 3 }", "EvalError", "NonBoolPred", loc str_loc!("만약 ", "1"));
         }
     }
 }

@@ -1,4 +1,5 @@
 mod assignment_infix;
+mod branch;
 mod call;
 mod combinator_infix;
 mod expressions;
@@ -56,7 +57,9 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
             assign_infix::reduce_percent_equals(&l, &r, &loc, env, stdouts)
         }
         AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env, stdouts),
-        _ => todo!(),
+        AstKind::Branch { predicate: p, consequence: c, alternative: a } => {
+            branch::evaluate(p, c, a, &loc, env, stdouts)
+        }
     }
 }
 
@@ -1214,6 +1217,124 @@ mod tests {
         fn expression(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
         }
+    }
+
+    #[rstest]
+    #[case::evaluated_as_conseq(
+        // Represents `만약 참 { 1 } 아니면 { 2 }`.
+        mkast!(prog loc str_loc!("", "만약 참 { 1 } 아니면 { 2 }"), vec![
+            mkast!(branch loc str_loc!("", "만약 참 { 1 } 아니면 { 2 }"),
+                pred mkast!(boolean true, loc str_loc!("만약 ", "참")),
+                conseq vec![
+                    mkast!(num 1.0, loc str_loc!("만약 참 { ", "1")),
+                ],
+                altern vec![
+                    mkast!(num 2.0, loc str_loc!("만약 참 { 1 } 아니면 { ", "2")),
+                ],
+            )
+        ]),
+        mkval!(ValueKind::Number(1.0), str_loc!("", "만약 참 { 1 } 아니면 { 2 }"))
+    )]
+    #[case::evaluated_as_altern(
+        // Represents `만약 거짓 { 1 } 아니면 { 2 }`.
+        mkast!(prog loc str_loc!("", "만약 거짓 { 1 } 아니면 { 2 }"), vec![
+            mkast!(branch loc str_loc!("", "만약 거짓 { 1 } 아니면 { 2 }"),
+                pred mkast!(boolean false, loc str_loc!("만약 ", "거짓")),
+                conseq vec![
+                    mkast!(num 1.0, loc str_loc!("만약 거짓 { ", "1")),
+                ],
+                altern vec![
+                    mkast!(num 2.0, loc str_loc!("만약 거짓 { 1 } 아니면 { ", "2")),
+                ],
+            )
+        ]),
+        mkval!(ValueKind::Number(2.0), str_loc!("", "만약 거짓 { 1 } 아니면 { 2 }"))
+    )]
+    #[case::three_way_evaluated_as_second(
+        // Represents `만약 거짓 { 1 } 아니면 만약 참 { 2 } 아니면 { 3 }`.
+        mkast!(prog loc str_loc!("", "만약 거짓 { 1 } 아니면 만약 참 { 2 } 아니면 { 3 }"), vec![
+            mkast!(branch loc str_loc!("", "만약 거짓 { 1 } 아니면 만약 참 { 2 } 아니면 { 3 }"),
+                pred mkast!(boolean false, loc str_loc!("만약 ", "거짓")),
+                conseq vec![
+                    mkast!(num 1.0, loc str_loc!("만약 거짓 { ", "1")),
+                ],
+                altern vec![
+                    mkast!(branch loc str_loc!("만약 거짓 { 1 } 아니면 ", "만약 참 { 2 } 아니면 { 3 }"),
+                        pred mkast!(boolean true, loc str_loc!("만약 거짓 { 1 } 아니면 만약 ", "참")),
+                        conseq vec![
+                            mkast!(num 2.0, loc str_loc!("만약 거짓 { 1 } 아니면 만약 참 { ", "2")),
+                        ],
+                        altern vec![
+                            mkast!(num 3.0, loc str_loc!("만약 거짓 { 1 } 아니면 만약 참 { 2 } 아니면 { ", "3")),
+                        ],
+                    ),
+                ],
+            )
+        ]),
+        mkval!(ValueKind::Number(2.0), str_loc!("", "만약 거짓 { 1 } 아니면 만약 참 { 2 } 아니면 { 3 }"))
+    )]
+    #[case::three_way_evaluated_as_third(
+        // Represents `만약 거짓 { 1 } 아니면 만약 거짓 { 2 } 아니면 { 3 }`.
+        mkast!(prog loc str_loc!("", "만약 거짓 { 1 } 아니면 만약 거짓 { 2 } 아니면 { 3 }"), vec![
+            mkast!(branch loc str_loc!("", "만약 거짓 { 1 } 아니면 만약 거짓 { 2 } 아니면 { 3 }"),
+                pred mkast!(boolean false, loc str_loc!("만약 ", "거짓")),
+                conseq vec![
+                    mkast!(num 1.0, loc str_loc!("만약 거짓 { ", "1")),
+                ],
+                altern vec![
+                    mkast!(branch loc str_loc!("만약 거짓 { 1 } 아니면 ", "만약 거짓 { 2 } 아니면 { 3 }"),
+                        pred mkast!(boolean false, loc str_loc!("만약 거짓 { 1 } 아니면 만약 ", "거짓")),
+                        conseq vec![
+                            mkast!(num 2.0, loc str_loc!("만약 거짓 { 1 } 아니면 만약 거짓 { ", "2")),
+                        ],
+                        altern vec![
+                            mkast!(num 3.0, loc str_loc!("만약 거짓 { 1 } 아니면 만약 거짓 { 2 } 아니면 { ", "3")),
+                        ],
+                    ),
+                ],
+            )
+        ]),
+        mkval!(ValueKind::Number(3.0), str_loc!("", "만약 거짓 { 1 } 아니면 만약 거짓 { 2 } 아니면 { 3 }"))
+    )]
+    fn branch(#[case] ast: Box<Ast>, #[case] expected: Value) {
+        assert_eval!(&ast, expected);
+    }
+
+    #[rstest]
+    #[case::num_pred(
+        // Represents `만약 1 { 2 } 아니면 { 3 }`.
+        mkast!(prog loc str_loc!("", "만약 1 { 2 } 아니면 { 3 }"), vec![
+            mkast!(branch loc str_loc!("", "만약 1 { 2 } 아니면 { 3 }"),
+                pred mkast!(num 1.0, loc str_loc!("만약 ", "1")),
+                conseq vec![
+                    mkast!(num 2.0, loc str_loc!("만약 1 { ", "2")),
+                ],
+                altern vec![
+                    mkast!(num 3.0, loc str_loc!("만약 1 { 2 } 아니면 { ", "3")),
+                ],
+            )
+        ]),
+        mkerr!(NonBoolPred, str_loc!("만약 ", "1")),
+    )]
+    #[case::str_pred(
+        // Represents `만약 "사과" { 1 } 아니면 { 2 }`.
+        mkast!(prog loc str_loc!("", "만약 \"사과\" { 1 } 아니면 { 2 }"), vec![
+            mkast!(branch loc str_loc!("", "만약 \"사과\" { 1 } 아니면 { 2 }"),
+                pred mkast!(string loc str_loc!("만약 ", "\"사과\""), vec![
+                    mkstrseg!(Str, "사과", str_loc!("만약 \"", "사과")),
+                ]),
+                conseq vec![
+                    mkast!(num 1.0, loc str_loc!("만약 \"사과\" { ", "1")),
+                ],
+                altern vec![
+                    mkast!(num 2.0, loc str_loc!("만약 \"사과\" { 1 } 아니면 { ", "2")),
+                ],
+            )
+        ]),
+        mkerr!(NonBoolPred, str_loc!("만약 ", "\"사과\"")),
+    )]
+    fn invalid_pred(#[case] ast: Box<Ast>, #[case] error: EvalError) {
+        assert_eval_fail!(&ast, error);
     }
 
     #[rstest]
