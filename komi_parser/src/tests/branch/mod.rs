@@ -131,6 +131,75 @@ mod tests {
                 )
             ])
         )]
+        #[case::three_way(
+            // Represents `만약 참 { 1 } 아니면 만약 { 2 } 아니면 { 3 }`.
+            vec![
+                mktoken!(str_loc!("", "만약"),
+                    TokenKind::IfBranch,
+                ),
+                mktoken!(str_loc!("만약 ", "참"),
+                    TokenKind::Bool(true),
+                ),
+                mktoken!(str_loc!("만약 참 ", "{"),
+                    TokenKind::LBrace,
+                ),
+                mktoken!(str_loc!("만약 참 { ", "1"),
+                    TokenKind::Number(1.0),
+                ),
+                mktoken!(str_loc!("만약 참 { 1 ", "}"),
+                    TokenKind::RBrace,
+                ),
+                mktoken!(str_loc!("만약 참 { 1 } ", "아니면"),
+                    TokenKind::ElseBranch,
+                ),
+                mktoken!(str_loc!("만약 참 { 1 } 아니면 ", "만약"),
+                    TokenKind::IfBranch,
+                ),
+                mktoken!(str_loc!("만약 참 { 1 } 아니면 만약 ", "참"),
+                    TokenKind::Bool(true),
+                ),
+                mktoken!(str_loc!("만약 참 { 1 } 아니면 만약 참 ", "{"),
+                    TokenKind::LBrace,
+                ),
+                mktoken!(str_loc!("만약 참 { 1 } 아니면 만약 참 { ", "2"),
+                    TokenKind::Number(2.0),
+                ),
+                mktoken!(str_loc!("만약 참 { 1 } 아니면 만약 참 { 2 ", "}"),
+                    TokenKind::RBrace,
+                ),
+                mktoken!(str_loc!("만약 참 { 1 } 아니면 만약 참 { 2 } ", "아니면"),
+                    TokenKind::ElseBranch,
+                ),
+                mktoken!(str_loc!("만약 참 { 1 } 아니면 만약 참 { 2 } 아니면 ", "{"),
+                    TokenKind::LBrace,
+                ),
+                mktoken!(str_loc!("만약 참 { 1 } 아니면 만약 참 { 2 } 아니면 { ", "3"),
+                    TokenKind::Number(3.0),
+                ),
+                mktoken!(str_loc!("만약 참 { 1 } 아니면 만약 참 { 2 } 아니면 { 3 ", "}"),
+                    TokenKind::RBrace,
+                ),
+            ],
+            mkast!(prog loc str_loc!("", "만약 참 { 1 } 아니면 만약 참 { 2 } 아니면 { 3 }"), vec![
+                mkast!(branch loc str_loc!("", "만약 참 { 1 } 아니면 만약 참 { 2 } 아니면 { 3 }"),
+                    pred mkast!(boolean true, loc str_loc!("만약 ", "참")),
+                    conseq vec![
+                        mkast!(num 1.0, loc str_loc!("만약 참 { ", "1")),
+                    ],
+                    altern vec![
+                        mkast!(branch loc str_loc!("만약 참 { 1 } 아니면 ", "만약 참 { 2 } 아니면 { 3 }"),
+                            pred mkast!(boolean true, loc str_loc!("만약 참 { 1 } 아니면 만약 ", "참")),
+                            conseq vec![
+                                mkast!(num 2.0, loc str_loc!("만약 참 { 1 } 아니면 만약 참 { ", "2")),
+                            ],
+                            altern vec![
+                                mkast!(num 3.0, loc str_loc!("만약 참 { 1 } 아니면 만약 참 { 2 } 아니면 { ", "3")),
+                            ],
+                        ),
+                    ],
+                )
+            ])
+        )]
         fn branch(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
             assert_parse!(&tokens, expected);
         }

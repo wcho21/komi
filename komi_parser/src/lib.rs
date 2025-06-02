@@ -106,10 +106,54 @@ impl<'a> Parser<'a> {
         // Parse a consequence
         let consequence = self.parse_branch_expression_consequence(keyword_location)?;
 
-        // Parse a alternative
-        let (alternative, altern_location) = self.parse_branch_expression_alternative(keyword_location)?;
+        // Expect an else-branch keyword
+        let else_keyword_location = self.scanner.locate();
+        let Some(token) = self.scanner.read_and_advance() else {
+            let branch_location = Range::new(keyword_location.begin, else_keyword_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoAlternBlock, branch_location));
+        };
+        if token.kind != TokenKind::ElseBranch {
+            return Err(ParseError::new(ParseErrorKind::NoAlternKeyword, else_keyword_location));
+        }
 
-        let branch_location = Range::new(keyword_location.begin, altern_location.end);
+        // Expect an if-branch keyword or opening brace
+        let next_token_location = self.scanner.locate();
+        let Some(next_token) = self.scanner.read_and_advance() else {
+            let branch_location = Range::new(else_keyword_location.begin, next_token_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoAlternBlock, branch_location));
+        };
+        if next_token.kind == TokenKind::IfBranch {
+            let nested_branch = self.parse_branch_expression(&next_token_location)?;
+            let branch_location = Range::new(keyword_location.begin, nested_branch.location.end);
+            let branch = Ast::new(
+                AstKind::Branch { predicate, consequence, alternative: vec![nested_branch] },
+                branch_location,
+            );
+            return Ok(Box::new(branch));
+        }
+        if next_token.kind != TokenKind::LBrace {
+            return Err(ParseError::new(
+                ParseErrorKind::NoOpeningBraceInAltern,
+                next_token.location,
+            ));
+        }
+
+        let alternative = self.parse_brace_block()?;
+
+        // Expect a closing brace
+        let altern_closing_brace_location = self.scanner.locate();
+        let Some(_token) = self.scanner.read_and_advance() else {
+            let else_location = Range::new(next_token_location.begin, altern_closing_brace_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoClosingBraceInAltern, else_location));
+        };
+
+        // Expect a non-empty alternative
+        if alternative.len() == 0 {
+            let else_location = Range::new(next_token_location.begin, altern_closing_brace_location.end);
+            return Err(ParseError::new(ParseErrorKind::NoExprInAltern, else_location));
+        }
+
+        let branch_location = Range::new(keyword_location.begin, altern_closing_brace_location.end);
         let branch = Ast::new(AstKind::Branch { predicate, consequence, alternative }, branch_location);
         Ok(Box::new(branch))
     }
@@ -156,47 +200,6 @@ impl<'a> Parser<'a> {
         }
 
         Ok(consequence)
-    }
-
-    /// Should be called after the scanner has advanced past the closing brace `}` of a consequence.
-    /// Stops at the character past the closing brace `}`.
-    fn parse_branch_expression_alternative(&mut self, keyword_location: &Range) -> Result<(Exprs, Range), ParseError> {
-        // Expect a else-branch keyword
-        let else_keyword_location = self.scanner.locate();
-        let Some(token) = self.scanner.read_and_advance() else {
-            let branch_location = Range::new(keyword_location.begin, else_keyword_location.end);
-            return Err(ParseError::new(ParseErrorKind::NoAlternBlock, branch_location));
-        };
-        if token.kind != TokenKind::ElseBranch {
-            return Err(ParseError::new(ParseErrorKind::NoAlternKeyword, else_keyword_location));
-        }
-
-        // Expect an opening brace
-        let altern_opening_brace_location = self.scanner.locate();
-        let Some(token) = self.scanner.read_and_advance() else {
-            let else_location = Range::new(else_keyword_location.begin, altern_opening_brace_location.end);
-            return Err(ParseError::new(ParseErrorKind::NoAlternBlock, else_location));
-        };
-        if token.kind != TokenKind::LBrace {
-            return Err(ParseError::new(ParseErrorKind::NoOpeningBraceInAltern, token.location));
-        }
-
-        let alternative = self.parse_brace_block()?;
-
-        // Expect a closing brace
-        let altern_closing_brace_location = self.scanner.locate();
-        let Some(_token) = self.scanner.read_and_advance() else {
-            let else_location = Range::new(altern_opening_brace_location.begin, altern_closing_brace_location.end);
-            return Err(ParseError::new(ParseErrorKind::NoClosingBraceInAltern, else_location));
-        };
-
-        // Expect a non-empty alternative
-        if alternative.len() == 0 {
-            let else_location = Range::new(altern_opening_brace_location.begin, altern_closing_brace_location.end);
-            return Err(ParseError::new(ParseErrorKind::NoExprInAltern, else_location));
-        }
-
-        Ok((alternative, altern_closing_brace_location))
     }
 
     /// Parses characters into a closure-expression AST, with the location `keyword_location` of the closure keyword.
