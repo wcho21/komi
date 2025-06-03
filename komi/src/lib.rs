@@ -292,7 +292,7 @@ mod tests {
     #[rstest]
     #[case::addition_assignment_to_bool_id(
         "a=참 a+=1",
-        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumOrStrInfixLeftOperand, Range::from_nums(0, 4, 0, 5)))
     )]
     #[case::subtraction_assignment_to_bool_id(
         "a=참 a-=1",
@@ -312,7 +312,7 @@ mod tests {
     )]
     #[case::addition_assignment_with_bool(
         "a=1 a+=참",
-        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixRightOperand, Range::from_nums(0, 7, 0, 8)))
     )]
     #[case::subtraction_assignment_with_bool(
         "a=1 a-=참",

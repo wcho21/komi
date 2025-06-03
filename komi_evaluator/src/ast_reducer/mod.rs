@@ -615,7 +615,40 @@ mod tests {
             ]),
             mkval!(ValueKind::Number(2.0), str_loc!("", "6%4"))
         )]
-        fn arithmetic_infix(#[case] ast: Box<Ast>, #[case] expected: Value) {
+        fn arithmetic_infix_nums(#[case] ast: Box<Ast>, #[case] expected: Value) {
+            assert_eval!(&ast, expected);
+        }
+
+        #[rstest]
+        #[case::addition(
+            // Represents `"사과" + "오렌지"`.
+            mkast!(prog loc str_loc!("", "\"사과\" + \"오렌지\""), vec![
+                mkast!(infix InfixPlus, loc str_loc!("", "\"사과\" + \"오렌지\""),
+                    left mkast!(string loc str_loc!("", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                    ]),
+                    right mkast!(string loc str_loc!("\"사과\" + ", "\"오렌지\""), vec![
+                        mkstrseg!(Str, "오렌지", str_loc!("\"사과\" = \"", "오렌지")),
+                    ]),
+                ),
+            ]),
+            mkval!(ValueKind::Str(String::from("사과오렌지")), str_loc!("", "\"사과\" + \"오렌지\""))
+        )]
+        /* TODO
+        #[case::multiplication(
+            // Represents `"사과" * 3`.
+            mkast!(prog loc str_loc!("", "\"사과\" * 3"), vec![
+                mkast!(infix InfixAsterisk, loc str_loc!("", "\"사과\" * 3"),
+                    left mkast!(string loc str_loc!("", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                    ]),
+                    right mkast!(num 3.0, loc str_loc!("\"사과\" * ", "3")),
+                ),
+            ]),
+            mkval!(ValueKind::Str(String::from("사과사과사과")), str_loc!("", "\"사과\" * 3"))
+        )]
+        */
+        fn arithmetic_infix_strs(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
         }
 
@@ -741,7 +774,7 @@ mod tests {
                     right mkast!(num 1.0, loc str_loc!("참 + ", "1")),
                 ),
             ]),
-            mkerr!(NonNumInfixOperand, str_loc!("", "참")),
+            mkerr!(NonNumOrStrInfixLeftOperand, str_loc!("", "참")),
         )]
         #[case::right_bool_addition(
             // Represents `1 + 참`.
@@ -751,7 +784,7 @@ mod tests {
                     right mkast!(boolean true, loc str_loc!("1 + ", "참")),
                 ),
             ]),
-            mkerr!(NonNumInfixOperand, str_loc!("1 + ", "참")),
+            mkerr!(NonNumInfixRightOperand, str_loc!("1 + ", "참")),
         )]
         #[case::left_bool_subtraction(
             // Represents `참 - 1`.
@@ -987,7 +1020,7 @@ mod tests {
             ]),
             // Represents a binding for `사과` to `1`.
             root_env("사과", &mkval!(ValueKind::Number(1.0), range())),
-            mkerr!(NonNumInfixOperand, str_loc!("사과 += ", "참")),
+            mkerr!(NonNumInfixRightOperand, str_loc!("사과 += ", "참")),
         )]
         #[case::num_id_minus_equals_bool(
             // Represents `사과 -= 참`.
