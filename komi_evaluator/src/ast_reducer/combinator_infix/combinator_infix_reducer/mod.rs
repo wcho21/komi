@@ -61,10 +61,12 @@ where
 }
 
 fn get_num_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<f64, EvalError> {
+    #[allow(deprecated)]
     util::get_num_primitive_or_error(ast, EvalErrorKind::NonNumInfixOperand, env, stdouts)
 }
 
 fn get_bool_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<bool, EvalError> {
+    #[allow(deprecated)]
     util::get_bool_primitive_or_error(ast, EvalErrorKind::NonBoolInfixOperand, env, stdouts)
 }
 
