@@ -296,7 +296,7 @@ mod tests {
     )]
     #[case::subtraction_assignment_to_bool_id(
         "a=참 a-=1",
-        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixLeftOperand, Range::from_nums(0, 4, 0, 5)))
     )]
     #[case::multiplication_assignment_to_bool_id(
         "a=참 a*=1",
@@ -304,11 +304,11 @@ mod tests {
     )]
     #[case::division_assignment_to_bool_id(
         "a=참 a/=1",
-        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixLeftOperand, Range::from_nums(0, 4, 0, 5)))
     )]
     #[case::modular_assignment_to_bool_id(
         "a=참 a%=1",
-        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 4, 0, 5)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixLeftOperand, Range::from_nums(0, 4, 0, 5)))
     )]
     #[case::addition_assignment_with_bool(
         "a=1 a+=참",
@@ -316,7 +316,7 @@ mod tests {
     )]
     #[case::subtraction_assignment_with_bool(
         "a=1 a-=참",
-        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixRightOperand, Range::from_nums(0, 7, 0, 8)))
     )]
     #[case::multiplication_assignment_with_bool(
         "a=1 a*=참",
@@ -324,11 +324,11 @@ mod tests {
     )]
     #[case::division_assignment_with_bool(
         "a=1 a/=참",
-        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixRightOperand, Range::from_nums(0, 7, 0, 8)))
     )]
     #[case::modular_assignment_with_bool(
         "a=1 a%=참",
-        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixOperand, Range::from_nums(0, 7, 0, 8)))
+        ExecError::Eval(EvalError::new(EvalErrorKind::NonNumInfixRightOperand, Range::from_nums(0, 7, 0, 8)))
     )]
     fn assignment_with_wrong_type(#[case] source: &str, #[case] error: ExecError) {
         assert_fail!(source, error);

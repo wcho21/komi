@@ -11,11 +11,7 @@ pub enum EvalErrorKind {
     UndefinedIdentifier,
     /// A left-hand side value of an assignment expression is not identifier, such as `1 = 2`.
     NonIdLeftValInAssign,
-    /// Expected a numeric value as an operand of an infix, but it isn't, such as `참` in `1 + 참`.
-    #[deprecated]
-    NonNumInfixOperand,
     /// Expected a boolean value as an operand of an infix, but it isn't, such as `1` in `참 또는 1`.
-    #[deprecated]
     NonBoolInfixOperand,
     /// Expected a numeric value as a left-hand side operand of an index, but it isn't, such as `참` in `참 - 1`.
     NonNumInfixLeftOperand,
@@ -45,9 +41,6 @@ impl fmt::Display for EvalErrorKind {
             EvalErrorKind::NoExpressions => "NoExpressions",
             EvalErrorKind::UndefinedIdentifier => "UndefinedIdentifier",
             EvalErrorKind::NonIdLeftValInAssign => "NonIdLeftValInAssign",
-            #[allow(deprecated)]
-            EvalErrorKind::NonNumInfixOperand => "NonNumInfixOperand",
-            #[allow(deprecated)]
             EvalErrorKind::NonBoolInfixOperand => "NonBoolInfixOperand",
             EvalErrorKind::NonNumInfixLeftOperand => "NonNumInfixLeftOperand",
             EvalErrorKind::NonNumOrStrInfixLeftOperand => "NonNumOrStrInfixLeftOperand",
