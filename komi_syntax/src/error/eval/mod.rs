@@ -25,6 +25,8 @@ pub enum EvalErrorKind {
     NonNumInfixRightOperand,
     /// Expected a string value as a right-hand side operand of an index, but it isn't, such as `1` in `"사과" + 1`.
     NonStrInfixRightOperand,
+    /// Expected a non-negative integer value as a right-hand side operand of an index, but it isn't, such as `-1.5` in `"사과" * -1.5`.
+    NonNonnegIntInfixRightOperand,
     /// Expected a numeric value as an operand of a prefix, but it isn't, such as `참` in `+참`.
     NonNumPrefixOperand,
     /// Expected a boolean value as an operand of a prefix, but it isn't, such as `1` in `!1`.
@@ -51,6 +53,8 @@ impl fmt::Display for EvalErrorKind {
             EvalErrorKind::NonNumOrStrInfixLeftOperand => "NonNumOrStrInfixLeftOperand",
             EvalErrorKind::NonNumInfixRightOperand => "NonNumInfixRightOperand",
             EvalErrorKind::NonStrInfixRightOperand => "NonStrInfixRightOperand",
+            // TODO: better name `NotNonneg...`?
+            EvalErrorKind::NonNonnegIntInfixRightOperand => "NonNonnegIntInfixRightOperadn",
             EvalErrorKind::NonNumPrefixOperand => "NonNumPrefixOperand",
             EvalErrorKind::NonBoolPrefixOperand => "NonBoolPrefixOperand",
             EvalErrorKind::InvalidCallTarget => "InvalidCallTarget",
