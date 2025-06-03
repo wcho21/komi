@@ -27,7 +27,8 @@ where
         location,
         env,
         stdouts,
-        get_num_primitive,
+        get_left_num_primitive,
+        get_right_num_primitive,
         reduce_infix,
         get_kind,
     )
@@ -55,16 +56,24 @@ where
         env,
         stdouts,
         get_bool_primitive,
+        get_bool_primitive,
         reduce_infix,
         get_kind,
     )
 }
 
-fn get_num_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<f64, EvalError> {
-    util::get_num_primitive_or_error(ast, EvalErrorKind::NonNumInfixOperand, env, stdouts)
+fn get_left_num_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<f64, EvalError> {
+    #[allow(deprecated)]
+    util::get_num_primitive_or_error(ast, EvalErrorKind::NonNumInfixLeftOperand, env, stdouts)
+}
+
+fn get_right_num_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<f64, EvalError> {
+    #[allow(deprecated)]
+    util::get_num_primitive_or_error(ast, EvalErrorKind::NonNumInfixRightOperand, env, stdouts)
 }
 
 fn get_bool_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Result<bool, EvalError> {
+    #[allow(deprecated)]
     util::get_bool_primitive_or_error(ast, EvalErrorKind::NonBoolInfixOperand, env, stdouts)
 }
 
@@ -75,23 +84,25 @@ fn get_bool_primitive(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> Re
 /// - `get_kind` specifies what kind to return from `z`.
 ///
 /// The location is determined by `location`.
-fn reduce<T, F, G, H>(
+fn reduce<T, F, G, H, I>(
     left: &Box<Ast>,
     right: &Box<Ast>,
     location: &Range,
     env: &mut Env,
     stdouts: &mut Stdout,
-    reduce_operand: F,
-    reduce_infix: G,
-    get_kind: H,
+    reduce_left_operand: F,
+    reduce_right_operand: G,
+    reduce_infix: H,
+    get_kind: I,
 ) -> ValRes
 where
     F: Fn(&Box<Ast>, &mut Env, &mut Stdout) -> Result<T, EvalError>,
-    G: Fn(T, T) -> T,
-    H: Fn(T) -> ValueKind,
+    G: Fn(&Box<Ast>, &mut Env, &mut Stdout) -> Result<T, EvalError>,
+    H: Fn(T, T) -> T,
+    I: Fn(T) -> ValueKind,
 {
-    let left_val = reduce_operand(left, env, stdouts)?;
-    let right_val = reduce_operand(right, env, stdouts)?;
+    let left_val = reduce_left_operand(left, env, stdouts)?;
+    let right_val = reduce_right_operand(right, env, stdouts)?;
     let infix_val = reduce_infix(left_val, right_val);
 
     let kind = get_kind(infix_val);
