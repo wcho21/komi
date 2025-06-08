@@ -257,6 +257,10 @@ mod tests {
     #[rstest]
     #[case::equality("1 == 1", "참")]
     #[case::inequality("1 != 1", "거짓")]
+    #[case::less_than("1 < 2", "참")]
+    #[case::less_than_or_equal_to("1 <= 2", "참")]
+    #[case::greater_than("1 > 2", "거짓")]
+    #[case::greater_than_or_equal_to("1 >= 2", "거짓")]
     fn comparison_infix(#[case] source: &str, #[case] expected: String) {
         assert_out!(source, expected, "");
     }

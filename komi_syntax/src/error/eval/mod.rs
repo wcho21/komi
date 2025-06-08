@@ -30,6 +30,10 @@ pub enum EvalErrorKind {
     BadTypeEqLeftOperand,
     /// The type of the right operand is not comparable under equality, such as `함수 { 1 }` in `1 == 함수 { 1 }`.
     BadTypeEqRightOperand,
+    /// The type of the left operand is invalid for ordering relation, such as `참` in `참 == 1`.
+    BadTypeOrdLeftOperand,
+    /// The type of the right operand is invalid for ordering relation, such as `참` in `1 == 참`.
+    BadTypeOrdRightOperand,
     /// Expected a numeric value as an operand of a prefix, but it isn't, such as `참` in `+참`.
     NonNumPrefixOperand,
     /// Expected a boolean value as an operand of a prefix, but it isn't, such as `1` in `!1`.
@@ -58,6 +62,8 @@ impl fmt::Display for EvalErrorKind {
             EvalErrorKind::NotSameTypeInfixOperands => "NotSameTypeInfixOperands",
             EvalErrorKind::BadTypeEqLeftOperand => "BadTypeEqLeftOperand",
             EvalErrorKind::BadTypeEqRightOperand => "BadTypeEqRightOperand",
+            EvalErrorKind::BadTypeOrdLeftOperand => "BadTypeOrdLeftOperand",
+            EvalErrorKind::BadTypeOrdRightOperand => "BadTypeOrdRightOperand",
             EvalErrorKind::NonNumPrefixOperand => "NonNumPrefixOperand",
             EvalErrorKind::NonBoolPrefixOperand => "NonBoolPrefixOperand",
             EvalErrorKind::InvalidCallTarget => "InvalidCallTarget",

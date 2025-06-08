@@ -12,6 +12,7 @@ enum Prim {
     Str(String),
 }
 
+// TODO: factor out common logic in equality implemenation (below 2 functions)
 pub fn reduce_double_equals(
     left: &Box<Ast>,
     right: &Box<Ast>,
@@ -73,5 +74,102 @@ pub fn reduce_bang_equals(
         (Prim::Str(l), Prim::Str(r)) => Ok(l != r),
         _ => Err(EvalError::new(EvalErrorKind::NotSameTypeInfixOperands, *location)),
     }?;
+    Ok(Value::new(ValueKind::Bool(infix_val), *location))
+}
+
+// TODO: factor out common logic in ordering relation implementation (below 4 functions)
+pub fn reduce_lbracket(
+    left: &Box<Ast>,
+    right: &Box<Ast>,
+    location: &Range,
+    env: &mut Env,
+    stdouts: &mut Stdout,
+) -> ValRes {
+    let left_val = reduce_ast(left, env, stdouts)?;
+    let ValueKind::Number(left_prim) = left_val.kind else {
+        return Err(EvalError::new(EvalErrorKind::BadTypeOrdLeftOperand, left_val.location));
+    };
+
+    let right_val = reduce_ast(right, env, stdouts)?;
+    let ValueKind::Number(right_prim) = right_val.kind else {
+        return Err(EvalError::new(
+            EvalErrorKind::BadTypeOrdRightOperand,
+            right_val.location,
+        ));
+    };
+
+    let infix_val = left_prim < right_prim;
+    Ok(Value::new(ValueKind::Bool(infix_val), *location))
+}
+
+pub fn reduce_rbracket(
+    left: &Box<Ast>,
+    right: &Box<Ast>,
+    location: &Range,
+    env: &mut Env,
+    stdouts: &mut Stdout,
+) -> ValRes {
+    let left_val = reduce_ast(left, env, stdouts)?;
+    let ValueKind::Number(left_prim) = left_val.kind else {
+        return Err(EvalError::new(EvalErrorKind::BadTypeOrdLeftOperand, left_val.location));
+    };
+
+    let right_val = reduce_ast(right, env, stdouts)?;
+    let ValueKind::Number(right_prim) = right_val.kind else {
+        return Err(EvalError::new(
+            EvalErrorKind::BadTypeOrdRightOperand,
+            right_val.location,
+        ));
+    };
+
+    let infix_val = left_prim > right_prim;
+    Ok(Value::new(ValueKind::Bool(infix_val), *location))
+}
+
+pub fn reduce_lbracket_equals(
+    left: &Box<Ast>,
+    right: &Box<Ast>,
+    location: &Range,
+    env: &mut Env,
+    stdouts: &mut Stdout,
+) -> ValRes {
+    let left_val = reduce_ast(left, env, stdouts)?;
+    let ValueKind::Number(left_prim) = left_val.kind else {
+        return Err(EvalError::new(EvalErrorKind::BadTypeOrdLeftOperand, left_val.location));
+    };
+
+    let right_val = reduce_ast(right, env, stdouts)?;
+    let ValueKind::Number(right_prim) = right_val.kind else {
+        return Err(EvalError::new(
+            EvalErrorKind::BadTypeOrdRightOperand,
+            right_val.location,
+        ));
+    };
+
+    let infix_val = left_prim <= right_prim;
+    Ok(Value::new(ValueKind::Bool(infix_val), *location))
+}
+
+pub fn reduce_rbracket_equals(
+    left: &Box<Ast>,
+    right: &Box<Ast>,
+    location: &Range,
+    env: &mut Env,
+    stdouts: &mut Stdout,
+) -> ValRes {
+    let left_val = reduce_ast(left, env, stdouts)?;
+    let ValueKind::Number(left_prim) = left_val.kind else {
+        return Err(EvalError::new(EvalErrorKind::BadTypeOrdLeftOperand, left_val.location));
+    };
+
+    let right_val = reduce_ast(right, env, stdouts)?;
+    let ValueKind::Number(right_prim) = right_val.kind else {
+        return Err(EvalError::new(
+            EvalErrorKind::BadTypeOrdRightOperand,
+            right_val.location,
+        ));
+    };
+
+    let infix_val = left_prim >= right_prim;
     Ok(Value::new(ValueKind::Bool(infix_val), *location))
 }

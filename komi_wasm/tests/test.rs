@@ -272,6 +272,8 @@ mod tests {
             test_error!(not_same_type_on_eq, "1 == \"2\"", "EvalError", "NotSameTypeInfixOperands", loc str_loc!("", "1 == \"2\""));
             test_error!(bad_type_equality_left_operand, "함수 { 1 } == 1", "EvalError", "BadTypeEqLeftOperand", loc str_loc!("", "함수 { 1 }"));
             test_error!(bad_type_equality_right_operand, "1 == 함수 { 1 }", "EvalError", "BadTypeEqRightOperand", loc str_loc!("1 == ", "함수 { 1 }"));
+            test_error!(bad_type_ordering_left_operand, "참 < 1", "EvalError", "BadTypeOrdLeftOperand", loc str_loc!("", "참"));
+            test_error!(bad_type_ordering_right_operand, "1 < 참", "EvalError", "BadTypeOrdRightOperand", loc str_loc!("1 < ", "참"));
         }
     }
 }
