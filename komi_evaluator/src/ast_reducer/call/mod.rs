@@ -25,6 +25,7 @@ fn evaluate_builtin_func(builtin_func: BuiltinFunc, arguments: &Args, env: &mut 
     Ok(builtin_func(&arg_vals, stdouts))
 }
 
+// TODO: validate the number of arguments, and return BadNumArgs if not matched.
 fn evaluate_closure(
     parameters: Params,
     arguments: &Args,
