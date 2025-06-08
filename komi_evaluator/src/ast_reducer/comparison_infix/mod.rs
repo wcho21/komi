@@ -43,3 +43,35 @@ pub fn reduce_double_equals(
     }?;
     Ok(Value::new(ValueKind::Bool(infix_val), *location))
 }
+
+pub fn reduce_bang_equals(
+    left: &Box<Ast>,
+    right: &Box<Ast>,
+    location: &Range,
+    env: &mut Env,
+    stdouts: &mut Stdout,
+) -> ValRes {
+    let left_val = reduce_ast(left, env, stdouts)?;
+    let left_prim = match left_val.kind {
+        ValueKind::Bool(b) => Ok(Prim::Bool(b)),
+        ValueKind::Number(n) => Ok(Prim::Number(n)),
+        ValueKind::Str(s) => Ok(Prim::Str(s)),
+        _ => Err(EvalError::new(EvalErrorKind::BadTypeEqLeftOperand, left_val.location)),
+    }?;
+
+    let right_val = reduce_ast(right, env, stdouts)?;
+    let right_prim = match right_val.kind {
+        ValueKind::Bool(b) => Ok(Prim::Bool(b)),
+        ValueKind::Number(n) => Ok(Prim::Number(n)),
+        ValueKind::Str(s) => Ok(Prim::Str(s)),
+        _ => Err(EvalError::new(EvalErrorKind::BadTypeEqRightOperand, right_val.location)),
+    }?;
+
+    let infix_val = match (left_prim, right_prim) {
+        (Prim::Bool(l), Prim::Bool(r)) => Ok(l != r),
+        (Prim::Number(l), Prim::Number(r)) => Ok(l != r),
+        (Prim::Str(l), Prim::Str(r)) => Ok(l != r),
+        _ => Err(EvalError::new(EvalErrorKind::NotSameTypeInfixOperands, *location)),
+    }?;
+    Ok(Value::new(ValueKind::Bool(infix_val), *location))
+}

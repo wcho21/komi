@@ -61,6 +61,7 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
         AstKind::InfixDoubleEquals { left: l, right: r } => {
             comp_infix::reduce_double_equals(&l, &r, &loc, env, stdouts)
         }
+        AstKind::InfixBangEquals { left: l, right: r } => comp_infix::reduce_bang_equals(&l, &r, &loc, env, stdouts),
         AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env, stdouts),
         AstKind::Branch { predicate: p, consequence: c, alternative: a } => {
             branch::evaluate(p, c, a, &loc, env, stdouts)
@@ -1209,6 +1210,136 @@ mod tests {
             mkerr!(NotSameTypeInfixOperands, str_loc!("", "1 == 참")),
         )]
         fn wrong_type_double_equals(#[case] ast: Box<Ast>, #[case] error: EvalError) {
+            assert_eval_fail!(&ast, error);
+        }
+
+        #[rstest]
+        #[case::equal_bool(
+            // Represents `참 != 참`.
+            mkast!(prog loc str_loc!("", "참 != 참"), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "참 != 참"),
+                    left mkast!(boolean true, loc str_loc!("", "참")),
+                    right mkast!(boolean true, loc str_loc!("참 != ", "참")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(false), str_loc!("", "참 != 참"))
+        )]
+        #[case::not_equal_bool(
+            // Represents `참 != 거짓`.
+            mkast!(prog loc str_loc!("", "참 != 거짓"), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "참 != 거짓"),
+                    left mkast!(boolean true, loc str_loc!("", "참")),
+                    right mkast!(boolean false, loc str_loc!("참 != ", "거짓")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(true), str_loc!("", "참 != 거짓"))
+        )]
+        #[case::equal_num(
+            // Represents `1 != 1`.
+            mkast!(prog loc str_loc!("", "1 != 1"), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "1 != 1"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 1.0, loc str_loc!("1 != ", "1")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(false), str_loc!("", "1 != 1"))
+        )]
+        #[case::not_equal_num(
+            // Represents `1 != 2`.
+            mkast!(prog loc str_loc!("", "1 != 2"), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "1 != 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 != ", "2")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(true), str_loc!("", "1 != 2"))
+        )]
+        #[case::equal_str(
+            // Represents `"사과" != "사과"`.
+            mkast!(prog loc str_loc!("", "\"사과\" != \"사과\""), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "\"사과\" != \"사과\""),
+                    left mkast!(string loc str_loc!("", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                    ]),
+                    right mkast!(string loc str_loc!("\"사과\" != ", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("\"사과\" != \"", "사과")),
+                    ]),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(false), str_loc!("", "\"사과\" != \"사과\""))
+        )]
+        #[case::not_equal_str(
+            // Represents `"사과" != "바나나"`.
+            mkast!(prog loc str_loc!("", "\"사과\" != \"바나나\""), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "\"사과\" != \"바나나\""),
+                    left mkast!(string loc str_loc!("", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                    ]),
+                    right mkast!(string loc str_loc!("\"사과\" != ", "\"바나나\""), vec![
+                        mkstrseg!(Str, "바나나", str_loc!("\"사과\" != \"", "바나나")),
+                    ]),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(true), str_loc!("", "\"사과\" != \"바나나\""))
+        )]
+        fn bang_equals(#[case] ast: Box<Ast>, #[case] expected: Value) {
+            assert_eval!(&ast, expected);
+        }
+
+        #[rstest]
+        #[case::closure_and_num(
+            // Represents `함수 { 1 } != 1`.
+            mkast!(prog loc str_loc!("", "함수 { 1 } != 1"), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "함수 { 1 } != 1"),
+                    left mkast!(closure loc str_loc!("", "함수 { 1 }"),
+                        params vec![],
+                        body vec![
+                            mkast!(num 1.0, loc str_loc!("함수 { ", "1"))
+                        ],
+                    ),
+                    right mkast!(num 1.0, loc str_loc!("함수 { 1 } != ", "1")),
+                ),
+            ]),
+            mkerr!(BadTypeEqLeftOperand, str_loc!("", "함수 { 1 }")),
+        )]
+        #[case::num_and_closure(
+            // Represents `1 != 함수 { 1 }`.
+            mkast!(prog loc str_loc!("", "1 != 함수 { 1 }"), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "1 != 함수 { 1 }"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(closure loc str_loc!("1 != ", "함수 { 1 }"),
+                        params vec![],
+                        body vec![
+                            mkast!(num 1.0, loc str_loc!("1 != 함수 { ", "1"))
+                        ],
+                    ),
+                ),
+            ]),
+            mkerr!(BadTypeEqRightOperand, str_loc!("1 != ", "함수 { 1 }")),
+        )]
+        #[case::num_and_str(
+            // Represents `1 != "사과"`.
+            mkast!(prog loc str_loc!("", "1 != \"사과\""), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "1 != \"사과\""),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(string loc str_loc!("1 != ", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("1 != \"", "사과")),
+                    ]),
+                ),
+            ]),
+            mkerr!(NotSameTypeInfixOperands, str_loc!("", "1 != \"사과\"")),
+        )]
+        #[case::num_and_bool(
+            // Represents `1 != 참`.
+            mkast!(prog loc str_loc!("", "1 != 참"), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "1 != 참"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(boolean true, loc str_loc!("1 != ", "참")),
+                ),
+            ]),
+            mkerr!(NotSameTypeInfixOperands, str_loc!("", "1 != 참")),
+        )]
+        fn wrong_type_bang_equals(#[case] ast: Box<Ast>, #[case] error: EvalError) {
             assert_eval_fail!(&ast, error);
         }
     }
