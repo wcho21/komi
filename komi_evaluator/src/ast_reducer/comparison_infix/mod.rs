@@ -12,6 +12,7 @@ enum Prim {
     Str(String),
 }
 
+// TODO: factor out common logic in equality implemenation (below 2 functions)
 pub fn reduce_double_equals(
     left: &Box<Ast>,
     right: &Box<Ast>,
@@ -76,6 +77,7 @@ pub fn reduce_bang_equals(
     Ok(Value::new(ValueKind::Bool(infix_val), *location))
 }
 
+// TODO: factor out common logic in ordering relation implementation (below 4 functions)
 pub fn reduce_lbracket(
     left: &Box<Ast>,
     right: &Box<Ast>,
