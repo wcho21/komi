@@ -1154,6 +1154,63 @@ mod tests {
         fn double_equals(#[case] ast: Box<Ast>, #[case] expected: Value) {
             assert_eval!(&ast, expected);
         }
+
+        #[rstest]
+        #[case::closure_and_num(
+            // Represents `함수 { 1 } == 1`.
+            mkast!(prog loc str_loc!("", "함수 { 1 } == 1"), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "함수 { 1 } == 1"),
+                    left mkast!(closure loc str_loc!("", "함수 { 1 }"),
+                        params vec![],
+                        body vec![
+                            mkast!(num 1.0, loc str_loc!("함수 { ", "1"))
+                        ],
+                    ),
+                    right mkast!(num 1.0, loc str_loc!("함수 { 1 } == ", "1")),
+                ),
+            ]),
+            mkerr!(BadTypeEqLeftOperand, str_loc!("", "함수 { 1 }")),
+        )]
+        #[case::num_and_closure(
+            // Represents `1 == 함수 { 1 }`.
+            mkast!(prog loc str_loc!("", "1 == 함수 { 1 }"), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "1 == 함수 { 1 }"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(closure loc str_loc!("1 == ", "함수 { 1 }"),
+                        params vec![],
+                        body vec![
+                            mkast!(num 1.0, loc str_loc!("1 == 함수 { ", "1"))
+                        ],
+                    ),
+                ),
+            ]),
+            mkerr!(BadTypeEqRightOperand, str_loc!("1 == ", "함수 { 1 }")),
+        )]
+        #[case::num_and_str(
+            // Represents `1 == "사과"`.
+            mkast!(prog loc str_loc!("", "1 == \"사과\""), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "1 == \"사과\""),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(string loc str_loc!("1 == ", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("1 == \"", "사과")),
+                    ]),
+                ),
+            ]),
+            mkerr!(NotSameTypeInfixOperands, str_loc!("", "1 == \"사과\"")),
+        )]
+        #[case::num_and_bool(
+            // Represents `1 == 참`.
+            mkast!(prog loc str_loc!("", "1 == 참"), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "1 == 참"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(boolean true, loc str_loc!("1 == ", "참")),
+                ),
+            ]),
+            mkerr!(NotSameTypeInfixOperands, str_loc!("", "1 == 참")),
+        )]
+        fn wrong_type_double_equals(#[case] ast: Box<Ast>, #[case] error: EvalError) {
+            assert_eval_fail!(&ast, error);
+        }
     }
 
     mod combinator_infix_with_env {
