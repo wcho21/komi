@@ -21,8 +21,15 @@ pub enum EvalErrorKind {
     NonNumInfixRightOperand,
     /// Expected a string value as a right-hand side operand of an index, but it isn't, such as `1` in `"사과" + 1`.
     NonStrInfixRightOperand,
+    // TODO: correct typo 'indix' to 'infix'
     /// Expected a non-negative integer value as a right-hand side operand of an index, but it isn't, such as `-1.5` in `"사과" * -1.5`.
     NonNonnegIntInfixRightOperand,
+    /// Expected the same type operands for an infix, but it isn't, such as `1 == 참`.
+    NotSameTypeInfixOperands,
+    /// The type of the left operand is not comparable under equality, such as `함수 { 1 }` in `함수 { 1 } == 1`.
+    BadTypeEqLeftOperand,
+    /// The type of the right operand is not comparable under equality, such as `함수 { 1 }` in `1 == 함수 { 1 }`.
+    BadTypeEqRightOperand,
     /// Expected a numeric value as an operand of a prefix, but it isn't, such as `참` in `+참`.
     NonNumPrefixOperand,
     /// Expected a boolean value as an operand of a prefix, but it isn't, such as `1` in `!1`.
@@ -48,6 +55,9 @@ impl fmt::Display for EvalErrorKind {
             EvalErrorKind::NonStrInfixRightOperand => "NonStrInfixRightOperand",
             // TODO: better name `NotNonneg...`?
             EvalErrorKind::NonNonnegIntInfixRightOperand => "NonNonnegIntInfixRightOperadn",
+            EvalErrorKind::NotSameTypeInfixOperands => "NotSameTypeInfixOperands",
+            EvalErrorKind::BadTypeEqLeftOperand => "BadTypeEqLeftOperand",
+            EvalErrorKind::BadTypeEqRightOperand => "BadTypeEqRightOperand",
             EvalErrorKind::NonNumPrefixOperand => "NonNumPrefixOperand",
             EvalErrorKind::NonBoolPrefixOperand => "NonBoolPrefixOperand",
             EvalErrorKind::InvalidCallTarget => "InvalidCallTarget",

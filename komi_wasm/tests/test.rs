@@ -269,6 +269,9 @@ mod tests {
             test_error!(invalid_bool_prefix_operand, "!1", "EvalError", "NonBoolPrefixOperand", loc str_loc!("!", "1"));
             test_error!(invalid_call_target, "1()", "EvalError", "InvalidCallTarget", loc str_loc!("", "1"));
             test_error!(invalid_predicate, "만약 1 { 2 } 아니면 { 3 }", "EvalError", "NonBoolPred", loc str_loc!("만약 ", "1"));
+            test_error!(not_same_type_on_eq, "1 == \"2\"", "EvalError", "NotSameTypeInfixOperands", loc str_loc!("", "1 == \"2\""));
+            test_error!(bad_type_equality_left_operand, "함수 { 1 } == 1", "EvalError", "BadTypeEqLeftOperand", loc str_loc!("", "함수 { 1 }"));
+            test_error!(bad_type_equality_right_operand, "1 == 함수 { 1 }", "EvalError", "BadTypeEqRightOperand", loc str_loc!("1 == ", "함수 { 1 }"));
         }
     }
 }

@@ -1,6 +1,7 @@
 //! Combinator Infix
 //!
 //! The *combinator infix* means an infix that takes two operands and combines them into a value, such as arithmetic addition (`+`), or boolean conjunction (`&&`).
+// TODO: rename 'combinator' to 'arithmetic'. comparison is also a kind of 'combinator', so this term is too broad.
 
 mod combinator_infix_reducer;
 

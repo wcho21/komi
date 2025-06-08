@@ -255,6 +255,13 @@ mod tests {
     }
 
     #[rstest]
+    #[case::equality("1 == 1", "참")]
+    #[case::inequality("1 != 1", "거짓")]
+    fn comparison_infix(#[case] source: &str, #[case] expected: String) {
+        assert_out!(source, expected, "");
+    }
+
+    #[rstest]
     #[case::conjunction("참 그리고 거짓", "거짓")]
     #[case::disjunction("참 또는 거짓", "참")]
     fn connective_infix(#[case] source: &str, #[case] expected: String) {
