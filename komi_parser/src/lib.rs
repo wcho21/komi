@@ -340,6 +340,7 @@ impl<'a> Parser<'a> {
             TokenKind::SlashEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixSlashEquals),
             TokenKind::PercentEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixPercentEquals),
             TokenKind::LParen => self.read_right_and_make_call_ast(left),
+            TokenKind::DoubleEquals => read_right_and_make_infix_ast!(self, left, COMPARISON, InfixDoubleEquals),
             _ => Err(ParseError::new(ParseErrorKind::UnexpectedExprInfix, infix.location)),
         }
     }

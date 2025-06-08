@@ -273,6 +273,27 @@ mod tests {
                 ),
             ])
         )]
+        // TODO(?): split tests into combinator infix, assignment infix, and comparison infix files
+        #[case::double_equals(
+            // Represents `1 == 1`.
+            vec![
+                mktoken!(str_loc!("", "1"),
+                    TokenKind::Number(1.0),
+                ),
+                mktoken!(str_loc!("1 ", "=="),
+                    TokenKind::DoubleEquals,
+                ),
+                mktoken!(str_loc!("1 == ", "2"),
+                    TokenKind::Number(2.0),
+                ),
+            ],
+            mkast!(prog loc str_loc!("", "1 == 2"), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "1 == 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 == ", "2")),
+                ),
+            ])
+        )]
         fn test(#[case] tokens: Vec<Token>, #[case] expected: Box<Ast>) {
             assert_parse!(&tokens, expected);
         }
