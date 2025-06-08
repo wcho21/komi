@@ -62,6 +62,7 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
             comp_infix::reduce_double_equals(&l, &r, &loc, env, stdouts)
         }
         AstKind::InfixBangEquals { left: l, right: r } => comp_infix::reduce_bang_equals(&l, &r, &loc, env, stdouts),
+        AstKind::InfixLBracket { left: l, right: r } => comp_infix::reduce_lbracket(&l, &r, &loc, env, stdouts),
         AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env, stdouts),
         AstKind::Branch { predicate: p, consequence: c, alternative: a } => {
             branch::evaluate(p, c, a, &loc, env, stdouts)
@@ -1340,6 +1341,120 @@ mod tests {
             mkerr!(NotSameTypeInfixOperands, str_loc!("", "1 != 참")),
         )]
         fn wrong_type_bang_equals(#[case] ast: Box<Ast>, #[case] error: EvalError) {
+            assert_eval_fail!(&ast, error);
+        }
+
+        #[rstest]
+        #[case::left_greater_than_right(
+            // Represents `2 < 1`.
+            mkast!(prog loc str_loc!("", "2 < 1"), vec![
+                mkast!(infix InfixLBracket, loc str_loc!("", "2 < 1"),
+                    left mkast!(num 2.0, loc str_loc!("", "2")),
+                    right mkast!(num 1.0, loc str_loc!("2 < ", "1")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(false), str_loc!("", "2 < 1"))
+        )]
+        #[case::left_equal_to_right(
+            // Represents `1 < 1`.
+            mkast!(prog loc str_loc!("", "1 < 1"), vec![
+                mkast!(infix InfixLBracket, loc str_loc!("", "1 < 1"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 1.0, loc str_loc!("1 < ", "1")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(false), str_loc!("", "1 < 1"))
+        )]
+        #[case::left_less_than_right(
+            // Represents `1 < 2`.
+            mkast!(prog loc str_loc!("", "1 < 2"), vec![
+                mkast!(infix InfixLBracket, loc str_loc!("", "1 < 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 < ", "2")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(true), str_loc!("", "1 < 2"))
+        )]
+        fn lbracket(#[case] ast: Box<Ast>, #[case] expected: Value) {
+            assert_eval!(&ast, expected);
+        }
+
+        #[rstest]
+        #[case::str_and_num(
+            // Represents `"사과" < 1`.
+            mkast!(prog loc str_loc!("", "\"사과\" < 1"), vec![
+                mkast!(infix InfixLBracket, loc str_loc!("", "\"사과\" < 1"),
+                    left mkast!(string loc str_loc!("", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                    ]),
+                    right mkast!(num 1.0, loc str_loc!("\"사과\" < ", "1")),
+                ),
+            ]),
+            mkerr!(BadTypeOrdLeftOperand, str_loc!("", "\"사과\"")),
+        )]
+        #[case::num_and_str(
+            // Represents `1 < "사과"`.
+            mkast!(prog loc str_loc!("", "1 < \"사과\""), vec![
+                mkast!(infix InfixLBracket, loc str_loc!("", "1 < \"사과\""),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(string loc str_loc!("1 < ", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("1 < \"", "사과")),
+                    ]),
+                ),
+            ]),
+            mkerr!(BadTypeOrdRightOperand, str_loc!("1 < ", "\"사과\"")),
+        )]
+        #[case::bool_and_num(
+            // Represents `참 < 1`.
+            mkast!(prog loc str_loc!("", "참 < 1"), vec![
+                mkast!(infix InfixLBracket, loc str_loc!("", "참 < 1"),
+                    left mkast!(boolean true, loc str_loc!("", "참")),
+                    right mkast!(num 1.0, loc str_loc!("참 < ", "1")),
+                ),
+            ]),
+            mkerr!(BadTypeOrdLeftOperand, str_loc!("", "참")),
+        )]
+        #[case::num_and_bool(
+            // Represents `1 < 참`.
+            mkast!(prog loc str_loc!("", "1 < 참"), vec![
+                mkast!(infix InfixLBracket, loc str_loc!("", "1 < 참"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(boolean true, loc str_loc!("1 < ", "참")),
+                ),
+            ]),
+            mkerr!(BadTypeOrdRightOperand, str_loc!("1 < ", "참")),
+        )]
+        #[case::closure_and_num(
+            // Represents `함수 { 1 } < 1`.
+            mkast!(prog loc str_loc!("", "함수 { 1 } < 1"), vec![
+                mkast!(infix InfixLBracket, loc str_loc!("", "함수 { 1 } < 1"),
+                    left mkast!(closure loc str_loc!("", "함수 { 1 }"),
+                        params vec![],
+                        body vec![
+                            mkast!(num 1.0, loc str_loc!("함수 { ", "1"))
+                        ],
+                    ),
+                    right mkast!(num 1.0, loc str_loc!("함수 { 1 } < ", "1")),
+                ),
+            ]),
+            mkerr!(BadTypeOrdLeftOperand, str_loc!("", "함수 { 1 }")),
+        )]
+        #[case::num_and_closure(
+            // Represents `1 < 함수 { 1 }`.
+            mkast!(prog loc str_loc!("", "1 < 함수 { 1 }"), vec![
+                mkast!(infix InfixLBracket, loc str_loc!("", "1 < 함수 { 1 }"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(closure loc str_loc!("1 < ", "함수 { 1 }"),
+                        params vec![],
+                        body vec![
+                            mkast!(num 1.0, loc str_loc!("1 < 함수 { ", "1"))
+                        ],
+                    ),
+                ),
+            ]),
+            mkerr!(BadTypeOrdRightOperand, str_loc!("1 < ", "함수 { 1 }")),
+        )]
+        fn wrong_type_lbracket(#[case] ast: Box<Ast>, #[case] error: EvalError) {
             assert_eval_fail!(&ast, error);
         }
     }
