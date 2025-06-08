@@ -32,6 +32,7 @@ pub enum AstKind {
     InfixAsteriskEquals { left: Expr, right: Expr },
     InfixSlashEquals { left: Expr, right: Expr },
     InfixPercentEquals { left: Expr, right: Expr },
+    InfixDoubleEquals { left: Expr, right: Expr },
     Closure { parameters: Ids, body: Exprs },
     Call { target: Expr, arguments: Exprs },
     Branch { predicate: Expr, consequence: Exprs, alternative: Exprs },
