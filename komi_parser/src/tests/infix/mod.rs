@@ -275,7 +275,7 @@ mod tests {
         )]
         // TODO(?): split tests into combinator infix, assignment infix, and comparison infix files
         #[case::double_equals(
-            // Represents `1 == 1`.
+            // Represents `1 == 2`.
             vec![
                 mktoken!(str_loc!("", "1"),
                     TokenKind::Number(1.0),
@@ -291,6 +291,106 @@ mod tests {
                 mkast!(infix InfixDoubleEquals, loc str_loc!("", "1 == 2"),
                     left mkast!(num 1.0, loc str_loc!("", "1")),
                     right mkast!(num 2.0, loc str_loc!("1 == ", "2")),
+                ),
+            ])
+        )]
+        #[case::bang_equals(
+            // Represents `1 != 2`.
+            vec![
+                mktoken!(str_loc!("", "1"),
+                    TokenKind::Number(1.0),
+                ),
+                mktoken!(str_loc!("1 ", "!="),
+                    TokenKind::BangEquals,
+                ),
+                mktoken!(str_loc!("1 != ", "2"),
+                    TokenKind::Number(2.0),
+                ),
+            ],
+            mkast!(prog loc str_loc!("", "1 != 2"), vec![
+                mkast!(infix InfixBangEquals, loc str_loc!("", "1 != 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 != ", "2")),
+                ),
+            ])
+        )]
+        #[case::lbracket_equals(
+            // Represents `1 >= 1`.
+            vec![
+                mktoken!(str_loc!("", "1"),
+                    TokenKind::Number(1.0),
+                ),
+                mktoken!(str_loc!("1 ", ">="),
+                    TokenKind::LBracketEquals,
+                ),
+                mktoken!(str_loc!("1 >= ", "2"),
+                    TokenKind::Number(2.0),
+                ),
+            ],
+            mkast!(prog loc str_loc!("", "1 >= 2"), vec![
+                mkast!(infix InfixLBracketEquals, loc str_loc!("", "1 >= 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 >= ", "2")),
+                ),
+            ])
+        )]
+        #[case::rbracket_equals(
+            // Represents `1 <= 1`.
+            vec![
+                mktoken!(str_loc!("", "1"),
+                    TokenKind::Number(1.0),
+                ),
+                mktoken!(str_loc!("1 ", "<="),
+                    TokenKind::RBracketEquals,
+                ),
+                mktoken!(str_loc!("1 <= ", "2"),
+                    TokenKind::Number(2.0),
+                ),
+            ],
+            mkast!(prog loc str_loc!("", "1 <= 2"), vec![
+                mkast!(infix InfixRBracketEquals, loc str_loc!("", "1 <= 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 <= ", "2")),
+                ),
+            ])
+        )]
+        #[case::lbracket(
+            // Represents `1 > 1`.
+            vec![
+                mktoken!(str_loc!("", "1"),
+                    TokenKind::Number(1.0),
+                ),
+                mktoken!(str_loc!("1 ", ">"),
+                    TokenKind::LBracket,
+                ),
+                mktoken!(str_loc!("1 > ", "2"),
+                    TokenKind::Number(2.0),
+                ),
+            ],
+            mkast!(prog loc str_loc!("", "1 > 2"), vec![
+                mkast!(infix InfixLBracket, loc str_loc!("", "1 > 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 > ", "2")),
+                ),
+            ])
+        )]
+        #[case::rbracket(
+            // Represents `1 < 1`.
+            vec![
+                mktoken!(str_loc!("", "1"),
+                    TokenKind::Number(1.0),
+                ),
+                mktoken!(str_loc!("1 ", "<"),
+                    TokenKind::RBracket,
+                ),
+                mktoken!(str_loc!("1 < ", "2"),
+                    TokenKind::Number(2.0),
+                ),
+            ],
+            mkast!(prog loc str_loc!("", "1 < 2"), vec![
+                mkast!(infix InfixRBracket, loc str_loc!("", "1 < 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 < ", "2")),
                 ),
             ])
         )]
