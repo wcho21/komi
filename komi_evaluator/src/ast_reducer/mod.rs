@@ -2,6 +2,7 @@ mod assignment_infix;
 mod branch;
 mod call;
 mod combinator_infix;
+mod comparison_infix;
 mod expressions;
 mod leaf;
 mod prefix;
@@ -11,6 +12,7 @@ use crate::ValRes;
 use crate::environment::Environment as Env;
 use assignment_infix as assign_infix;
 use combinator_infix as comb_infix;
+use comparison_infix as comp_infix;
 use komi_syntax::ast::{Ast, AstKind};
 use komi_syntax::value::Stdout;
 
@@ -55,6 +57,9 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
         }
         AstKind::InfixPercentEquals { left: l, right: r } => {
             assign_infix::reduce_percent_equals(&l, &r, &loc, env, stdouts)
+        }
+        AstKind::InfixDoubleEquals { left: l, right: r } => {
+            comp_infix::reduce_double_equals(&l, &r, &loc, env, stdouts)
         }
         AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env, stdouts),
         AstKind::Branch { predicate: p, consequence: c, alternative: a } => {
@@ -1071,6 +1076,83 @@ mod tests {
         )]
         fn combinating_equals_with_wrong_type(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] error: EvalError) {
             assert_eval_fail!(&ast, &mut env, error);
+        }
+    }
+
+    mod comparison_infix {
+        use super::*;
+
+        #[rstest]
+        #[case::equal_bool(
+            // Represents `참 == 참`.
+            mkast!(prog loc str_loc!("", "참 == 참"), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "참 == 참"),
+                    left mkast!(boolean true, loc str_loc!("", "참")),
+                    right mkast!(boolean true, loc str_loc!("참 == ", "참")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(true), str_loc!("", "참 == 참"))
+        )]
+        #[case::not_equal_bool(
+            // Represents `참 == 거짓`.
+            mkast!(prog loc str_loc!("", "참 == 거짓"), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "참 == 거짓"),
+                    left mkast!(boolean true, loc str_loc!("", "참")),
+                    right mkast!(boolean false, loc str_loc!("참 == ", "거짓")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(false), str_loc!("", "참 == 거짓"))
+        )]
+        #[case::equal_num(
+            // Represents `1 == 1`.
+            mkast!(prog loc str_loc!("", "1 == 1"), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "1 == 1"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 1.0, loc str_loc!("1 == ", "1")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(true), str_loc!("", "1 == 1"))
+        )]
+        #[case::not_equal_num(
+            // Represents `1 == 2`.
+            mkast!(prog loc str_loc!("", "1 == 2"), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "1 == 2"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(num 2.0, loc str_loc!("1 == ", "2")),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(false), str_loc!("", "1 == 2"))
+        )]
+        #[case::equal_str(
+            // Represents `"사과" == "사과"`.
+            mkast!(prog loc str_loc!("", "\"사과\" == \"사과\""), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "\"사과\" == \"사과\""),
+                    left mkast!(string loc str_loc!("", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                    ]),
+                    right mkast!(string loc str_loc!("\"사과\" == ", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("\"사과\" == \"", "사과")),
+                    ]),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(true), str_loc!("", "\"사과\" == \"사과\""))
+        )]
+        #[case::not_equal_str(
+            // Represents `"사과" == "바나나"`.
+            mkast!(prog loc str_loc!("", "\"사과\" == \"바나나\""), vec![
+                mkast!(infix InfixDoubleEquals, loc str_loc!("", "\"사과\" == \"바나나\""),
+                    left mkast!(string loc str_loc!("", "\"사과\""), vec![
+                        mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                    ]),
+                    right mkast!(string loc str_loc!("\"사과\" == ", "\"바나나\""), vec![
+                        mkstrseg!(Str, "바나나", str_loc!("\"사과\" == \"", "바나나")),
+                    ]),
+                ),
+            ]),
+            mkval!(ValueKind::Bool(false), str_loc!("", "\"사과\" == \"바나나\""))
+        )]
+        fn double_equals(#[case] ast: Box<Ast>, #[case] expected: Value) {
+            assert_eval!(&ast, expected);
         }
     }
 
