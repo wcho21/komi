@@ -339,6 +339,12 @@ impl<'a> Parser<'a> {
             TokenKind::AsteriskEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixAsteriskEquals),
             TokenKind::SlashEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixSlashEquals),
             TokenKind::PercentEquals => read_right_and_make_infix_ast!(self, left, ASSIGNMENT, InfixPercentEquals),
+            TokenKind::DoubleEquals => read_right_and_make_infix_ast!(self, left, COMPARISON, InfixDoubleEquals),
+            TokenKind::BangEquals => read_right_and_make_infix_ast!(self, left, COMPARISON, InfixBangEquals),
+            TokenKind::LBracketEquals => read_right_and_make_infix_ast!(self, left, COMPARISON, InfixLBracketEquals),
+            TokenKind::RBracketEquals => read_right_and_make_infix_ast!(self, left, COMPARISON, InfixRBracketEquals),
+            TokenKind::LBracket => read_right_and_make_infix_ast!(self, left, COMPARISON, InfixLBracket),
+            TokenKind::RBracket => read_right_and_make_infix_ast!(self, left, COMPARISON, InfixRBracket),
             TokenKind::LParen => self.read_right_and_make_call_ast(left),
             _ => Err(ParseError::new(ParseErrorKind::UnexpectedExprInfix, infix.location)),
         }
