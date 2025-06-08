@@ -123,3 +123,27 @@ pub fn reduce_rbracket(
     let infix_val = left_prim > right_prim;
     Ok(Value::new(ValueKind::Bool(infix_val), *location))
 }
+
+pub fn reduce_lbracket_equals(
+    left: &Box<Ast>,
+    right: &Box<Ast>,
+    location: &Range,
+    env: &mut Env,
+    stdouts: &mut Stdout,
+) -> ValRes {
+    let left_val = reduce_ast(left, env, stdouts)?;
+    let ValueKind::Number(left_prim) = left_val.kind else {
+        return Err(EvalError::new(EvalErrorKind::BadTypeOrdLeftOperand, left_val.location));
+    };
+
+    let right_val = reduce_ast(right, env, stdouts)?;
+    let ValueKind::Number(right_prim) = right_val.kind else {
+        return Err(EvalError::new(
+            EvalErrorKind::BadTypeOrdRightOperand,
+            right_val.location,
+        ));
+    };
+
+    let infix_val = left_prim <= right_prim;
+    Ok(Value::new(ValueKind::Bool(infix_val), *location))
+}
