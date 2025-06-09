@@ -42,6 +42,8 @@ pub enum EvalErrorKind {
     InvalidCallTarget,
     /// Expected a boolean value as a predicate, but it isn't, such as `1` in `만약 1 { 2 } 아니면 { 3 }`.
     NonBoolPred,
+    /// The number of arguments is not the same with the one of parameters.
+    BadNumArgs,
 }
 
 pub type EvalError = EngineError<EvalErrorKind>;
@@ -68,6 +70,7 @@ impl fmt::Display for EvalErrorKind {
             EvalErrorKind::NonBoolPrefixOperand => "NonBoolPrefixOperand",
             EvalErrorKind::InvalidCallTarget => "InvalidCallTarget",
             EvalErrorKind::NonBoolPred => "NonBoolPred",
+            EvalErrorKind::BadNumArgs => "BadNumArgs",
         };
         write!(f, "{}", s)
     }

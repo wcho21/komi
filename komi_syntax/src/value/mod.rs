@@ -1,6 +1,7 @@
 mod representation;
 
 use crate::ast::Ast;
+use crate::error::EvalError;
 use komi_util::environment::Environment;
 use komi_util::location::Range;
 use representation::Representer;
@@ -34,7 +35,7 @@ impl Value {
 }
 
 pub type Stdout = Vec<String>;
-pub type BuiltinFunc = fn(&Vec<Value>, &mut Stdout) -> Value;
+pub type BuiltinFunc = fn(&Range, &Vec<Value>, &mut Stdout) -> Result<Value, EvalError>;
 
 #[macro_export]
 macro_rules! mkval {

@@ -35,6 +35,7 @@ mod tests {
     use super::*;
     use komi_syntax::error::{EvalError, EvalErrorKind, LexError, LexErrorKind, ParseError, ParseErrorKind};
     use komi_util::location::Range;
+    use komi_util::str_loc;
     use rstest::rstest;
 
     /// Asserts a given source to be interpreted into the expected result with stdout.
@@ -383,5 +384,14 @@ mod tests {
     #[case::str_hangul("쓰기(\"사과\")", "2", "사과")]
     fn stdout(#[case] source: &str, #[case] expected_repr: String, #[case] expected_stdout: String) {
         assert_out!(source, expected_repr, expected_stdout);
+    }
+
+    #[rstest]
+    #[case::stdout_write_with_no_arg(
+        "쓰기()",
+        ExecError::Eval(EvalError::new(EvalErrorKind::BadNumArgs, str_loc!("", "쓰기()")))
+    )]
+    fn builtin_fail(#[case] source: &str, #[case] error: ExecError) {
+        assert_fail!(source, error);
     }
 }
