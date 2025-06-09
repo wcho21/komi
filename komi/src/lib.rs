@@ -387,6 +387,14 @@ mod tests {
     }
 
     #[rstest]
+    #[case::str("타입(\"사과\")", "문자")]
+    #[case::num("타입(1)", "숫자")]
+    #[case::bool("타입(참)", "불리언")]
+    fn get_type(#[case] source: &str, #[case] expected: String) {
+        assert_out!(source, expected, "");
+    }
+
+    #[rstest]
     #[case::stdout_write_with_no_arg(
         "쓰기()",
         ExecError::Eval(EvalError::new(EvalErrorKind::BadNumArgs, str_loc!("", "쓰기()")))
