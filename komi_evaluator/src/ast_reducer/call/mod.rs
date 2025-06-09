@@ -31,7 +31,6 @@ fn evaluate_builtin_func(
     builtin_func(location, &arg_vals, stdouts)
 }
 
-// TODO: validate the number of arguments, and return BadNumArgs if not matched.
 fn evaluate_closure(
     parameters: Params,
     arguments: &Args,
@@ -41,6 +40,10 @@ fn evaluate_closure(
     location: &Range,
     stdouts: &mut Stdout,
 ) -> ValRes {
+    if arguments.len() != parameters.len() {
+        return Err(EvalError::new(EvalErrorKind::BadNumArgs, *location));
+    }
+
     let arg_vals_res: ValsRes = arguments
         .iter()
         .map(|arg| reduce_ast(arg, outer_env, stdouts))
