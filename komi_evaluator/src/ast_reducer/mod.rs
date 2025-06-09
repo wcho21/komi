@@ -268,6 +268,29 @@ mod tests {
             root_empty_env(),
             mkerr!(InvalidCallTarget, str_loc!("", "참")),
         )]
+        #[case::different_num_args_from_num_params(
+            // Represents `사과(1, 2)`.
+            mkast!(prog loc str_loc!("", "사과(1, 2)"), vec![
+                mkast!(call loc str_loc!("", "사과(1, 2)"),
+                    target mkast!(identifier "사과", loc str_loc!("", "사과")),
+                    args vec![
+                        mkast!(num 1.0, loc str_loc!("사과(", "1")),
+                        mkast!(num 2.0, loc str_loc!("사과(1, ", "2")),
+                    ],
+                ),
+            ]),
+            // Represents a binding for `사과` to `함수 오렌지 {오렌지}`.
+            root_env("사과", &Value::new(ValueKind::Closure {
+                parameters: vec![
+                    String::from("오렌지"),
+                ],
+                body: vec![
+                    mkast!(identifier "오렌지", loc range()),
+                ],
+                env: Env::new(),
+            }, range())),
+            mkerr!(BadNumArgs, str_loc!("", "사과(1, 2)")),
+        )]
         fn invalid_call(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] error: EvalError) {
             assert_eval_fail!(&ast, &mut env, error);
         }
