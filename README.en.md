@@ -115,9 +115,6 @@ Since everything is and must be an expression, the closure can't have an empty b
 
 ### Branching
 
-> [!WARNING]
->️ This feature is unimplemented yet.
-
 Branching is also an expression, so both branches must contain at least a single expression.
 
 ```
@@ -130,7 +127,7 @@ Branching is also an expression, so both branches must contain at least a single
 ```
 
 ```
-"더워"
+더워
 ```
 
 You can also add conditions using "아니면 만약", similar to `else if` in other programming languages.
@@ -146,9 +143,6 @@ You can also add conditions using "아니면 만약", similar to `else if` in ot
 ```
 
 ### Types
-
-> [!WARNING]
-> This feature is unimplemented yet.
 
 Komi supports primitive types: numbers, strings, and booleans.
 
@@ -168,7 +162,7 @@ Komi isn't strongly-typed, but you can check the type of a value using the built
 ```
 
 ```
-"숫자"
+숫자
 ```
 
 ### Method
