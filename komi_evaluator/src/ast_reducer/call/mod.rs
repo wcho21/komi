@@ -13,16 +13,22 @@ pub fn evaluate(target: &Box<Ast>, arguments: &Args, location: &Range, env: &mut
         ValueKind::Closure { parameters, body, env: closure_env } => {
             evaluate_closure(parameters, arguments, body, env, closure_env, location, stdouts)
         }
-        ValueKind::BuiltinFunc(builtin_func) => evaluate_builtin_func(builtin_func, arguments, env, stdouts),
+        ValueKind::BuiltinFunc(builtin_func) => evaluate_builtin_func(builtin_func, arguments, env, location, stdouts),
         _ => Err(EvalError::new(EvalErrorKind::InvalidCallTarget, target.location)),
     }
 }
 
-fn evaluate_builtin_func(builtin_func: BuiltinFunc, arguments: &Args, env: &mut Env, stdouts: &mut Stdout) -> ValRes {
+fn evaluate_builtin_func(
+    builtin_func: BuiltinFunc,
+    arguments: &Args,
+    env: &mut Env,
+    location: &Range,
+    stdouts: &mut Stdout,
+) -> ValRes {
     let arg_vals_res: ValsRes = arguments.iter().map(|arg| reduce_ast(arg, env, stdouts)).collect();
     let arg_vals = arg_vals_res?;
 
-    builtin_func(&arg_vals, stdouts)
+    builtin_func(location, &arg_vals, stdouts)
 }
 
 // TODO: validate the number of arguments, and return BadNumArgs if not matched.

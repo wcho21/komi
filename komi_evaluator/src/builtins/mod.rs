@@ -7,7 +7,7 @@ pub fn bind(env: &mut Env) -> () {
     env.set("쓰기", &Value::new(ValueKind::BuiltinFunc(stdout_write), Range::ORIGIN))
 }
 
-fn stdout_write(args: &Vec<Value>, stdouts: &mut Stdout) -> ValRes {
+fn stdout_write(_location: &Range, args: &Vec<Value>, stdouts: &mut Stdout) -> ValRes {
     let strs: Vec<String> = args.iter().map(|arg| arg.represent()).collect();
     let joined = strs.join(" ");
     let joined_len = joined.chars().count();
