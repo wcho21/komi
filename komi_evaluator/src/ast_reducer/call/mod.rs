@@ -22,7 +22,7 @@ fn evaluate_builtin_func(builtin_func: BuiltinFunc, arguments: &Args, env: &mut 
     let arg_vals_res: ValsRes = arguments.iter().map(|arg| reduce_ast(arg, env, stdouts)).collect();
     let arg_vals = arg_vals_res?;
 
-    Ok(builtin_func(&arg_vals, stdouts))
+    builtin_func(&arg_vals, stdouts)
 }
 
 // TODO: validate the number of arguments, and return BadNumArgs if not matched.
