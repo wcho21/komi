@@ -53,6 +53,8 @@ pub enum TokenKind {
     Colon,
     /// A comma `,`.
     Comma,
+    /// A dot `.`.
+    Dot,
     /// A bang `!`.
     Bang,
     /// An equals `=`.
