@@ -51,6 +51,7 @@ impl<'a> Lexer<'a> {
                 "}" => Token::new(Kind::RBrace, location),
                 ":" => Token::new(Kind::Colon, location),
                 "," => Token::new(Kind::Comma, location),
+                "." => Token::new(Kind::Dot, location),
                 "참" => Token::new(Kind::Bool(true), location),
                 "거" => expect_or_lex_identifier(&mut self.scanner, "짓", Kind::Bool(false), char, location)?,
                 "그" => expect_or_lex_identifier(&mut self.scanner, "리고", Kind::Conjunct, char, location)?,
@@ -206,10 +207,6 @@ mod tests {
     #[case::illegal_char(
         "12^",
         mkerr!(IllegalChar, str_loc!("12", "^"))
-    )]
-    #[case::beginning_with_dot(
-        ".25",
-        mkerr!(IllegalChar, str_loc!("", "."))
     )]
     #[case::ending_with_dot(
         "12.",
@@ -549,6 +546,14 @@ mod tests {
         vec![
             mktoken!(str_loc!("", ","),
                 Kind::Comma,
+            )
+        ]
+    )]
+    #[case::dot(
+        ".",
+        vec![
+            mktoken!(str_loc!("", "."),
+                Kind::Dot,
             )
         ]
     )]

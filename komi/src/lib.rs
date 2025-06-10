@@ -92,10 +92,6 @@ mod tests {
     }
 
     #[rstest]
-    #[case::number_beginning_with_dot(
-        ".12",
-        ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))
-    )]
     #[case::number_ending_with_dot(
         "12.",
         ExecError::Lex(LexError::new(LexErrorKind::IllegalNumLiteral, Range::from_nums(0, 0, 0, 3)))
@@ -153,10 +149,6 @@ mod tests {
         "또는",
         ExecError::Parse(ParseError::new(ParseErrorKind::InvalidExprStart, Range::from_nums(0, 0, 0, 2)))
     )]
-    #[case::dot(
-        ".",
-        ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))
-    )]
     fn single(#[case] source: &str, #[case] error: ExecError) {
         assert_fail!(source, error);
     }
@@ -173,10 +165,6 @@ mod tests {
     #[case::two_bangs(
         "!!",
         ExecError::Parse(ParseError::new(ParseErrorKind::NoPrefixOperand, Range::from_nums(0, 1, 0, 2)))
-    )]
-    #[case::two_dots(
-        "..",
-        ExecError::Lex(LexError::new(LexErrorKind::IllegalChar, Range::from_nums(0, 0, 0, 1)))
     )]
     fn double(#[case] source: &str, #[case] error: ExecError) {
         assert_fail!(source, error);
