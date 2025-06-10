@@ -49,9 +49,12 @@ pub enum TokenKind {
     /// A right bracket `>`.
     RBracket,
     /// A colon `:`.
+    // TODO: remove if unused
     Colon,
     /// A comma `,`.
     Comma,
+    /// A dot `.`.
+    Dot,
     /// A bang `!`.
     Bang,
     /// An equals `=`.
@@ -85,6 +88,7 @@ pub enum TokenKind {
     /// An else-branch keyword `아니면`.
     ElseBranch,
     /// An iteration keyword `반복`.
+    // TODO: remove if unused
     Iteration,
 }
 
