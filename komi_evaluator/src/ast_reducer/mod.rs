@@ -215,6 +215,24 @@ mod tests {
             }, range())),
             mkval!(ValueKind::Number(1.0), str_loc!("", "사과()")),
         )]
+        #[case::call_id_alt(
+            // Represents `사과()`.
+            mkast!(prog loc str_loc!("", "사과()"), vec![
+                mkast!(call loc str_loc!("", "사과()"),
+                    target mkast!(identifier "사과", loc str_loc!("", "사과")),
+                    args vec![],
+                ),
+            ]),
+            // Represents a binding for `사과` to `함수 {1}`.
+            root_env("사과", &Value::new(ValueKind::ClosureAlt {
+                parameters: vec![],
+                body: ClosureBodyKind::Ast(vec![
+                    mkast!(num 1.0, loc range()),
+                ]),
+                env: Env::new(),
+            }, range())),
+            mkval!(ValueKind::Number(1.0), str_loc!("", "사과()")),
+        )]
         #[case::call_with_args(
             // Represents `사과(1, 2)`.
             mkast!(prog loc str_loc!("", "사과(1, 2)"), vec![

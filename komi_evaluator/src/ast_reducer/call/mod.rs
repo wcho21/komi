@@ -45,23 +45,29 @@ fn evaluate_closure_alt(
         inner_env.set(param, arg);
     }
 
-    let mut val = evaluate_closure_alt_body(body, location, &arg_vals, stdouts)?;
+    let mut val = evaluate_closure_alt_body(body, &mut inner_env, location, &arg_vals, stdouts)?;
     val.location = *location;
     Ok(val)
 }
 
 fn evaluate_closure_alt_body(
     body: ClosureBodyKind,
+    env: &mut Env,
     location: &Range,
     arguments: &Vec<Value>,
     stdouts: &mut Stdout,
 ) -> ValRes {
     match body {
+        ClosureBodyKind::Ast(body) => {
+            let body_location = Range::new(body[0].location.begin, body[body.len() - 1].location.end);
+            let body_as_prog = Box::new(Ast::new(AstKind::Program { expressions: body }, body_location));
+            let val = reduce_ast(&body_as_prog, env, stdouts)?;
+            Ok(val)
+        }
         ClosureBodyKind::Native(f) => {
             let val = f(location, arguments, stdouts)?;
             Ok(val)
         }
-        _ => todo!(),
     }
 }
 
