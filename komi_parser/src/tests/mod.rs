@@ -1,8 +1,10 @@
+mod assignment_infix;
 mod branch;
 mod call;
 mod closure;
+mod comparison_infix;
 mod group;
-mod infix;
 mod literal;
 mod multiple_tokens;
+mod operator_infix;
 mod prefix;
