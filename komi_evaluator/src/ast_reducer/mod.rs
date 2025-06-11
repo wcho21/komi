@@ -74,6 +74,7 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
         AstKind::Branch { predicate: p, consequence: c, alternative: a } => {
             branch::evaluate(p, c, a, &loc, env, stdouts)
         }
+        _ => todo!(),
     }
 }
 

@@ -38,6 +38,7 @@ pub enum AstKind {
     InfixRBracketEquals { left: Expr, right: Expr },
     InfixLBracket { left: Expr, right: Expr },
     InfixRBracket { left: Expr, right: Expr },
+    InfixDot { left: Expr, right: Expr },
     Closure { parameters: Ids, body: Exprs },
     Call { target: Expr, arguments: Exprs },
     Branch { predicate: Expr, consequence: Exprs, alternative: Exprs },
