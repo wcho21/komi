@@ -86,7 +86,9 @@ impl<'a> Lexer<'a> {
                     lexer_tool::skip_comment(&mut self.scanner);
                     continue;
                 }
-                s if char_validator::is_digit_char(s) => lexer_tool::lex_num(&mut self.scanner, location, char)?,
+                s if char_validator::is_digit_char(s) => {
+                    lexer_tool::lex_num(&mut self.scanner, &mut self.pushback_buffer, location, char)?
+                }
                 // Lexing an identifier must come after attempting to lex a number
                 s if char_validator::is_char_in_identifier_domain(s) => {
                     lex_identifier_with_init_seg(&mut self.scanner, String::from(s), location)?
@@ -208,6 +210,20 @@ mod tests {
             mktoken!(str_loc!("", "12.25"),
                 Kind::Number(12.25),
             )
+        ]
+    )]
+    #[case::with_dot_and_id(
+        "12.사과",
+        vec![
+            mktoken!(str_loc!("", "12"),
+                Kind::Number(12.0),
+            ),
+            mktoken!(str_loc!("12", "."),
+                Kind::Dot,
+            ),
+            mktoken!(str_loc!("12.", "사과"),
+                Kind::Identifier(String::from("사과")),
+            ),
         ]
     )]
     fn num_literal(#[case] source: &str, #[case] expected: Tokens) {
