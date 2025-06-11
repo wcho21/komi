@@ -344,6 +344,7 @@ impl<'a> Parser<'a> {
             TokenKind::RBracketEquals => read_right_and_make_infix_ast!(self, left, COMPARISON, InfixRBracketEquals),
             TokenKind::LBracket => read_right_and_make_infix_ast!(self, left, COMPARISON, InfixLBracket),
             TokenKind::RBracket => read_right_and_make_infix_ast!(self, left, COMPARISON, InfixRBracket),
+            TokenKind::Dot => read_right_and_make_infix_ast!(self, left, BIND, InfixDot),
             TokenKind::LParen => self.read_right_and_make_call_ast(left),
             _ => Err(ParseError::new(ParseErrorKind::UnexpectedExprInfix, infix.location)),
         }

@@ -1,4 +1,5 @@
 mod assignment_infix;
+mod bind_infix;
 mod branch;
 mod call;
 mod closure;
