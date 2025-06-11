@@ -25,6 +25,7 @@ pub fn evaluate_identifier(name: &String, location: &Range, env: &Env) -> ValRes
             *location,
         )),
         ValueKind::BuiltinFunc(builtin_func) => Ok(Value::new(ValueKind::BuiltinFunc(*builtin_func), *location)),
+        _ => todo!(),
     }
 }
 

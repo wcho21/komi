@@ -19,6 +19,17 @@ pub enum ValueKind {
         env: Environment<Value>,
     },
     BuiltinFunc(BuiltinFunc),
+    ClosureAlt {
+        parameters: Vec<String>,
+        body: ClosureBodyKind,
+        env: Environment<Value>,
+    },
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum ClosureBodyKind {
+    Ast(Box<Ast>),
+    Native(BuiltinFunc),
 }
 
 /// A representation of the value produced during evaluation.

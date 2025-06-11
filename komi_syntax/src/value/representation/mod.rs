@@ -17,6 +17,7 @@ impl Representer {
             ValueKind::Str(s) => Self::represent_str(s),
             ValueKind::Closure { parameters: p, .. } => Self::represent_closure(p),
             ValueKind::BuiltinFunc(_) => Self::represent_builtin_func(),
+            _ => todo!(),
         }
     }
 
