@@ -1,6 +1,5 @@
 use crate::Environment as Env;
 use crate::ValRes;
-use komi_syntax::error::{EvalError, EvalErrorKind};
 use komi_syntax::value::{ClosureBodyKind, Stdout, Value, ValueKind};
 use komi_util::location::Range;
 
@@ -30,27 +29,18 @@ pub fn bind(env: &mut Env) -> () {
     );
 }
 
-fn stdout_write(location: &Range, args: &Vec<Value>, stdouts: &mut Stdout) -> ValRes {
-    if args.len() != 1 {
-        return Err(EvalError::new(EvalErrorKind::BadNumArgs, *location));
-    }
+fn stdout_write(location: &Range, env: &Env, stdouts: &mut Stdout) -> ValRes {
+    let arg = env.get("내용").unwrap();
+    let str = arg.represent();
+    let str_len = str.chars().count();
 
-    let strs: Vec<String> = args.iter().map(|arg| arg.represent()).collect();
-    let joined = strs.join(" ");
-    let joined_len = joined.chars().count();
+    stdouts.push(str);
 
-    stdouts.push(joined);
-
-    // TODO: fix location (meaning?)
-    Ok(Value::new(ValueKind::Number(joined_len as f64), Range::ORIGIN))
+    Ok(Value::new(ValueKind::Number(str_len as f64), *location))
 }
 
-fn get_type(location: &Range, args: &Vec<Value>, _stdouts: &mut Stdout) -> ValRes {
-    if args.len() != 1 {
-        return Err(EvalError::new(EvalErrorKind::BadNumArgs, *location));
-    }
-
-    let arg = &args[0];
+fn get_type(location: &Range, env: &Env, _stdouts: &mut Stdout) -> ValRes {
+    let arg = env.get("값").unwrap();
     let arg_type = match arg.kind {
         ValueKind::Bool(_) => "불리언",
         ValueKind::Number(_) => "숫자",

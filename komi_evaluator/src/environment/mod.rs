@@ -1,7 +1,4 @@
-use komi_syntax::value::Value;
-use komi_util;
-
-pub type Environment = komi_util::environment::Environment<Value>;
+pub use komi_syntax::value::Environment;
 
 #[cfg(test)]
 mod tests {

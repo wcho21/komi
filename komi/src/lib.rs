@@ -30,6 +30,7 @@ pub fn execute(source: &str) -> ExecRes {
     Ok(exec_out)
 }
 
+// TODO: write tests at the source-code level
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -42,7 +43,14 @@ mod tests {
     /// Helps write a test declaratively.
     macro_rules! assert_out {
         ($source:expr, $expected_repr:expr, $expected_stdout:expr) => {{
-            let out = execute($source).unwrap();
+            let executed = execute($source);
+            assert!(
+                executed.is_ok(),
+                "expected a execution result, but an error '{:?}'.",
+                executed
+            );
+
+            let out = executed.unwrap();
             let repr = out.representation;
             let stdout = out.stdout;
 
@@ -58,7 +66,14 @@ mod tests {
     /// Helps write a test declaratively.
     macro_rules! assert_fail {
         ($source:expr, $expected:expr) => {{
-            let err = execute($source).unwrap_err();
+            let executed = execute($source);
+            assert!(
+                executed.is_err(),
+                "expected a execution error, but success '{:?}'.",
+                executed
+            );
+
+            let err = executed.unwrap_err();
             assert_eq!(err, $expected, "received a result (left), but it isn't (right)",);
         }};
     }
@@ -371,6 +386,13 @@ mod tests {
     #[case::str_ascii("쓰기(\"foo\")", "3", "foo")]
     #[case::str_hangul("쓰기(\"사과\")", "2", "사과")]
     fn stdout(#[case] source: &str, #[case] expected_repr: String, #[case] expected_stdout: String) {
+        assert_out!(source, expected_repr, expected_stdout);
+    }
+
+    #[rstest]
+    #[case::str_and_closure("\"사과\".함수 문자1, 문자2 { 문자1+문자2 }(\"오렌지\")", "사과오렌지", "")]
+    #[case::str_and_builtin("\"사과\".타입()", "문자", "")]
+    fn method(#[case] source: &str, #[case] expected_repr: String, #[case] expected_stdout: String) {
         assert_out!(source, expected_repr, expected_stdout);
     }
 

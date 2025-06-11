@@ -3,7 +3,7 @@ use crate::environment::Environment as Env;
 use crate::{ValRes, ValsRes, reduce_ast};
 use komi_syntax::ast::{Ast, AstKind};
 use komi_syntax::error::{EvalError, EvalErrorKind};
-use komi_syntax::value::{ClosureBodyKind, Stdout, Value, ValueKind};
+use komi_syntax::value::{ClosureBodyKind, Stdout, ValueKind};
 use komi_util::location::Range;
 
 pub fn evaluate(target: &Box<Ast>, arguments: &Args, location: &Range, env: &mut Env, stdouts: &mut Stdout) -> ValRes {
@@ -40,18 +40,12 @@ fn evaluate_closure(
         inner_env.set(param, arg);
     }
 
-    let mut val = evaluate_closure_body(body, &mut inner_env, location, &arg_vals, stdouts)?;
+    let mut val = evaluate_closure_body(body, &mut inner_env, location, stdouts)?;
     val.location = *location;
     Ok(val)
 }
 
-fn evaluate_closure_body(
-    body: ClosureBodyKind,
-    env: &mut Env,
-    location: &Range,
-    arguments: &Vec<Value>,
-    stdouts: &mut Stdout,
-) -> ValRes {
+fn evaluate_closure_body(body: ClosureBodyKind, env: &mut Env, location: &Range, stdouts: &mut Stdout) -> ValRes {
     match body {
         ClosureBodyKind::Ast(body) => {
             let body_location = Range::new(body[0].location.begin, body[body.len() - 1].location.end);
@@ -60,7 +54,7 @@ fn evaluate_closure_body(
             Ok(val)
         }
         ClosureBodyKind::Native(f) => {
-            let val = f(location, arguments, stdouts)?;
+            let val = f(location, env, stdouts)?;
             Ok(val)
         }
     }

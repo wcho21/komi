@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 /// A lexical environment implemented as a linked list of hash maps.
+// TODO: separate from util module, so that not visible and not used in engine modules.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Environment<T> {
     outer: Option<Box<Environment<T>>>,
