@@ -12,6 +12,7 @@ pub fn evaluate_identifier(name: &String, location: &Range, env: &Env) -> ValRes
         return Err(EvalError::new(EvalErrorKind::UndefinedIdentifier, *location));
     };
 
+    // TOOD: just change location and shorten code
     match &x.kind {
         ValueKind::Bool(x) => Ok(Value::new(ValueKind::Bool(*x), *location)),
         ValueKind::Number(x) => Ok(Value::new(ValueKind::Number(*x), *location)),
@@ -25,7 +26,11 @@ pub fn evaluate_identifier(name: &String, location: &Range, env: &Env) -> ValRes
             *location,
         )),
         ValueKind::BuiltinFunc(builtin_func) => Ok(Value::new(ValueKind::BuiltinFunc(*builtin_func), *location)),
-        _ => todo!(),
+        ValueKind::ClosureAlt { .. } => {
+            let mut v = x.clone();
+            v.location = *location;
+            Ok(v)
+        }
     }
 }
 

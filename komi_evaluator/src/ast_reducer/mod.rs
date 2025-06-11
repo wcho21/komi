@@ -84,7 +84,7 @@ mod tests {
     use fixtures::*;
     use komi_syntax::ast::AstKind;
     use komi_syntax::error::{EvalError, EvalErrorKind};
-    use komi_syntax::value::{Value, ValueKind};
+    use komi_syntax::value::{ClosureBodyKind, Value, ValueKind};
     use komi_syntax::{mkast, mkval};
     use komi_util::location::Range;
     use komi_util::str_segment::{StrSegment, StrSegmentKind};
@@ -336,6 +336,26 @@ mod tests {
                 body: vec![
                     mkast!(num 1.0, loc range()),
                 ],
+                env: Env::new()
+            }, str_loc!("", "사과"))
+        )]
+        #[case::closure_alt(
+            // Represents `사과`.
+            mkast!(prog loc str_loc!("", "사과"), vec![
+                mkast!(identifier "사과", loc str_loc!("", "사과")),
+            ]),
+            root_env("사과", &Value::new(ValueKind::ClosureAlt {
+                parameters: vec![String::from("오렌지")],
+                body: ClosureBodyKind::Ast(vec![
+                    mkast!(num 1.0, loc range()),
+                ]),
+                env: Env::new()
+            }, range())),
+            Value::new(ValueKind::ClosureAlt {
+                parameters: vec![String::from("오렌지")],
+                body: ClosureBodyKind::Ast(vec![
+                    mkast!(num 1.0, loc range()),
+                ]),
                 env: Env::new()
             }, str_loc!("", "사과"))
         )]

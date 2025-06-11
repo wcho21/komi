@@ -28,7 +28,7 @@ pub enum ValueKind {
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ClosureBodyKind {
-    Ast(Box<Ast>),
+    Ast(Vec<Box<Ast>>),
     Native(BuiltinFunc),
 }
 

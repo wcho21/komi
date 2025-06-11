@@ -5,6 +5,7 @@ use komi_syntax::value::{ClosureBodyKind, Stdout, Value, ValueKind};
 use komi_util::location::Range;
 
 pub fn bind(env: &mut Env) -> () {
+    // Note: a dummy location used here, since it will be determined later when evaluated as an identifier.
     env.set("쓰기", &Value::new(ValueKind::BuiltinFunc(stdout_write), Range::ORIGIN));
     env.set("타입", &Value::new(ValueKind::BuiltinFunc(get_type), Range::ORIGIN));
     env.set(

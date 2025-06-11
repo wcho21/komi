@@ -3,7 +3,7 @@ use crate::environment::Environment as Env;
 use crate::{ValRes, ValsRes, reduce_ast};
 use komi_syntax::ast::{Ast, AstKind};
 use komi_syntax::error::{EvalError, EvalErrorKind};
-use komi_syntax::value::{BuiltinFunc, Stdout, ValueKind};
+use komi_syntax::value::{BuiltinFunc, ClosureBodyKind, Stdout, Value, ValueKind};
 use komi_util::location::Range;
 
 pub fn evaluate(target: &Box<Ast>, arguments: &Args, location: &Range, env: &mut Env, stdouts: &mut Stdout) -> ValRes {
@@ -14,7 +14,54 @@ pub fn evaluate(target: &Box<Ast>, arguments: &Args, location: &Range, env: &mut
             evaluate_closure(parameters, arguments, body, env, closure_env, location, stdouts)
         }
         ValueKind::BuiltinFunc(builtin_func) => evaluate_builtin_func(builtin_func, arguments, env, location, stdouts),
+        ValueKind::ClosureAlt { parameters, body, env: closure_env } => {
+            evaluate_closure_alt(parameters, arguments, body, env, closure_env, location, stdouts)
+        }
         _ => Err(EvalError::new(EvalErrorKind::InvalidCallTarget, target.location)),
+    }
+}
+
+fn evaluate_closure_alt(
+    parameters: Params,
+    arguments: &Args,
+    body: ClosureBodyKind,
+    outer_env: &mut Env,
+    closure_env: Env,
+    location: &Range,
+    stdouts: &mut Stdout,
+) -> ValRes {
+    if arguments.len() != parameters.len() {
+        return Err(EvalError::new(EvalErrorKind::BadNumArgs, *location));
+    }
+
+    let arg_vals_res: ValsRes = arguments
+        .iter()
+        .map(|arg| reduce_ast(arg, outer_env, stdouts))
+        .collect();
+    let arg_vals = arg_vals_res?;
+
+    let mut inner_env = Env::from_outer(closure_env);
+    for (param, arg) in parameters.iter().zip(arg_vals.iter()) {
+        inner_env.set(param, arg);
+    }
+
+    let mut val = evaluate_closure_alt_body(body, location, &arg_vals, stdouts)?;
+    val.location = *location;
+    Ok(val)
+}
+
+fn evaluate_closure_alt_body(
+    body: ClosureBodyKind,
+    location: &Range,
+    arguments: &Vec<Value>,
+    stdouts: &mut Stdout,
+) -> ValRes {
+    match body {
+        ClosureBodyKind::Native(f) => {
+            let val = f(location, arguments, stdouts)?;
+            Ok(val)
+        }
+        _ => todo!(),
     }
 }
 
