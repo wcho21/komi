@@ -43,7 +43,7 @@ impl Value {
 }
 
 pub type Stdout = Vec<String>;
-pub type BuiltinFunc = fn(&Range, &Vec<Value>, &mut Stdout) -> Result<Value, EvalError>;
+pub type BuiltinFunc = fn(&Range, &Environment, &mut Stdout) -> Result<Value, EvalError>;
 
 #[macro_export]
 macro_rules! mkval {
