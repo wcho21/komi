@@ -2,7 +2,7 @@ use crate::ValRes;
 use crate::ast_reducer::{Exprs, Params};
 use crate::environment::Environment as Env;
 use komi_syntax::error::{EvalError, EvalErrorKind};
-use komi_syntax::value::{Value, ValueKind};
+use komi_syntax::value::{ClosureBodyKind, Value, ValueKind};
 use komi_util::location::Range;
 use komi_util::str_segment::{StrSegment, StrSegmentKind};
 
@@ -17,16 +17,7 @@ pub fn evaluate_identifier(name: &String, location: &Range, env: &Env) -> ValRes
         ValueKind::Bool(x) => Ok(Value::new(ValueKind::Bool(*x), *location)),
         ValueKind::Number(x) => Ok(Value::new(ValueKind::Number(*x), *location)),
         ValueKind::Str(x) => Ok(Value::new(ValueKind::Str(x.clone()), *location)),
-        ValueKind::Closure { parameters, body, env } => Ok(Value::new(
-            ValueKind::Closure {
-                parameters: parameters.clone(),
-                body: body.clone(),
-                env: env.clone(),
-            },
-            *location,
-        )),
-        ValueKind::BuiltinFunc(builtin_func) => Ok(Value::new(ValueKind::BuiltinFunc(*builtin_func), *location)),
-        ValueKind::ClosureAlt { .. } => {
+        ValueKind::Closure { .. } => {
             let mut v = x.clone();
             v.location = *location;
             Ok(v)
@@ -63,7 +54,7 @@ pub fn evaluate_closure(parameters: &Params, body: &Exprs, location: &Range, env
     Ok(Value::new(
         ValueKind::Closure {
             parameters: parameters.clone(),
-            body: body.clone(),
+            body: ClosureBodyKind::Ast(body.clone()),
             env: env.clone(),
         },
         *location,
@@ -74,6 +65,7 @@ pub fn evaluate_closure(parameters: &Params, body: &Exprs, location: &Range, env
 mod tests {
     use super::*;
     use fixtures::*;
+    use komi_syntax::value::ClosureBodyKind;
     use rstest::rstest;
 
     #[rstest]
@@ -125,7 +117,7 @@ mod tests {
             Ok(Value::new(
                 ValueKind::Closure {
                     parameters: vec![String::from("foo")],
-                    body: vec![],
+                    body: ClosureBodyKind::Ast(vec![]),
                     env: root_env()
                 },
                 range()

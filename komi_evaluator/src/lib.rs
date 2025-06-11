@@ -102,12 +102,12 @@ mod tests {
     }
 
     #[test]
-    fn test_type2() {
-        let ast = mkast!(prog loc str_loc!("", "타입2(1)"), vec![
-            mkast!(call loc str_loc!("", "타입2(1)"),
-                target mkast!(identifier "타입2", loc str_loc!("", "타입2")),
+    fn test_type() {
+        let ast = mkast!(prog loc str_loc!("", "타입(1)"), vec![
+            mkast!(call loc str_loc!("", "타입(1)"),
+                target mkast!(identifier "타입", loc str_loc!("", "타입")),
                 args vec![
-                    mkast!(num 1.0, loc str_loc!("타입2(", "1")),
+                    mkast!(num 1.0, loc str_loc!("타입(", "1")),
                 ],
             ),
         ]);
@@ -120,7 +120,7 @@ mod tests {
             repr,
             Ok(Value::new(
                 ValueKind::Str(String::from("숫자")),
-                str_loc!("", "타입2(1)")
+                str_loc!("", "타입(1)")
             )),
         );
         assert_eq!(stdout, "");

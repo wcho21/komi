@@ -15,12 +15,6 @@ pub enum ValueKind {
     Str(String),
     Closure {
         parameters: Vec<String>,
-        body: Vec<Box<Ast>>,
-        env: Environment<Value>,
-    },
-    BuiltinFunc(BuiltinFunc),
-    ClosureAlt {
-        parameters: Vec<String>,
         body: ClosureBodyKind,
         env: Environment<Value>,
     },
