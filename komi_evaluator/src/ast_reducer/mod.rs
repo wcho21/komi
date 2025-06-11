@@ -84,7 +84,7 @@ mod tests {
     use fixtures::*;
     use komi_syntax::ast::AstKind;
     use komi_syntax::error::{EvalError, EvalErrorKind};
-    use komi_syntax::value::{Value, ValueKind};
+    use komi_syntax::value::{ClosureBodyKind, Value, ValueKind};
     use komi_syntax::{mkast, mkval};
     use komi_util::location::Range;
     use komi_util::str_segment::{StrSegment, StrSegmentKind};
@@ -208,9 +208,27 @@ mod tests {
             // Represents a binding for `사과` to `함수 {1}`.
             root_env("사과", &Value::new(ValueKind::Closure {
                 parameters: vec![],
-                body: vec![
+                body: ClosureBodyKind::Ast(vec![
                     mkast!(num 1.0, loc range()),
-                ],
+                ]),
+                env: Env::new(),
+            }, range())),
+            mkval!(ValueKind::Number(1.0), str_loc!("", "사과()")),
+        )]
+        #[case::call_id_alt(
+            // Represents `사과()`.
+            mkast!(prog loc str_loc!("", "사과()"), vec![
+                mkast!(call loc str_loc!("", "사과()"),
+                    target mkast!(identifier "사과", loc str_loc!("", "사과")),
+                    args vec![],
+                ),
+            ]),
+            // Represents a binding for `사과` to `함수 {1}`.
+            root_env("사과", &Value::new(ValueKind::Closure {
+                parameters: vec![],
+                body: ClosureBodyKind::Ast(vec![
+                    mkast!(num 1.0, loc range()),
+                ]),
                 env: Env::new(),
             }, range())),
             mkval!(ValueKind::Number(1.0), str_loc!("", "사과()")),
@@ -232,12 +250,12 @@ mod tests {
                     String::from("오렌지"),
                     String::from("바나나"),
                 ],
-                body: vec![
+                body: ClosureBodyKind::Ast(vec![
                     mkast!(infix InfixPlus, loc range(),
                         left mkast!(identifier "오렌지", loc range()),
                         right mkast!(identifier "바나나", loc range()),
                     ),
-                ],
+                ]),
                 env: Env::new(),
             }, range())),
             mkval!(ValueKind::Number(3.0), str_loc!("", "사과(1, 2)")),
@@ -285,9 +303,9 @@ mod tests {
                 parameters: vec![
                     String::from("오렌지"),
                 ],
-                body: vec![
+                body: ClosureBodyKind::Ast(vec![
                     mkast!(identifier "오렌지", loc range()),
-                ],
+                ]),
                 env: Env::new(),
             }, range())),
             mkerr!(BadNumArgs, str_loc!("", "사과(1, 2)")),
@@ -326,16 +344,36 @@ mod tests {
             ]),
             root_env("사과", &Value::new(ValueKind::Closure {
                 parameters: vec![String::from("오렌지")],
-                body: vec![
+                body: ClosureBodyKind::Ast(vec![
                     mkast!(num 1.0, loc range()),
-                ],
+                ]),
                 env: Env::new()
             }, range())),
             Value::new(ValueKind::Closure {
                 parameters: vec![String::from("오렌지")],
-                body: vec![
+                body: ClosureBodyKind::Ast(vec![
                     mkast!(num 1.0, loc range()),
-                ],
+                ]),
+                env: Env::new()
+            }, str_loc!("", "사과"))
+        )]
+        #[case::closure_alt(
+            // Represents `사과`.
+            mkast!(prog loc str_loc!("", "사과"), vec![
+                mkast!(identifier "사과", loc str_loc!("", "사과")),
+            ]),
+            root_env("사과", &Value::new(ValueKind::Closure {
+                parameters: vec![String::from("오렌지")],
+                body: ClosureBodyKind::Ast(vec![
+                    mkast!(num 1.0, loc range()),
+                ]),
+                env: Env::new()
+            }, range())),
+            Value::new(ValueKind::Closure {
+                parameters: vec![String::from("오렌지")],
+                body: ClosureBodyKind::Ast(vec![
+                    mkast!(num 1.0, loc range()),
+                ]),
                 env: Env::new()
             }, str_loc!("", "사과"))
         )]
@@ -401,11 +439,11 @@ mod tests {
             ]),
             Value::new(ValueKind::Closure {
                 parameters: vec![String::from("사과"), String::from("오렌지"), String::from("바나나")],
-                body: vec![
+                body: ClosureBodyKind::Ast(vec![
                     mkast!(num 1.0, loc str_loc!("함수 ", "사과")),
                     mkast!(num 2.0, loc str_loc!("함수 사과, ", "오렌지")),
                     mkast!(num 3.0, loc str_loc!("함수 사과, 오렌지, ", "바나나")),
-                ],
+                ]),
                 env: Env::new()
             }, str_loc!("", "함수 사과, 오렌지, 바나나 { 1 2 3 }"))
         )]
@@ -433,7 +471,7 @@ mod tests {
                 parameters: vec![
                     String::from("사과"),
                 ],
-                body: vec![
+                body: ClosureBodyKind::Ast(vec![
                     // Should contain the same AST with the closure body
                     mkast!(closure loc str_loc!("함수 사과 { ", "함수 오렌지 { 사과 + 오렌지 }"),
                         params vec![
@@ -446,7 +484,7 @@ mod tests {
                             ),
                         ],
                     ),
-                ],
+                ]),
                 env: Env::new()
             }, str_loc!("", "함수 사과 { 함수 오렌지 { 사과 + 오렌지 } }"))
         )]

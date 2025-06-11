@@ -15,10 +15,15 @@ pub enum ValueKind {
     Str(String),
     Closure {
         parameters: Vec<String>,
-        body: Vec<Box<Ast>>,
+        body: ClosureBodyKind,
         env: Environment<Value>,
     },
-    BuiltinFunc(BuiltinFunc),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum ClosureBodyKind {
+    Ast(Vec<Box<Ast>>),
+    Native(BuiltinFunc),
 }
 
 /// A representation of the value produced during evaluation.

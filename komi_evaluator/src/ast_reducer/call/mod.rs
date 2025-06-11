@@ -1,40 +1,25 @@
-use crate::ast_reducer::{Args, Exprs, Params};
+use crate::ast_reducer::{Args, Params};
 use crate::environment::Environment as Env;
 use crate::{ValRes, ValsRes, reduce_ast};
 use komi_syntax::ast::{Ast, AstKind};
 use komi_syntax::error::{EvalError, EvalErrorKind};
-use komi_syntax::value::{BuiltinFunc, Stdout, ValueKind};
+use komi_syntax::value::{ClosureBodyKind, Stdout, Value, ValueKind};
 use komi_util::location::Range;
 
 pub fn evaluate(target: &Box<Ast>, arguments: &Args, location: &Range, env: &mut Env, stdouts: &mut Stdout) -> ValRes {
     let target_closure = reduce_ast(target, env, stdouts)?;
 
-    match target_closure.kind {
-        ValueKind::Closure { parameters, body, env: closure_env } => {
-            evaluate_closure(parameters, arguments, body, env, closure_env, location, stdouts)
-        }
-        ValueKind::BuiltinFunc(builtin_func) => evaluate_builtin_func(builtin_func, arguments, env, location, stdouts),
-        _ => Err(EvalError::new(EvalErrorKind::InvalidCallTarget, target.location)),
-    }
-}
+    let ValueKind::Closure { parameters, body, env: closure_env } = target_closure.kind else {
+        return Err(EvalError::new(EvalErrorKind::InvalidCallTarget, target.location));
+    };
 
-fn evaluate_builtin_func(
-    builtin_func: BuiltinFunc,
-    arguments: &Args,
-    env: &mut Env,
-    location: &Range,
-    stdouts: &mut Stdout,
-) -> ValRes {
-    let arg_vals_res: ValsRes = arguments.iter().map(|arg| reduce_ast(arg, env, stdouts)).collect();
-    let arg_vals = arg_vals_res?;
-
-    builtin_func(location, &arg_vals, stdouts)
+    evaluate_closure(parameters, arguments, body, env, closure_env, location, stdouts)
 }
 
 fn evaluate_closure(
     parameters: Params,
     arguments: &Args,
-    body: Exprs,
+    body: ClosureBodyKind,
     outer_env: &mut Env,
     closure_env: Env,
     location: &Range,
@@ -55,10 +40,28 @@ fn evaluate_closure(
         inner_env.set(param, arg);
     }
 
-    let body_location = Range::new(body[0].location.begin, body[body.len() - 1].location.end);
-    let body_as_prog = Box::new(Ast::new(AstKind::Program { expressions: body }, body_location));
-    let mut val = reduce_ast(&body_as_prog, &mut inner_env, stdouts)?;
-
+    let mut val = evaluate_closure_body(body, &mut inner_env, location, &arg_vals, stdouts)?;
     val.location = *location;
     Ok(val)
+}
+
+fn evaluate_closure_body(
+    body: ClosureBodyKind,
+    env: &mut Env,
+    location: &Range,
+    arguments: &Vec<Value>,
+    stdouts: &mut Stdout,
+) -> ValRes {
+    match body {
+        ClosureBodyKind::Ast(body) => {
+            let body_location = Range::new(body[0].location.begin, body[body.len() - 1].location.end);
+            let body_as_prog = Box::new(Ast::new(AstKind::Program { expressions: body }, body_location));
+            let val = reduce_ast(&body_as_prog, env, stdouts)?;
+            Ok(val)
+        }
+        ClosureBodyKind::Native(f) => {
+            let val = f(location, arguments, stdouts)?;
+            Ok(val)
+        }
+    }
 }

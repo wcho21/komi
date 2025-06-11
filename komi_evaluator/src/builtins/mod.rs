@@ -1,16 +1,37 @@
 use crate::Environment as Env;
 use crate::ValRes;
 use komi_syntax::error::{EvalError, EvalErrorKind};
-use komi_syntax::value::{Stdout, Value, ValueKind};
+use komi_syntax::value::{ClosureBodyKind, Stdout, Value, ValueKind};
 use komi_util::location::Range;
 
 pub fn bind(env: &mut Env) -> () {
-    env.set("쓰기", &Value::new(ValueKind::BuiltinFunc(stdout_write), Range::ORIGIN));
-    env.set("타입", &Value::new(ValueKind::BuiltinFunc(get_type), Range::ORIGIN));
+    // Note: a dummy location used here, since it will be determined later when evaluated as an identifier.
+    env.set(
+        "쓰기",
+        &Value::new(
+            ValueKind::Closure {
+                parameters: vec![String::from("내용")],
+                body: ClosureBodyKind::Native(stdout_write),
+                env: Env::new(),
+            },
+            Range::ORIGIN,
+        ),
+    );
+    env.set(
+        "타입",
+        &Value::new(
+            ValueKind::Closure {
+                parameters: vec![String::from("값")],
+                body: ClosureBodyKind::Native(get_type),
+                env: Env::new(),
+            },
+            Range::ORIGIN,
+        ),
+    );
 }
 
 fn stdout_write(location: &Range, args: &Vec<Value>, stdouts: &mut Stdout) -> ValRes {
-    if args.len() == 0 {
+    if args.len() != 1 {
         return Err(EvalError::new(EvalErrorKind::BadNumArgs, *location));
     }
 
@@ -34,7 +55,7 @@ fn get_type(location: &Range, args: &Vec<Value>, _stdouts: &mut Stdout) -> ValRe
         ValueKind::Bool(_) => "불리언",
         ValueKind::Number(_) => "숫자",
         ValueKind::Str(_) => "문자",
-        ValueKind::Closure { .. } | ValueKind::BuiltinFunc(_) => "함수",
+        ValueKind::Closure { .. } => "함수",
     };
 
     Ok(Value::new(ValueKind::Str(String::from(arg_type)), *location))
