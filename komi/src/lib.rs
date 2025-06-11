@@ -30,6 +30,7 @@ pub fn execute(source: &str) -> ExecRes {
     Ok(exec_out)
 }
 
+// TODO: write tests at the source-code level
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -385,6 +386,13 @@ mod tests {
     #[case::str_ascii("쓰기(\"foo\")", "3", "foo")]
     #[case::str_hangul("쓰기(\"사과\")", "2", "사과")]
     fn stdout(#[case] source: &str, #[case] expected_repr: String, #[case] expected_stdout: String) {
+        assert_out!(source, expected_repr, expected_stdout);
+    }
+
+    #[rstest]
+    #[case::str_and_closure("\"사과\".함수 문자1, 문자2 { 문자1+문자2 }(\"오렌지\")", "사과오렌지", "")]
+    //#[case::str_and_builtin("\"사과\".타입()", "2", "쓰기")]
+    fn method(#[case] source: &str, #[case] expected_repr: String, #[case] expected_stdout: String) {
         assert_out!(source, expected_repr, expected_stdout);
     }
 

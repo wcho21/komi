@@ -44,6 +44,10 @@ pub enum EvalErrorKind {
     NonBoolPred,
     /// The number of arguments is not the same with the one of parameters.
     BadNumArgs,
+    /// Expected a closure value as a right-hand side operand of a dot infix, but it isn't.
+    NotClosureRightOperand,
+    /// Expected a closure with non-empty parameters as a right-hand side operand of a dot infix, but it isn't.
+    NoParamsToBind,
 }
 
 pub type EvalError = EngineError<EvalErrorKind>;
@@ -71,6 +75,8 @@ impl fmt::Display for EvalErrorKind {
             EvalErrorKind::InvalidCallTarget => "InvalidCallTarget",
             EvalErrorKind::NonBoolPred => "NonBoolPred",
             EvalErrorKind::BadNumArgs => "BadNumArgs",
+            EvalErrorKind::NotClosureRightOperand => "NotClosureRightOperand",
+            EvalErrorKind::NoParamsToBind => "NoParamsToBind",
         };
         write!(f, "{}", s)
     }

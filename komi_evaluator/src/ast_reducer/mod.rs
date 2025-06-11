@@ -1,6 +1,8 @@
 mod assignment_infix;
+mod binder_infix;
 mod branch;
 mod call;
+// TODO: rename combinator_infix to operator_infix
 mod combinator_infix;
 mod comparison_infix;
 mod expressions;
@@ -10,8 +12,12 @@ mod util;
 
 use crate::ValRes;
 use crate::environment::Environment as Env;
+// TODO: rename to a_infix
 use assignment_infix as assign_infix;
+use binder_infix as b_infix;
+// TODO: rename comb_infix to o_infix (operator infix)
 use combinator_infix as comb_infix;
+// TODO: rename to c_infix
 use comparison_infix as comp_infix;
 use komi_syntax::ast::{Ast, AstKind};
 use komi_syntax::value::Stdout;
@@ -28,6 +34,7 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
 
     let loc = ast.location;
     match &ast.kind {
+        // TODO: should pass arguments as references? (consider passing ownerships)
         AstKind::Program { expressions: e } => expressions::reduce(&e, &loc, env, stdouts),
         AstKind::Identifier(id) => leaf::evaluate_identifier(id, &loc, env),
         AstKind::Number(n) => leaf::evaluate_num(*n, &loc),
@@ -70,11 +77,11 @@ pub fn reduce_ast(ast: &Box<Ast>, env: &mut Env, stdouts: &mut Stdout) -> ValRes
         AstKind::InfixRBracketEquals { left: l, right: r } => {
             comp_infix::reduce_rbracket_equals(&l, &r, &loc, env, stdouts)
         }
+        AstKind::InfixDot { left: l, right: r } => b_infix::reduce(&l, &r, &loc, env, stdouts),
         AstKind::Call { target: t, arguments: args } => call::evaluate(t, args, &loc, env, stdouts),
         AstKind::Branch { predicate: p, consequence: c, alternative: a } => {
             branch::evaluate(p, c, a, &loc, env, stdouts)
         }
-        _ => todo!(),
     }
 }
 
@@ -309,6 +316,31 @@ mod tests {
                 env: Env::new(),
             }, range())),
             mkerr!(BadNumArgs, str_loc!("", "사과(1, 2)")),
+        )]
+        #[case::different_num_args_from_num_params_with_bind(
+            // Represents `"사과".함수 오렌지{ 오렌지 }(1)`.
+            mkast!(prog loc str_loc!("", "\"사과\".함수 오렌지{ 오렌지 }(1)"), vec![
+                mkast!(call loc str_loc!("", "\"사과\".함수 오렌지{ 오렌지 }(1)"),
+                    target mkast!(infix InfixDot, loc str_loc!("", "\"사과\".함수 오렌지{ 오렌지 }"),
+                        left mkast!(string loc str_loc!("", "\"사과\""), vec![
+                            mkstrseg!(Str, "사과", str_loc!("\"", "사과")),
+                        ]),
+                        right mkast!(closure loc str_loc!("\"사과\".", "함수 오렌지{ 오렌지 }"), 
+                            params vec![
+                                String::from("오렌지"),
+                            ],
+                            body vec![
+                                mkast!(identifier "오렌지", loc str_loc!("\"사과\".함수 오렌지{ ", "오렌지")),
+                            ],
+                        ),
+                    ),
+                    args vec![
+                        mkast!(num 1.0, loc str_loc!("\"사과\".함수 오렌지{ 오렌지 }(", "1")),
+                    ],
+                ),
+            ]),
+            root_empty_env(),
+            mkerr!(BadNumArgs, str_loc!("", "\"사과\".함수 오렌지{ 오렌지 }(1)")),
         )]
         fn invalid_call(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] error: EvalError) {
             assert_eval_fail!(&ast, &mut env, error);
@@ -2043,6 +2075,108 @@ mod tests {
         )]
         fn expression(#[case] ast: Box<Ast>, #[case] mut env: Env, #[case] expected: Value) {
             assert_eval!(&ast, &mut env, expected);
+        }
+    }
+
+    mod bind_infix {
+        use super::*;
+
+        #[rstest]
+        #[case::bind(
+            // Represents `1 . 함수 사과, 오렌지 { 사과 + 오렌지 }`.
+            mkast!(prog loc str_loc!("", "1 . 함수 사과, 오렌지 { 사과 + 오렌지 }"), vec![
+                mkast!(infix InfixDot, loc str_loc!("", "1 . 함수 사과, 오렌지 { 사과 + 오렌지 }"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(closure loc str_loc!("1 . ", "함수 사과, 오렌지 { 사과 + 오렌지 }"),
+                        params vec![
+                            String::from("사과"),
+                            String::from("오렌지"),
+                        ],
+                        body vec![
+                            mkast!(infix InfixPlus, loc str_loc!("1 . 함수 사과, 오렌지 { ", "사과 + 오렌지"),
+                                left mkast!(identifier "사과", loc str_loc!("1 . 함수 사과, 오렌지 { ", "사과")),
+                                right mkast!(identifier "오렌지", loc str_loc!("1 . 함수 사과, 오렌지 { 사과 + ", "오렌지")),
+                            ),
+                        ],
+                    ),
+                ),
+            ]),
+            Value::new(ValueKind::Closure {
+                parameters: vec![
+                    String::from("오렌지"),
+                ],
+                body: ClosureBodyKind::Ast(vec![
+                    mkast!(infix InfixPlus, loc str_loc!("1 . 함수 사과, 오렌지 { ", "사과 + 오렌지"),
+                        left mkast!(identifier "사과", loc str_loc!("1 . 함수 사과, 오렌지 { ", "사과")),
+                        right mkast!(identifier "오렌지", loc str_loc!("1 . 함수 사과, 오렌지 { 사과 + ", "오렌지")),
+                    ),
+                ]),
+                env: root_env("사과", &mkval!(ValueKind::Number(1.0), str_loc!("", "1")))
+            }, str_loc!("", "1 . 함수 사과, 오렌지 { 사과 + 오렌지 }"))
+        )]
+        fn literal(#[case] ast: Box<Ast>, #[case] expected: Value) {
+            assert_eval!(&ast, expected);
+        }
+
+        #[rstest]
+        #[case::bind(
+            // Represents `1 . 함수 사과, 오렌지 { 사과 + 오렌지 }(2)`.
+            mkast!(prog loc str_loc!("", "1 . 함수 사과, 오렌지 { 사과 + 오렌지 }(2)"), vec![
+                mkast!(call loc str_loc!("", ""),
+                    target mkast!(infix InfixDot, loc str_loc!("", "1 . 함수 사과, 오렌지 { 사과 + 오렌지 }(2)"),
+                        left mkast!(num 1.0, loc str_loc!("", "1")),
+                        right mkast!(closure loc str_loc!("1 . ", "함수 사과, 오렌지 { 사과 + 오렌지 }"),
+                            params vec![
+                                String::from("사과"),
+                                String::from("오렌지"),
+                            ],
+                            body vec![
+                                mkast!(infix InfixPlus, loc str_loc!("1 . 함수 사과, 오렌지 { ", "사과 + 오렌지"),
+                                    left mkast!(identifier "사과", loc str_loc!("1 . 함수 사과, 오렌지 { ", "사과")),
+                                    right mkast!(identifier "오렌지", loc str_loc!("1 . 함수 사과, 오렌지 { 사과 + ", "오렌지")),
+                                ),
+                            ],
+                        ),
+                    ),
+                    args vec![
+                        mkast!(num 2.0, loc str_loc!("1 . 함수 사과, 오렌지 { 사과 + 오렌지 }(", "2")),
+                    ],
+                ),
+            ]),
+            mkval!(ValueKind::Number(3.0), str_loc!("", "1 . 함수 사과, 오렌지 { 사과 + 오렌지 }(2)")),
+        )]
+        fn with_call(#[case] ast: Box<Ast>, #[case] expected: Value) {
+            assert_eval!(&ast, expected);
+        }
+
+        #[rstest]
+        #[case::non_closure_right(
+            // Represents `1.참`.
+            mkast!(prog loc str_loc!("", "1.참"), vec![
+                mkast!(infix InfixDot, loc str_loc!("", "1.참"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(boolean true, loc str_loc!("1.", "참")),
+                ),
+            ]),
+            mkerr!(NotClosureRightOperand, str_loc!("1.", "참")),
+        )]
+        #[case::no_parameter_to_bind(
+            // Represents `1.함수 { 2 }`.
+            mkast!(prog loc str_loc!("", "1.함수 { 2 }"), vec![
+                mkast!(infix InfixDot, loc str_loc!("", "1.함수 { 2 }"),
+                    left mkast!(num 1.0, loc str_loc!("", "1")),
+                    right mkast!(closure loc str_loc!("1.", "함수 { 2 }"),
+                        params vec![],
+                        body vec![
+                            mkast!(num 2.0, loc str_loc!("1.함수 { ", "2")),
+                        ],
+                    ),
+                ),
+            ]),
+            mkerr!(NoParamsToBind, str_loc!("1.", "함수 { 2 }")),
+        )]
+        fn invalid(#[case] ast: Box<Ast>, #[case] error: EvalError) {
+            assert_eval_fail!(&ast, error);
         }
     }
 
