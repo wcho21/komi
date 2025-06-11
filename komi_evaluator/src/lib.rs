@@ -102,6 +102,31 @@ mod tests {
     }
 
     #[test]
+    fn test_type2() {
+        let ast = mkast!(prog loc str_loc!("", "타입2(1)"), vec![
+            mkast!(call loc str_loc!("", "타입2(1)"),
+                target mkast!(identifier "타입2", loc str_loc!("", "타입2")),
+                args vec![
+                    mkast!(num 1.0, loc str_loc!("타입2(", "1")),
+                ],
+            ),
+        ]);
+        let mut evaluator = Evaluator::new(&ast);
+
+        let repr = evaluator.eval();
+        let stdout = evaluator.flush();
+
+        assert_eq!(
+            repr,
+            Ok(Value::new(
+                ValueKind::Str(String::from("숫자")),
+                str_loc!("", "타입2(1)")
+            )),
+        );
+        assert_eq!(stdout, "");
+    }
+
+    #[test]
     fn test_stdout_id() {
         let ast = mkast!(prog loc 0, 0, 0, 5, vec![
             mkast!(infix InfixEquals, loc 0, 0, 0, 0,
