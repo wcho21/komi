@@ -3,7 +3,6 @@
 //! Reads *tokens* and returns *an abstract syntax tree (AST)* as defined in the `komi_syntax` crate.
 //! Designed to be loosely coupled, so it does not rely on the implementation details of the lexer and evaluator.
 
-mod tests;
 mod token_scanner;
 mod util;
 
@@ -553,3 +552,6 @@ macro_rules! mkerr {
         ParseError::new(ParseErrorKind::$kind, $range)
     };
 }
+
+#[cfg(test)]
+mod tests;
