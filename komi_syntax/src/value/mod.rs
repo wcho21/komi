@@ -2,9 +2,12 @@ mod representation;
 
 use crate::ast::Ast;
 use crate::error::EvalError;
-use komi_util::environment::Environment;
+// TODO: separate environment from this file (is environment syntax?)
+use komi_util::environment::Environment as BaseEnvironment;
 use komi_util::location::Range;
 use representation::Representer;
+
+pub type Environment = BaseEnvironment<Value>;
 
 /// Kinds of values produced during evaluation.
 /// Serves as the interface between an evaluator and its user.
@@ -16,7 +19,7 @@ pub enum ValueKind {
     Closure {
         parameters: Vec<String>,
         body: ClosureBodyKind,
-        env: Environment<Value>,
+        env: Environment,
     },
 }
 
