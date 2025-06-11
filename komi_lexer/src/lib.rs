@@ -22,11 +22,12 @@ pub type TokensRes = Result<Tokens, LexError>;
 /// Produces tokens from source codes.
 struct Lexer<'a> {
     scanner: SourceScanner<'a>,
+    pushback_buffer: Vec<(&'a str, Range)>,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
-        Self { scanner: SourceScanner::new(source) }
+        Self { scanner: SourceScanner::new(source), pushback_buffer: vec![] }
     }
 
     pub fn lex(&mut self) -> TokensRes {
@@ -36,14 +37,25 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
+    fn read_and_advance(&mut self) -> Option<(&'a str, Range)> {
+        // Try buffer first
+        if self.pushback_buffer.len() > 0 {
+            return self.pushback_buffer.pop();
+        }
+        let Some(char) = self.scanner.read() else {
+            return None;
+        };
+
+        let location = self.scanner.locate();
+        self.scanner.advance();
+        Some((char, location))
+    }
+
     fn lex_tokens(&mut self) -> TokensRes {
         let mut tokens: Tokens = vec![];
 
         // Lex characters into tokens one by one
-        while let Some(char) = self.scanner.read() {
-            let location = self.scanner.locate();
-            self.scanner.advance();
-
+        while let Some((char, location)) = self.read_and_advance() {
             let token = match char {
                 "(" => Token::new(Kind::LParen, location),
                 ")" => Token::new(Kind::RParen, location),
