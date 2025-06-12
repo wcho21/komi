@@ -167,9 +167,6 @@ Komi isn't strongly-typed, but you can check the type of a value using the built
 
 ### Method
 
-> [!WARNING]
-> This feature is unimplemented yet.
-
 When you've made a closure, Komi automatically supports method-style call syntax.
 
 ```
@@ -187,8 +184,9 @@ When you've made a closure, Komi automatically supports method-style call syntax
 15
 ```
 
-The dot operator calls the closure with the left-hand value as the first argument, and the remaining call arguments as the rest.
-In object-oriented terms, it sends a message to the value on the left.
+The dot operator calls the closure with the left-hand side value as the first argument, and the remaining call arguments as the rest.
+In object-oriented terms, it is a way of invoking the right-hand side method on the left-hand side object.
+In fact, `a.b` is equivalent to returning a new closure where `a` is bound as the first argument of `b`.
 
 You can chain methods using this operator.
 
