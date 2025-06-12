@@ -22,11 +22,12 @@ pub type TokensRes = Result<Tokens, LexError>;
 /// Produces tokens from source codes.
 struct Lexer<'a> {
     scanner: SourceScanner<'a>,
+    pushback_buffer: Vec<(&'a str, Range)>,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
-        Self { scanner: SourceScanner::new(source) }
+        Self { scanner: SourceScanner::new(source), pushback_buffer: vec![] }
     }
 
     pub fn lex(&mut self) -> TokensRes {
@@ -36,14 +37,25 @@ impl<'a> Lexer<'a> {
         Ok(tokens)
     }
 
+    fn read_and_advance(&mut self) -> Option<(&'a str, Range)> {
+        // Try buffer first
+        if self.pushback_buffer.len() > 0 {
+            return self.pushback_buffer.pop();
+        }
+        let Some(char) = self.scanner.read() else {
+            return None;
+        };
+
+        let location = self.scanner.locate();
+        self.scanner.advance();
+        Some((char, location))
+    }
+
     fn lex_tokens(&mut self) -> TokensRes {
         let mut tokens: Tokens = vec![];
 
         // Lex characters into tokens one by one
-        while let Some(char) = self.scanner.read() {
-            let location = self.scanner.locate();
-            self.scanner.advance();
-
+        while let Some((char, location)) = self.read_and_advance() {
             let token = match char {
                 "(" => Token::new(Kind::LParen, location),
                 ")" => Token::new(Kind::RParen, location),
@@ -74,7 +86,9 @@ impl<'a> Lexer<'a> {
                     lexer_tool::skip_comment(&mut self.scanner);
                     continue;
                 }
-                s if char_validator::is_digit_char(s) => lexer_tool::lex_num(&mut self.scanner, location, char)?,
+                s if char_validator::is_digit_char(s) => {
+                    lexer_tool::lex_num(&mut self.scanner, &mut self.pushback_buffer, location, char)?
+                }
                 // Lexing an identifier must come after attempting to lex a number
                 s if char_validator::is_char_in_identifier_domain(s) => {
                     lex_identifier_with_init_seg(&mut self.scanner, String::from(s), location)?
@@ -196,6 +210,20 @@ mod tests {
             mktoken!(str_loc!("", "12.25"),
                 Kind::Number(12.25),
             )
+        ]
+    )]
+    #[case::with_dot_and_id(
+        "12.사과",
+        vec![
+            mktoken!(str_loc!("", "12"),
+                Kind::Number(12.0),
+            ),
+            mktoken!(str_loc!("12", "."),
+                Kind::Dot,
+            ),
+            mktoken!(str_loc!("12.", "사과"),
+                Kind::Identifier(String::from("사과")),
+            ),
         ]
     )]
     fn num_literal(#[case] source: &str, #[case] expected: Tokens) {

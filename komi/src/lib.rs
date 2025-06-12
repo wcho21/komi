@@ -392,6 +392,7 @@ mod tests {
     #[rstest]
     #[case::str_and_closure("\"사과\".함수 문자1, 문자2 { 문자1+문자2 }(\"오렌지\")", "사과오렌지", "")]
     #[case::str_and_builtin("\"사과\".타입()", "문자", "")]
+    #[case::str_and_builtin("1.타입()", "숫자", "")]
     fn method(#[case] source: &str, #[case] expected_repr: String, #[case] expected_stdout: String) {
         assert_out!(source, expected_repr, expected_stdout);
     }
